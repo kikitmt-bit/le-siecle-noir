@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js";
-import * as local from "./localnet.js";
-import * as E from "./engine.js";
-import { PROVINCES, REGIONS } from "./map.js";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js";
-import * as A from "./audio.js";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js";
+import * as remote from "./net.js?v=1795285024";
+import * as local from "./localnet.js?v=1795285024";
+import * as E from "./engine.js?v=1795285024";
+import { PROVINCES, REGIONS } from "./map.js?v=1795285024";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795285024";
+import * as A from "./audio.js?v=1795285024";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795285024";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
@@ -156,7 +156,7 @@ async function joinGame(code, silent = false) {
 }
 function enterRoom(code) {
   L.code = code; L.joinedAt = Date.now();
-  if (!SOLO) { store.set("sn_room", code); history.replaceState(null, "", `${location.pathname}?r=${code}${new URLSearchParams(location.search).has("test") ? "&test" : ""}`); }
+  if (!SOLO) { store.set("sn_room", code); history.replaceState(null, "", `${location.pathname}${new URLSearchParams(location.search).has("test") ? "?test" : ""}`); }
   L.unsub.forEach((u) => u());
   L.unsub = [
     net.listen(code, "meta", (m) => { L.meta = m || {}; onMeta(); }),
