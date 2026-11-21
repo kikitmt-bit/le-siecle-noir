@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795289401">
+<link rel="stylesheet" href="css/style.css?v=1795290540">
 </head>
 <body>
 <div id="app">
@@ -18,7 +18,7 @@
     <div class="home-card">
       <div class="home-crest" id="home-crest"></div>
       <h1 class="gothic">Le Siècle Noir</h1>
-      <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches pour régner sur les cendres.</p>
+      <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches (ou sept) pour régner sur les cendres.</p>
       <label class="field"><span>Ton nom de seigneur</span><input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Ex. : Étienne"></label>
       <label class="field"><span>Nom de ta maison <i>(facultatif)</i></span><input id="in-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon (sinon un nom est donné)"></label>
       <button id="btn-create" class="btn btn-red">Créer une partie</button>
@@ -33,6 +33,7 @@
         <p class="ph" style="margin-top:12px">Combien d'adversaires ?</p>
         <div class="row" style="justify-content:center"><button class="btn btn-small" data-solo="2" aria-pressed="false">2 ordinateurs</button><button class="btn btn-small" data-solo="3" aria-pressed="true">3 ordinateurs (conseillé)</button></div>
         <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Première partie</b> : des explications à chaque étape</span></label>
+        <label class="field" style="margin-top:8px;text-align:left"><span>Durée</span><select id="solo-rounds"><option value="10" selected>10 manches</option><option value="7">7 manches (partie courte)</option></select></label>
         <button id="btn-solo-go" class="btn btn-red btn-block" style="margin-top:10px">Commencer la partie</button>
       </div>
       <p id="home-msg" class="msg" role="status"></p>
@@ -55,6 +56,8 @@
       <div id="lobby-host" class="lobby-host hidden">
         <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Première partie</b> : des explications à chaque étape, et deux règles arrivent un peu plus tard (intrigues manche 2, dé caché et accusations manche 3)</span></label>
         <label class="check"><input type="checkbox" id="opt-fill" checked> <span><b>Toujours 4 seigneurs</b> : l'ordinateur prend les places libres (conseillé : plus d'alliances et de trahisons)</span></label>
+        <label class="field" style="margin:4px 0 0"><span>Durée de la partie</span>
+          <select id="opt-rounds"><option value="10" selected>Partie complète : 10 manches (environ 1 h)</option><option value="7">Partie courte : 7 manches (environ 40 min)</option></select></label>
         <label class="field" style="margin:4px 0 0"><span>Temps pour jouer</span>
           <select id="opt-timer"><option value="none" selected>Pas de chrono : on attend tout le monde</option><option value="relaxed">Détendu (temps doublé)</option><option value="normal">Normal</option><option value="fast">Rapide</option></select></label>
         <label class="check"><input type="checkbox" id="opt-random"> <span><b>Provinces au hasard</b> : pas de choix des provinces, on commence tout de suite</span></label>
@@ -110,6 +113,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795289401"></script>
+<script type="module" src="js/main.js?v=1795290540"></script>
 </body>
 </html>

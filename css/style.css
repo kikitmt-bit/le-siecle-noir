@@ -479,3 +479,55 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
 .rv-body .ch-title, .rv-body .ch-sit, .rv-body .ch-choice, .rv-body .ch-res { display: block; }
 .rv-body .ch-title { font-style: normal; font-family: var(--caps); font-size: 13px; margin-bottom: 2px; }
 .rv-body .ch-choice { font-style: normal; font-weight: 700; color: #F6ECD6; margin-top: 4px; }
+
+/* ===================== VERSION 6 : RÉVÉLATION DANS LE PANNEAU, CARTE DÉGAGÉE ===================== */
+.banner.mini { top: 12px; bottom: auto; width: auto; max-width: calc(100% - 200px); left: 50%; padding: 6px 16px; border-radius: 20px; animation: rise .3s ease-out; pointer-events: none; }
+.banner.mini b { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-dock { background: #1E150E; color: var(--parch); border: 2px solid var(--gold); border-radius: 6px; padding: 12px 14px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.rv-dock .rv-head { display: flex; justify-content: space-between; gap: 8px; font-family: var(--caps); font-size: 11px; letter-spacing: 1px; color: #C9B48A; text-transform: uppercase; border-bottom: 1px solid rgba(217,164,65,.3); padding-bottom: 6px; margin-bottom: 8px; }
+.rv-label { font-family: var(--caps); font-weight: 700; font-size: 14px; letter-spacing: .5px; margin: 0 0 6px; filter: brightness(1.6); }
+.rv-text { font-size: 17px; line-height: 1.45; }
+.rv-text .ch-title, .rv-text .ch-sit, .rv-text .ch-choice, .rv-text .ch-res { display: block; }
+.rv-text .ch-title { color: var(--gold); font-family: var(--caps); font-size: 13px; }
+.rv-text .ch-sit { color: #C9B48A; font-style: italic; font-size: 15px; margin: 2px 0 6px; }
+.rv-text .ch-choice { font-weight: 700; color: #F6ECD6; }
+.rv-text .ch-res { margin-top: 4px; }
+.rv-move { border-left: 4px solid; padding: 2px 0 2px 10px; margin: 0 0 8px; font-size: 16px; line-height: 1.4; }
+.rv-dock .hint { color: #C9B48A; }
+.rv-dock .verdict { text-align: center; font-family: var(--caps); font-size: 16px; color: var(--gold); margin-top: 4px; }
+.rv-dock .rv-sub { color: #C9B48A; font-size: 14px; font-style: italic; margin: 6px 0 0; }
+.rv-dock .duel .dside .fc.rolling { animation: dicepulse .25s infinite alternate; color: var(--gold); }
+@keyframes dicepulse { from { transform: scale(1); opacity: .6; } to { transform: scale(1.25); opacity: 1; } }
+.rv-btns { display: flex; gap: 8px; margin-top: 12px; }
+.rv-btns .btn { min-height: 48px; }
+.rv-next { font-size: 18px; }
+.rv-opts { display: flex; gap: 12px; align-items: center; margin-top: 8px; font-size: 13px; color: #C9B48A; }
+.rv-opts .check { margin: 0; font-size: 13px; color: #C9B48A; }
+.rv-link { background: none; border: 0; color: var(--gold); text-decoration: underline; cursor: pointer; font: inherit; font-size: 13px; padding: 4px 0; }
+.rv-prog { margin-left: auto; font-family: var(--caps); font-size: 12px; }
+.rv-wait { font-style: italic; text-align: center; margin: 10px 0; }
+.rv-dock.done .summary { background: #F3E8D0; color: var(--ink); border-radius: 4px; padding: 8px 10px; }
+.rv-hist { display: flex; flex-direction: column; gap: 4px; }
+.rv-hist .rv-line { font-size: 14px; line-height: 1.35; padding: 4px 8px 4px 10px; margin: 0; background: rgba(255,255,255,.3); }
+@media (max-width: 900px) {
+  body.rv-on { padding-bottom: 46vh; }
+  body.rv-on .rv-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 46vh; overflow-y: auto; border-radius: 10px 10px 0 0; border-width: 2px 0 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  .rv-text { font-size: 15.5px; }
+  .banner.mini { max-width: calc(100% - 24px); top: 8px; }
+}
+@media (max-width: 900px) {
+  /* pendant la révélation sur téléphone : la carte en haut, le récit en bas, rien d'autre */
+  body.rv-on .guide { display: none; }
+  body.rv-on .banner.mini { display: none; }
+  body.rv-on #mapwrap { height: 54vh; min-height: 300px; }
+  body.rv-on { padding-bottom: 40vh; }
+  body.rv-on .rv-dock { max-height: 40vh; }
+  body.rv-on .rv-dock .rv-sub, body.rv-on .rv-dock .rv-battle-title, body.rv-on .rv-dock .hint { display: none; }
+  body.rv-on .rv-dock .duel { margin: 2px 0; }
+  body.rv-on .rv-dock .duel svg { width: 24px; height: 27px; }
+  body.rv-on .rv-dock .dside .fc { font-size: 24px; }
+  body.rv-on .rv-dock .vs { font-size: 20px; }
+  body.rv-on .rv-btns { margin-top: 8px; }
+  body.rv-on .rv-btns .btn { min-height: 44px; }
+  body.rv-on .rv-opts { margin-top: 4px; }
+}

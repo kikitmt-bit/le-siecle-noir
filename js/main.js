@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js?v=1795289401";
-import * as local from "./localnet.js?v=1795289401";
-import * as E from "./engine.js?v=1795289401";
-import { PROVINCES, REGIONS } from "./map.js?v=1795289401";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795289401";
-import * as A from "./audio.js?v=1795289401";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795289401";
+import * as remote from "./net.js?v=1795290540";
+import * as local from "./localnet.js?v=1795290540";
+import * as E from "./engine.js?v=1795290540";
+import { PROVINCES, REGIONS } from "./map.js?v=1795290540";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795290540";
+import * as A from "./audio.js?v=1795290540";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795290540";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
@@ -137,7 +137,7 @@ async function soloStart() {
   await net.updateMeta(code, { ais });
   enterRoom(code);
   const tuto = $("#solo-tuto").checked;
-  const wait = setInterval(() => { if (H.active && L.meta && L.meta.ais) { clearInterval(wait); hostStart({ tutorial: tuto, randomDraft: false }); } }, 100);
+  const wait = setInterval(() => { if (H.active && L.meta && L.meta.ais) { clearInterval(wait); hostStart({ tutorial: tuto, randomDraft: false, rounds: $("#solo-rounds").value }); } }, 100);
 }
 function aiName(p) { return { conquerant: "Le Conquérant", intrigant: "L'Intrigant", prudent: "Le Prudent" }[p] || "Ordinateur"; }
 async function createGame() {
@@ -211,7 +211,7 @@ $("#btn-share").onclick = async () => {
   try { if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ title: "Le Siècle Noir", text: `Rejoins ma partie du Siècle Noir (code ${L.code})`, url }); else { await navigator.clipboard.writeText(url); toast("Lien copié. Envoie-le à tes amis."); } }
   catch { prompt("Copie ce lien :", url); }
 };
-$("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto").checked, randomDraft: $("#opt-random").checked, timer: $("#opt-timer").value, fill: $("#opt-fill").checked }); };
+$("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto").checked, randomDraft: $("#opt-random").checked, timer: $("#opt-timer").value, fill: $("#opt-fill").checked, rounds: $("#opt-rounds").value }); };
 
 // ---------------------------------------------------------------------
 // réception des données
@@ -326,7 +326,7 @@ function onState(st) {
     if (st.phase === "draft") A.play("drum");
   }
   if (st.phase !== L.last.phase || st.round !== L.last.round) splash(st);
-  if (st.phase !== L.last.phase && ["orders", "placement", "draft"].includes(st.phase)) L.ui.tab = "panel";
+  if (st.phase !== L.last.phase && ["orders", "placement", "draft", "reveal"].includes(st.phase)) L.ui.tab = "panel";
   if (prev && prev.leader !== st.leader && st.leader && st.round > 1 && st.round < st.maxRounds && ["dilemma", "interlude"].includes(st.phase)) {
     setTimeout(() => { toast(`${ICON.prestige}<b>La couronne passe à ${esc(houseName(st.leader))}</b>${st.leader === me() ? " : c'est toi ! Tout le monde va vouloir te faire tomber." : ". Battre ses armées rapporte 2 Prestige."}`, "#D9A441", 6000); A.play("horn"); }, 2400);
   }
@@ -584,18 +584,13 @@ function renderGuide() {
     case "reveal": {
       step = round(3, "RÉVÉLATION");
       const sent = L.myInput.revdone && L.myInput.revdone.round === st.round;
-      text = sent ? "Tu as tout vu. On attend que les autres finissent leur révélation…" : "<b>À toi :</b> suis la révélation sur la carte, chapitre par chapitre. Les boutons sous le récit permettent de faire une pause, d'avancer ou de revenir. À la fin, clique « J'ai tout vu, continuer ».";
+      text = sent ? "Tu as tout vu. On attend que les autres finissent leur révélation…" : "<b>À toi :</b> regarde la carte, lis le récit dans le panneau, puis clique <b>« Suivant »</b>. Chacun avance à son rythme. À la fin : « J'ai tout vu ».";
       break;
     }
     case "interlude": step = `FIN DE LA MANCHE ${st.round}`; text = "Trois années passent… La chronique raconte ce qui s'est passé."; break;
     case "end": step = "FIN DE LA PARTIE"; text = "La partie est terminée."; btn = `<button class="btn btn-red" data-guide="end">Voir les résultats</button>`; break;
   }
-  if (st.phase === "interlude" && pid) {
-    const rd = L.myInput.next && L.myInput.next.round === st.round;
-    text = rd ? "On attend que les autres soient prêts…" : "<b>À toi :</b> lis le résumé de ta manche, puis passe à la suite.";
-    if (!rd) { btn = `<button class="btn btn-red" data-guide="next">Continuer</button>`; mine = true; }
-  }
-  const waiting = !mine && ["objectives", "draft", "placement", "dilemma", "orders", "interlude"].includes(st.phase);
+  const waiting = !mine && ["objectives", "draft", "placement", "dilemma", "orders"].includes(st.phase);
   if (waiting && H.active && !st.solo && (st.timer === "none" || !st.timer)) btn += `<button class="btn btn-small" data-guide="force" title="Passer à la suite sans attendre les retardataires">Forcer la suite</button>`;
   L.hudScore = "";
   if (pid && st.round > 0) {
@@ -609,11 +604,11 @@ function renderGuide() {
   const key = step + text + btn;
   if (el.dataset.k !== key) {
     el.dataset.k = key;
-    const track = st.round > 0 ? `<div class="hud-track" title="Les 10 manches">${Array.from({ length: st.maxRounds }, (_, i) => `<span class="${i + 1 < st.round ? "past" : i + 1 === st.round ? "now" : ""} ${i + 1 === st.maxRounds ? "last" : ""}">${i + 1 === st.maxRounds ? "♛" : i + 1}</span>`).join("")}</div>` : `<div class="hud-track prep"><span class="now">Préparatifs</span></div>`;
+    const track = st.round > 0 ? `<div class="hud-track" title="Les ${st.maxRounds} manches">${Array.from({ length: st.maxRounds }, (_, i) => `<span class="${i + 1 < st.round ? "past" : i + 1 === st.round ? "now" : ""} ${i + 1 === st.maxRounds ? "last" : ""}">${i + 1 === st.maxRounds ? "♛" : i + 1}</span>`).join("")}</div>` : `<div class="hud-track prep"><span class="now">Préparatifs</span></div>`;
     const stages = st.round > 0 ? ["Dilemmes", "Ordres", "Révélation"] : ["Objectifs", "Provinces", "Armées"];
     const cur = st.round > 0 ? stage : prepStage;
     const stepper = `<div class="hud-steps">${stages.map((n, i) => `<span class="${i < cur ? "done" : i === cur ? "cur" : ""}">${i + 1}. ${n}</span>`).join('<i>›</i>')}</div>`;
-    el.innerHTML = `<div class="hud-left">${track}${stepper}</div><div class="hud-main"><span class="g-text">${text}</span><span class="hud-btns">${btn}</span></div><div class="hud-right">${L.hudScore || ""}${hudRes()}<span class="hud-goal">But : avoir le plus de points après 10 manches</span></div>`;
+    el.innerHTML = `<div class="hud-left">${track}${stepper}</div><div class="hud-main"><span class="g-text">${text}</span><span class="hud-btns">${btn}</span></div><div class="hud-right">${L.hudScore || ""}${hudRes()}<span class="hud-goal">But : avoir le plus de points après ${st.maxRounds} manches</span></div>`;
     if (mine && el.dataset.last !== st.phase + st.round) { el.dataset.last = st.phase + st.round; el.classList.add("mine"); }
   }
   el.querySelectorAll("[data-guide]").forEach((b) => (b.onclick = () => {
@@ -1033,168 +1028,189 @@ function entryHtml(e, plain = false) {
   }
   return esc(e ? e.text : "");
 }
-// ---- révélation : chacun la suit à son rythme, chapitre par chapitre ----
+// ---- révélation : une info à la fois, on clique « Suivant » quand on l'a vue ----
 const CHAPTERS = {
-  dil: ["I", "Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeurs."],
-  intr: ["II", "Les intrigues", "Poisons, séductions et corruptions dans l'ombre."],
-  move: ["III", "Les troupes se mettent en marche", "Levées d'armées et déplacements, maison par maison."],
-  battle: ["IV", "Les batailles", "Chaque attaque, une par une : force contre force."],
-  diplo: ["V", "La diplomatie", "Mariages, trêves, cadeaux et accusations."],
-  end: ["VI", "Le bilan", "Ce que la manche laisse derrière elle."],
+  dil: ["I", "Les affaires des cours"],
+  intr: ["II", "Les intrigues"],
+  move: ["III", "Les troupes"],
+  battle: ["IV", "Les batailles"],
+  diplo: ["V", "La diplomatie"],
+  end: ["VI", "Le bilan"],
 };
-const RV = { key: "", list: [], i: -1, t0: 0, paused: false, speed: +(store.get("sn_rvspeed") || 1) };
+const RV = { key: "", list: [], i: -1, t0: 0, pre: false, auto: store.get("sn_rvauto") === "1", preTimer: null };
 function rvList(st) {
   const key = `${st.gameId}:${st.round}:${st.reveal ? st.reveal.steps.length : 0}`;
   if (RV.key === key) return RV.list;
-  RV.key = key; RV.i = -1; RV.t0 = 0; RV.paused = false;
-  const list = []; let last = null;
+  RV.key = key; RV.i = -1; RV.t0 = 0; RV.pre = false;
+  const list = [];
   const steps = st.reveal ? st.reveal.steps : [];
   steps.forEach((s, k) => {
     const ch = s.ch || "end";
-    if (ch !== last) { list.push({ virt: "chapter", ch, at: k, n: steps.filter((x) => (x.ch || "end") === ch).length }); last = ch; }
-    list.push({ k });
+    const last = list[list.length - 1];
+    // tous les mouvements de troupes sont montrés ensemble sur la carte
+    if (s.kind === "move" && last && last.kind === "move") { last.ks.push(k); return; }
+    list.push({ ks: [k], ch, kind: s.kind });
   });
-  list.push({ virt: "done" });
+  list.push({ virt: "done", ch: "fin" });
+  // numérotation dans chaque chapitre
+  const tot = {}; list.forEach((e) => (tot[e.ch] = (tot[e.ch] || 0) + 1));
+  const cur = {}; list.forEach((e) => { cur[e.ch] = (cur[e.ch] || 0) + 1; e.pos = cur[e.ch]; e.tot = tot[e.ch]; });
   RV.list = list;
   return list;
 }
-function rvDur(st, e) {
-  let ms = 4500;
-  if (e.virt === "chapter") ms = 2600;
-  else if (e.virt === "done") ms = 1e12;
-  else {
-    const s = st.reveal.steps[e.k];
-    const theirs = s.secret && s.pid !== me();
-    ms = { dilemma: theirs ? 5500 : 8000, battle: 7000, move: 5000, death: 6000, intrigue: 5500, bribe: 5500, birth: 5000, betrayal: 6000, claim: 6000, marriage: 5000 }[s.kind] || 5000;
-  }
-  return (ms / RV.speed) * SPEED;
-}
+function rvEntry(st) { return rvList(st)[RV.i]; }
 function rvStepIdx(st) {
-  // index de l'étape « moteur » déjà appliquée sur la carte
-  const list = rvList(st);
-  if (RV.i < 0) return -1;
-  if (list[RV.i] && list[RV.i].virt === "done") return st.reveal.steps.length - 1;
-  for (let x = RV.i; x >= 0; x--) if (list[x].k !== undefined) return list[x].k;
-  return -1;
+  const list = rvList(st), e = list[RV.i];
+  if (!e) return -1;
+  if (e.virt === "done") return st.reveal.steps.length - 1;
+  // pendant le suspense d'une bataille, la carte montre encore l'état d'avant
+  return RV.pre ? e.ks[0] - 1 : e.ks[e.ks.length - 1];
 }
 function revealIdx() { const st = S(); return st && st.reveal ? rvStepIdx(st) : -1; }
 function revealProvinces() {
   const st = S();
-  const list = rvList(st);
-  if (list[RV.i] && list[RV.i].virt === "done") return st.provinces;
+  const e = rvEntry(st);
+  if (e && e.virt === "done") return st.provinces;
   const view = JSON.parse(JSON.stringify(st.revealFrom || st.provinces));
   const idx = rvStepIdx(st);
   for (let i = 0; i <= idx; i++) { const s = st.reveal.steps[i]; if (s && s.set) Object.assign(view, JSON.parse(JSON.stringify(s.set))); }
   return view;
 }
 function rvFocus(st) {
-  // provinces à mettre en avant et flèches pour l'étape en cours
-  const e = rvList(st)[RV.i];
+  const e = rvEntry(st);
   const out = { hl: [], red: [], arrows: [], badges: [] };
-  if (!e || e.k === undefined) return out;
-  const s = st.reveal.steps[e.k];
-  if (s.kind === "battle") { out.red.push(s.prov); out.hl.push(...(s.from || [])); out.arrows = (s.from || []).map((f) => ({ from: f, to: s.prov, color: "#8E1B1B" })); }
-  else if (s.kind === "move") { out.hl.push(...(s.provs || [])); out.arrows = (s.mv || []).map((m) => ({ from: m.from, to: m.to, color: "#2B1D12" })); out.badges = [...(s.mv || []).map((m) => ({ prov: m.to, text: `+${m.n}`, color: "#2B1D12" })), ...(s.lv || []).map((l) => ({ prov: l.to, text: `+${l.n} levée`, color: "#2F5233" }))]; }
-  else if (s.prov) out.hl.push(s.prov);
+  if (!e || e.virt) return out;
+  for (const k of e.ks) {
+    const s = st.reveal.steps[k];
+    if (s.kind === "battle") { out.red.push(s.prov); out.hl.push(...(s.from || [])); out.arrows.push(...(s.from || []).map((f) => ({ from: f, to: s.prov, color: "#8E1B1B" }))); }
+    else if (s.kind === "move") { out.hl.push(...(s.provs || [])); out.arrows.push(...(s.mv || []).map((m) => ({ from: m.from, to: m.to, color: "#2B1D12" }))); out.badges.push(...(s.mv || []).map((m) => ({ prov: m.to, text: `+${m.n}`, color: "#2B1D12" })), ...(s.lv || []).map((l) => ({ prov: l.to, text: `+${l.n}`, color: "#2F5233" }))); }
+    else if (s.prov) out.hl.push(s.prov);
+  }
   return out;
 }
-function rvGo(i) {
-  const st = S(); const list = rvList(st);
-  RV.i = Math.max(0, Math.min(list.length - 1, i)); RV.t0 = net.now();
-  L.last.revealIdx = -2; // force l'affichage
-  tickReveal(true);
+const KIND_LABEL = { battle: "Bataille", death: "Mort", birth: "Naissance", intrigue: "Intrigue", bribe: "Corruption", move: "Mouvements de troupes", marriage: "Noces", betrayal: "Trahison", claim: "Revendication", exile: "Exil", plague: "Peste", event: "Événement", revolt: "Jacquerie", text: "Chronique", treaty: "Trêve", gift: "Or" };
+function rvLabel(st, s) {
+  if (s.kind === "dilemma") return s.secret && s.pid !== me() ? `Rumeur · ${houseName(s.pid)}` : `Décision · ${s.pid ? houseName(s.pid) : "anonyme"}`;
+  return (KIND_LABEL[s.kind] || "Chronique") + (s.kind === "battle" ? ` · ${PROVINCES[s.prov].city}` : "");
 }
-function rvChapterPos(st, e) {
+function duelHtml(st, s, pre) {
+  const a = s.atk[0];
+  const side = (pid, name, n, bonus, total, win) => `<div class="dside ${pre ? "" : win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 34) : '<svg width="34" height="38" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#2B1D12" stroke-width="3"/></svg>'}<span class="nm">${esc(name)}</span><span class="fc ${pre ? "rolling" : ""}">${pre ? "?" : total}</span><span class="dt">${n} armée${n > 1 ? "s" : ""}${bonus ? ` + ${bonus}` : ""} + hasard</span></div>`;
+  return `<div class="rv-battle-title">${esc(houseName(a.pid))} attaque ${esc(PROVINCES[s.prov].art)}${s.def ? ` de ${esc(houseName(s.def))}` : " (milice)"}</div>
+    <div class="duel">${side(a.pid, houseName(a.pid) + (s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""), a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.def ? houseName(s.def) : "Milice", s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div>
+    <div class="verdict">${pre ? "Le choc des armées…" : s.attWins ? `${esc(houseName(a.pid))} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? esc(houseName(s.def)) : "La milice"} tient ${esc(PROVINCES[s.prov].art)}.`}</div>
+    ${pre ? "" : `<p class="rv-sub">${esc(s.text)}</p>`}`;
+}
+function rvCardHtml(st) {
+  const e = rvEntry(st);
+  if (!e) return `<div class="rv-dock"><p class="rv-wait">Les sceaux se brisent…</p></div>`;
   const list = rvList(st);
-  const idx = list.indexOf(e);
-  let start = idx; while (start > 0 && !list[start].virt) start--;
-  const ch = list[start];
-  if (!ch || ch.virt !== "chapter") return "";
-  return `${CHAPTERS[ch.ch][1]} · ${idx - start} sur ${ch.n}`;
+  const sent = L.myInput.revdone && L.myInput.revdone.round === st.round;
+  if (e.virt === "done") {
+    const waiting = st.order.filter((p) => !st.players[p].isBot && p !== me() && !(st.ready || {})[p]);
+    return `<div class="rv-dock done"><div class="rv-head"><span>Fin de la révélation</span><span>${list.length - 1} événements</span></div>
+      ${summaryHtml()}
+      <div class="rv-btns"><button class="btn" data-rvc="prev">◀ Revenir</button><button class="btn btn-red grow" data-rvc="ok" ${sent ? "disabled" : ""}>${sent ? (waiting.length ? `On attend ${waiting.map((p) => esc(houseName(p))).join(", ")}…` : "C'est parti…") : `J'ai tout vu : manche suivante`}</button></div>
+      <button class="rv-link" data-rvc="restart">Revoir depuis le début</button></div>`;
+  }
+  const head = `<div class="rv-head"><span>${CHAPTERS[e.ch] ? `Chapitre ${CHAPTERS[e.ch][0]} · ${CHAPTERS[e.ch][1]}` : ""}</span><span>${e.pos} sur ${e.tot}</span></div>`;
+  let body = "";
+  if (e.kind === "move") {
+    body = `<p class="rv-label">Mouvements de troupes</p>${e.ks.map((k) => { const s = st.reveal.steps[k]; return `<p class="rv-move" style="border-left-color:${houseColor(s.pid)}">${esc(s.text)}</p>`; }).join("")}<p class="hint">Sur la carte : les flèches noires sont les déplacements, les pastilles vertes les armées levées.</p>`;
+  } else {
+    const s = st.reveal.steps[e.ks[0]];
+    body = `<p class="rv-label" style="color:${s.pid ? houseColor(s.pid) : "var(--red)"}">${esc(rvLabel(st, s))}</p>${s.kind === "battle" && s.atk ? duelHtml(st, s, RV.pre) : `<div class="rv-text">${s.title ? entryHtml(s) : esc(s.text)}</div>`}`;
+  }
+  return `<div class="rv-dock">${head}${body}
+    <div class="rv-btns"><button class="btn" data-rvc="prev" ${RV.i <= 0 ? "disabled" : ""}>◀</button><button class="btn btn-red grow rv-next" data-rvc="next" ${RV.pre ? "disabled" : ""}>Suivant ▶</button></div>
+    <div class="rv-opts"><label class="check"><input type="checkbox" data-rvc="auto" ${RV.auto ? "checked" : ""}> <span>Lecture automatique</span></label><button class="rv-link" data-rvc="end">Tout passer</button><span class="rv-prog">${RV.i + 1} / ${list.length}</span></div></div>`;
 }
 function panelReveal() {
   const st = S();
   const list = rvList(st);
-  let h = `<p class="ph">Révélation de la manche ${st.round}</p><p class="hint" style="margin-top:0">Clique une ligne pour la revoir sur la carte.</p>`;
-  let any = false;
+  let hist = "";
   list.forEach((e, x) => {
-    if (x > RV.i) return;
-    if (e.virt === "chapter") { h += `<p class="rv-chap">${CHAPTERS[e.ch][0]}. ${CHAPTERS[e.ch][1]}</p>`; return; }
-    if (e.virt) return;
-    any = true;
-    const s = st.reveal.steps[e.k];
-    h += `<button class="ptext ch-entry rv-line ${x === RV.i ? "cur" : ""}" data-rv="${x}" style="border-left:4px solid ${s.pid ? houseColor(s.pid) : "#6B5638"}">${entryHtml(s)}</button>`;
+    if (x >= RV.i || e.virt) return;
+    const s = st.reveal.steps[e.ks[0]];
+    const txt = e.kind === "move" ? `${e.ks.length} maison${e.ks.length > 1 ? "s" : ""} déplacent ou lèvent des troupes` : s.kind === "battle" && s.atk ? `${s.attWins ? "⚔ " + houseName(s.atk[0].pid) + " prend " + PROVINCES[s.prov].art : "⚔ " + PROVINCES[s.prov].name + " résiste à " + houseName(s.atk[0].pid)}` : (s.secret && s.pid !== me() ? "Rumeur : " : s.title ? `« ${s.title} » : ` : "") + s.text;
+    hist += `<button class="rv-line" data-rv="${x}" style="border-left-color:${s.pid ? houseColor(s.pid) : "#6B5638"}">${esc(txt)}</button>`;
   });
-  if (!any) h += `<p class="ptext wait">Les sceaux se brisent…</p>`;
-  return { html: h, bind: bindRevealPanel };
+  return { html: `${rvCardHtml(st)}${hist ? `<p class="ph" style="margin-top:16px">Déjà révélé <span class="hint">(clique pour revoir)</span></p><div class="rv-hist">${hist}</div>` : ""}`, bind: bindReveal };
 }
-function bindRevealPanel() { document.querySelectorAll("[data-rv]").forEach((b) => (b.onclick = () => { RV.paused = true; rvGo(+b.dataset.rv); })); }
-function rvControls(st, e) {
-  const list = rvList(st);
-  const done = e && e.virt === "done";
-  const sent = L.myInput.revdone && L.myInput.revdone.round === st.round;
-  const waiting = st.order.filter((p) => !st.players[p].isBot && !(st.ready || {})[p]).filter((p) => p !== me());
-  return `<div class="rv-ctrl">
-    <button class="rvb" data-rvc="prev" title="Étape précédente" ${RV.i <= 0 ? "disabled" : ""}>⏮</button>
-    ${done ? "" : `<button class="rvb" data-rvc="pause" title="${RV.paused ? "Reprendre" : "Pause"}">${RV.paused ? "▶" : "⏸"}</button><button class="rvb" data-rvc="next" title="Étape suivante">⏭</button>`}
-    <button class="rvb rv-speed" data-rvc="speed" title="Vitesse de défilement">${RV.speed === 1 ? "Lent" : RV.speed === 1.6 ? "Normal" : "Rapide"}</button>
-    <span class="rv-prog">${Math.max(0, RV.i + 1)} / ${list.length}</span>
-    ${done ? `<button class="btn btn-small" data-rvc="restart">Revoir depuis le début</button><button class="btn btn-small btn-red" data-rvc="ok" ${sent ? "disabled" : ""}>${sent ? (waiting.length ? `On attend ${waiting.map((p) => esc(houseName(p))).join(", ")}…` : "C'est parti…") : "J'ai tout vu, continuer"}</button>` : `<button class="btn btn-small" data-rvc="end">Passer à la fin</button>`}
-  </div>`;
-}
-function bindRvControls() {
+function bindReveal() {
+  document.querySelectorAll("[data-rv]").forEach((b) => (b.onclick = () => rvGo(+b.dataset.rv)));
   const st = S();
-  document.querySelectorAll("[data-rvc]").forEach((b) => (b.onclick = (ev) => {
-    ev.stopPropagation();
+  document.querySelectorAll("[data-rvc]").forEach((b) => {
     const c = b.dataset.rvc;
-    if (c === "prev") { RV.paused = true; rvGo(RV.i - 1); }
-    else if (c === "next") rvGo(RV.i + 1);
-    else if (c === "pause") { RV.paused = !RV.paused; RV.t0 = net.now(); L.last.revealIdx = -2; tickReveal(true); }
-    else if (c === "speed") { RV.speed = RV.speed === 1 ? 1.6 : RV.speed === 1.6 ? 2.6 : 1; store.set("sn_rvspeed", RV.speed); L.last.revealIdx = -2; tickReveal(true); }
-    else if (c === "end") rvGo(rvList(st).length - 1);
-    else if (c === "restart") { RV.paused = false; rvGo(0); }
-    else if (c === "ok") { setInput("revdone", { round: st.round }); A.play("seal"); L.last.revealIdx = -2; tickReveal(true); }
-  }));
+    const h = (ev) => {
+      ev.stopPropagation();
+      if (c === "prev") rvGo(RV.i - 1);
+      else if (c === "next") rvGo(RV.i + 1);
+      else if (c === "end") rvGo(rvList(st).length - 1);
+      else if (c === "restart") rvGo(0);
+      else if (c === "ok") { setInput("revdone", { round: st.round }); A.play("seal"); rvRender(false); }
+    };
+    if (c === "auto") b.onchange = () => { RV.auto = b.checked; store.set("sn_rvauto", RV.auto ? "1" : "0"); RV.t0 = net.now(); };
+    else b.onclick = h;
+  });
 }
-function tickReveal(forced) {
+function rvGo(i) {
+  const st = S(); const list = rvList(st);
+  const n = Math.max(0, Math.min(list.length - 1, i));
+  const changed = n !== RV.i;
+  RV.i = n; RV.t0 = net.now();
+  rvRender(changed);
+}
+function rvDur(st, e) {
+  if (!e || e.virt) return 1e12;
+  const s = st.reveal.steps[e.ks[0]];
+  const ms = e.kind === "move" ? 6000 : s.kind === "battle" ? 6500 : s.kind === "dilemma" ? (s.secret && s.pid !== me() ? 5000 : 8000) : 5500;
+  return ms * SPEED;
+}
+// le moteur de la révélation : démarre après le compte à rebours, avance seul seulement en lecture automatique
+function tickReveal() {
   const st = S();
-  if (!st || st.phase !== "reveal" || !st.reveal) { $("#banner").classList.add("hidden"); return; }
-  const list = rvList(st);
+  if (!st || st.phase !== "reveal" || !st.reveal) { $("#banner").classList.add("hidden"); document.body.classList.remove("rv-on"); return; }
+  document.body.classList.add("rv-on");
   const now = net.now();
-  if (RV.i < 0) { if (now < (st.revealStart || 0)) { $("#banner").classList.add("hidden"); return; } RV.i = 0; RV.t0 = now; }
-  else if (!RV.paused && now - RV.t0 > rvDur(st, list[RV.i])) { RV.i = Math.min(list.length - 1, RV.i + 1); RV.t0 = now; }
-  const ckey = `${RV.i}|${RV.paused}|${RV.speed}|${JSON.stringify(st.ready || {})}|${L.myInput.revdone ? L.myInput.revdone.round : ""}`;
-  if (!forced && ckey === L.last.revealKey) return;
-  const stepChanged = RV.i !== L.last.revealIdx;
-  L.last.revealKey = ckey; L.last.revealIdx = RV.i;
-  const e = list[RV.i];
-  let label = "", body = "";
-  if (e.virt === "chapter") {
-    const c = CHAPTERS[e.ch];
-    label = `CHAPITRE ${c[0]}`;
-    body = `<div class="rv-chapter"><span class="rv-chnum">${c[0]}</span><div><div class="rv-chname">${c[1]}</div><div class="rv-chsub">${c[2]} <i>(${e.n} événement${e.n > 1 ? "s" : ""})</i></div></div></div>`;
-    if (stepChanged) { A.play("horn"); speak(c[1]); }
-  } else if (e.virt === "done") {
-    label = "FIN DE LA RÉVÉLATION";
-    body = `<div class="rv-chapter"><span class="rv-chnum">✓</span><div><div class="rv-chname">Tout est révélé</div><div class="rv-chsub">Tu peux revoir n'importe quel moment dans la liste à droite (onglet Actions), ou continuer.</div></div></div>`;
-  } else {
-    const s = st.reveal.steps[e.k];
-    const kindLabel = { dilemma: s.secret && s.pid !== me() ? "RUMEUR" : "DÉCISION", battle: "BATAILLE", death: "MORT", birth: "NAISSANCE", intrigue: "INTRIGUE", bribe: "CORRUPTION", move: "MOUVEMENTS", marriage: "NOCES", betrayal: "TRAHISON", claim: "REVENDICATION", exile: "EXIL", plague: "PESTE", event: "ÉVÉNEMENT", revolt: "JACQUERIE", text: "CHRONIQUE", treaty: "TRÊVE", gift: "OR" }[s.kind] || "CHRONIQUE";
-    label = `${kindLabel}${s.pid && (s.title || s.kind === "move") ? ` · ${esc(houseName(s.pid))}` : ""}${s.kind === "battle" ? ` · ${esc(PROVINCES[s.prov].city)}` : ""}<span class="rv-pos">${esc(rvChapterPos(st, e))}</span>`;
-    body = s.title ? entryHtml(s) : esc(s.text);
-    if (s.kind === "battle" && s.atk) {
-      const a = s.atk[0];
-      const side = (pid, name, n, bonus, total, win) => `<div class="dside ${win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 34) : '<svg width="34" height="38" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#2B1D12" stroke-width="3"/></svg>'}<span class="nm">${esc(name)}</span><span class="fc">${total}</span><span class="dt">${n} armée${n > 1 ? "s" : ""}${bonus ? ` + ${bonus} (dé${pid && a.pid === pid ? "" : " de peur"})` : ""} + hasard</span></div>`;
-      body = `<div class="rv-battle-title">${esc(houseName(a.pid))} attaque ${esc(PROVINCES[s.prov].art)}${s.def ? ` (${esc(houseName(s.def))})` : ""}</div><div class="duel">${side(a.pid, houseName(a.pid) + (s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""), a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.def ? houseName(s.def) : "Milice", s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div><span class="verdict">${s.attWins ? `${esc(houseName(a.pid))} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? esc(houseName(s.def)) : "La milice"} tient ${esc(PROVINCES[s.prov].art)}.`}</span><span class="rv-sub">${esc(s.text)}</span>`;
+  if (RV.i < 0) {
+    rvList(st);
+    if (now >= (st.revealStart || 0)) {
+      // sur téléphone, on remonte sur la carte pour suivre la révélation
+      if (window.innerWidth <= 900) { const m = $("#mapwrap"); if (m) window.scrollTo({ top: Math.max(0, m.getBoundingClientRect().top + window.scrollY - 56), behavior: "smooth" }); }
+      rvGo(0);
     }
-    if (stepChanged) {
-      speak(s.kind === "battle" && s.atk ? (s.attWins ? `${houseName(s.atk[0].pid)} prend ${PROVINCES[s.prov].art}.` : `${PROVINCES[s.prov].art} résiste.`) : s.secret && s.pid !== me() ? `Rumeur. ${s.text}` : s.text);
-      const pid = me();
-      if (s.kind === "battle") {
-        A.play("battle"); fx("battle", s.prov);
-        setTimeout(() => { if (s.attWins) { fx("conquest", s.prov, houseColor(s.winner)); A.play("conquest"); } }, 1400);
-        if (pid && st.revealFrom[s.prov] && st.revealFrom[s.prov].owner === pid) A.vibrate([120, 60, 120]);
-      } else if (s.kind === "death") { A.play(s.sound === "poison" ? "poison" : "knell"); const c = s.pid && st.players[s.pid] && st.players[s.pid].capital; if (c) fx("death", c); if (pid && s.pid === pid) A.vibrate([200, 100, 200]); }
+    return;
+  }
+  const e = rvEntry(st);
+  if (RV.auto && !RV.pre && !e.virt && now - RV.t0 > rvDur(st, e)) rvGo(RV.i + 1);
+}
+function rvRender(stepChanged) {
+  const st = S();
+  const e = rvEntry(st);
+  if (!e) return;
+  clearTimeout(RV.preTimer);
+  const s = !e.virt ? st.reveal.steps[e.ks[0]] : null;
+  // une bataille : d'abord la carte d'avant et le choc, puis le résultat
+  RV.pre = !!(stepChanged && s && s.kind === "battle" && s.atk);
+  // petite étiquette en haut de la carte, qui ne cache rien
+  const bn = $("#banner");
+  if (s) { bn.className = "banner mini"; bn.innerHTML = `<b>${esc(e.kind === "move" ? "Mouvements de troupes" : rvLabel(st, s))}</b>`; }
+  else bn.classList.add("hidden");
+  rvPaint();
+  if (stepChanged && s) {
+    const pid = me();
+    if (s.kind === "battle") {
+      A.play("battle"); fx("battle", s.prov);
+      if (pid && st.revealFrom[s.prov] && st.revealFrom[s.prov].owner === pid) A.vibrate([120, 60, 120]);
+      RV.preTimer = setTimeout(() => {
+        RV.pre = false; rvPaint();
+        if (s.attWins) { fx("conquest", s.prov, houseColor(s.winner)); A.play("conquest"); }
+        speak(s.attWins ? `${houseName(s.atk[0].pid)} prend ${PROVINCES[s.prov].art}.` : `${PROVINCES[s.prov].art} résiste.`);
+      }, 1500 * SPEED);
+    } else {
+      speak(e.kind === "move" ? "Les troupes se mettent en marche." : s.secret && s.pid !== me() ? `Rumeur. ${s.text}` : s.text);
+      if (s.kind === "death") { A.play(s.sound === "poison" ? "poison" : "knell"); const c = s.pid && st.players[s.pid] && st.players[s.pid].capital; if (c) fx("death", c); if (pid && s.pid === pid) A.vibrate([200, 100, 200]); }
       else if (s.kind === "birth") A.play("birth");
       else if (s.kind === "marriage") A.play("bells");
       else if (s.kind === "betrayal") A.play("betrayal");
@@ -1206,18 +1222,19 @@ function tickReveal(forced) {
       else if (s.kind === "gift") A.play("coins");
       else A.play("click");
     }
-  }
-  const bn = $("#banner");
-  bn.innerHTML = `<b>${label}</b><div class="rv-body">${body}</div>${rvControls(st, e)}<div class="rv-timebar"><div style="${RV.paused || e.virt === "done" ? "width:0" : `animation-duration:${Math.max(0, rvDur(st, e) - (now - RV.t0))}ms`}"></div></div>`;
-  bn.classList.remove("hidden");
-  if (stepChanged) { bn.style.animation = "none"; void bn.offsetWidth; bn.style.animation = ""; }
-  bindRvControls();
-  // carte : état à cette étape, provinces concernées en surbrillance, flèches
+  } else if (stepChanged && e.virt === "done") A.play("bell");
+}
+function rvPaint() {
+  // panneau (récit + boutons) et carte, sans recalculer tout l'écran
+  const st = S();
   const f = rvFocus(st);
   MAP.hl = new Set(f.hl); MAP.hlRed = new Set(f.red); MAP.badges = f.badges;
   updateMap(revealProvinces());
   drawArrows(f.arrows);
-  if (stepChanged && L.ui.tab === "panel") { const pr = panelReveal(); $("#tab-panel").innerHTML = pr.html; pr.bind(); const cur = document.querySelector(".rv-line.cur"); const box = cur && cur.closest(".tab"); if (box && box.scrollHeight > box.clientHeight + 4 && getComputedStyle(box).overflowY !== "visible") box.scrollTop = Math.max(0, cur.offsetTop - box.offsetTop - box.clientHeight / 2); }
+  if (L.ui.tab !== "panel") L.ui.tab = "panel";
+  document.querySelectorAll("#side-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "panel"));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === "tab-panel"));
+  const pr = panelReveal(); $("#tab-panel").innerHTML = pr.html; pr.bind();
 }
 function interludeLines() {
   const st = S();
@@ -1274,7 +1291,6 @@ function renderOverlays() {
   let html = "";
   if (st.phase === "objectives" && pid && !L.objClosed && L.priv && L.priv.objOffer && L.priv.objOffer.length) html = objectivesCard();
   else if (st.phase === "dilemma" && pid && !L.dilemmaClosed && dilSlots().length) html = dilemmaCard();
-  else if (st.phase === "interlude") html = interludeHtml();
   else if (st.phase === "end" && !L.endClosed) html = endHtml();
   if (!html) { ov.classList.add("hidden"); ov.innerHTML = ""; L.ovKey = ""; return; }
   if (L.ovKey === html) return; // rien n'a changé : on ne relance pas les animations
@@ -1426,7 +1442,7 @@ function openModal(kind, data) {
   if (kind === "score") { const st = S(), pid = me(); const e = pid ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null; html = `<div class="card"><span class="card-kicker">COMMENT GAGNER</span><h2>Le score</h2><p>${GLOSSARY.score[1]}</p>${e ? `<div class="score-box"><b>${e.total}</b> points aujourd'hui :<br>${ICON.prestige}Prestige ${e.prestige} · ${ICON.province}provinces ${e.provinces} · régions ${e.regions} · objectifs ${e.objectives} · ${ICON.family}famille ${e.family}</div>` : ""}<p class="hint">Les objectifs secrets ne comptent que s'ils sont réussis à la fin. Détail dans l'onglet « Ma maison ».</p><button class="btn btn-block" id="md-close">Fermer</button></div>`; }
   if (kind === "house") html = `<div class="card">${houseHtml(L.ui.viewHouse, false)}<button class="btn btn-block" id="md-close" style="margin-top:12px">Fermer</button></div>`;
   if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><button class="btn btn-small" data-intro="0">Revoir l'introduction en 5 cartes</button>
-    <p><b>But :</b> avoir le plus de points après 10 manches (Prestige + 1 par province + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille). Quinze provinces = victoire immédiate.</p>
+    <p><b>But :</b> avoir le plus de points après la dernière manche (10, ou 7 en partie courte) (Prestige + 1 par province + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille). Quinze provinces = victoire immédiate.</p>
     <h3>Une manche</h3><ul><li><b>Revenus</b> : 1 or par province, 2 armées dans ta capitale, bonus de régions.</li><li><b>Dilemme</b> secret (parfois avec un autre joueur).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (recrute 2 à 4 armées), Intriguer (poison, séduction, corruption).</li><li><b>Révélation</b> : dilemmes, intrigues, mouvements, puis batailles.</li></ul>
     <h3>Batailles</h3><p>Force = armées + bonus + un petit dé (0 à 2). Le défenseur gagne les égalités. Le vainqueur perd la moitié des armées adverses. Les survivants du défenseur rentrent à sa capitale. Perdre sa capitale : −5 Prestige, +20 Colère, un tiers de l'or pillé.</p>
     <h3>Dynastie</h3><p>Chaque manche = 3 ans. Les rois vieillissent et meurent. L'aîné hérite (les fils d'abord). Sans héritier : guerre civile. Un bâtard semé chez l'ennemi te permet de revendiquer une province à la mort de son roi.</p>
@@ -1446,7 +1462,7 @@ function phaseTutos() {
   const T = {
     draft: ["Ta capitale", `Chacun choisit 3 provinces à tour de rôle. La première devient ta ${term("capitale")}. Ensuite, toutes les provinces restantes sont partagées automatiquement autour de vos terres : personne ne commence sur une carte vide. Une ${term("region")} complète rapporte des armées à chaque manche.`],
     placement: ["Les armées", `Le chiffre sur chaque bannière = les ${term("armees", "armées")} de la province. Mets-en plus là où tu touches tes voisins.`],
-    reveal: ["La révélation", "Tout se dévoile chapitre par chapitre : les affaires des cours, les intrigues, les troupes, puis chaque bataille. Le récit est en bas de la carte : ⏸ pour faire une pause, ⏭ pour avancer, ⏮ pour revenir. Chacun va à son rythme ; à la fin, clique « J'ai tout vu, continuer »."],
+    reveal: ["La révélation", "Tout se dévoile une info à la fois : les affaires des cours, les intrigues, les troupes, puis chaque bataille. Regarde la carte (les provinces concernées sont surlignées), lis le récit dans le panneau, puis clique « Suivant ». Chacun va à son rythme ; à la fin, clique « J'ai tout vu »."],
     end: ["Fin de la partie", "Bravo, tu connais maintenant tout le jeu ! Pour les prochaines parties, décoche « Première partie » : toutes les règles seront actives dès le début."],
   };
   if (T[st.phase]) tuto(st.phase, T[st.phase][0], T[st.phase][1]);
@@ -1623,7 +1639,7 @@ function hostStart(opts = {}) {
   }
   if (players.length === 2) players.push({ pid: "bot-anglais", name: "Édouard", house: "anglais", isBot: true });
   const tutorial = !!opts.tutorial, randomDraft = !!opts.randomDraft;
-  const { state, priv } = E.createGame({ players, tutorial, randomDraft, code: L.code }, Math.random);
+  const { state, priv } = E.createGame({ players, tutorial, randomDraft, code: L.code, rounds: +opts.rounds || 10 }, Math.random);
   state.solo = SOLO; // en solo : pas de chrono, on attend que tu valides
   state.timer = SOLO ? "none" : opts.timer || "none";
   state.gameId = Math.random().toString(36).slice(2, 10);

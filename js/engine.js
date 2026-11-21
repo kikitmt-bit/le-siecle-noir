@@ -2,15 +2,15 @@
 //  LE SIÈCLE NOIR — moteur de règles (pur JS, sans DOM ni réseau)
 //  L'hôte (arbitre) est le seul à appeler ces fonctions.
 // =====================================================================
-import { PROVINCES, REGIONS } from "./map.js?v=1795289401";
-import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795289401";
+import { PROVINCES, REGIONS } from "./map.js?v=1795290540";
+import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795290540";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 export const MAX_ROUNDS = 10;
 export const START_YEAR = 1347;
 export const COSTS = { poison: 4, seduction: 3, bribe: 6 };
 export const NEED = { poison: 5, seduction: 4, bribe: 6 };
-export const TIMES = { objectives: 30, draft: 15, placement: 45, dilemma: 35, orders: 75, interlude: 15 };
+export const TIMES = { objectives: 30, draft: 15, placement: 45, dilemma: 35, orders: 75, interlude: 4 };
 export const START_ARMIES = 12;
 // Première partie : les règles se débloquent manche après manche
 export const UNLOCK = { diplomacy: 1, intrigue: 2, hidden: 3 };
@@ -97,10 +97,10 @@ export function cleanHouseName(n) {
   n = String(n || "").replace(/^\s*(la\s+)?maison\s+(de\s+|d['’]\s*)?/i, "").replace(/[<>"]/g, "").trim().slice(0, 18);
   return n ? n.charAt(0).toUpperCase() + n.slice(1) : null;
 }
-export function createGame({ players, tutorial = false, randomDraft = false, code = "" }, rng) {
+export function createGame({ players, tutorial = false, randomDraft = false, code = "", rounds = MAX_ROUNDS }, rng) {
   // players: [{pid, name, house, isBot}]
   const state = {
-    v: 1, code, phase: "objectives", round: 0, maxRounds: MAX_ROUNDS, tutorial, randomDraft,
+    v: 1, code, phase: "objectives", round: 0, maxRounds: Math.max(5, Math.min(MAX_ROUNDS, rounds | 0 || MAX_ROUNDS)), tutorial, randomDraft,
     deadline: 0, players: {}, order: [], provinces: {}, families: {}, alliances: [],
     chronicle: [], news: [], reveal: null, proposals: {}, treaties: [], unsolved: [], leader: null, draft: null, result: null, seq: 0,
   };
