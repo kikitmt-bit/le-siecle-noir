@@ -24,7 +24,7 @@ const presence = {}; // cid -> chemin du membre à passer hors ligne quand la co
 function send(c) { const r = conns[c.cid]; if (r) r.write(`data: ${JSON.stringify({ sid: c.sid, v: getAt(c.path) })}\n\n`); }
 function notify(p) { for (const c of clients) { if (c.path.startsWith(p) || p.startsWith(c.path)) send(c); } }
 let pushId = 0;
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".svg": "image/svg+xml" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json", ".png": "image/png", ".svg": "image/svg+xml" };
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x");
   if (u.pathname === "/__db/stream") {

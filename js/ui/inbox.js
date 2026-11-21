@@ -1,24 +1,28 @@
 // Réception des données (salon, messages privés, état de la partie)
-import * as A from "../audio.js?v=1795296252";
-import { AI_REPLIES, WHISPERS } from "../content.js?v=1795296252";
-import * as E from "../engine.js?v=1795296252";
-import { ICON, term } from "../help.js?v=1795296252";
-import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795296252";
-import { $, H, L, S, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795296252";
-import { queueModal } from "./aides.js?v=1795296252";
-import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795296252";
-import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795296252";
-import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795296252";
-import { shield } from "./draw.js?v=1795296252";
-import { renderLobby } from "./lobby.js?v=1795296252";
-import { buildMap } from "./map.js?v=1795296252";
-import { recordPalmares } from "./overlays.js?v=1795296252";
-import { render } from "./render.js?v=1795296252";
+import * as A from "../audio.js?v=1795297246";
+import { AI_REPLIES, WHISPERS } from "../content.js?v=1795297246";
+import * as E from "../engine.js?v=1795297246";
+import { ICON, term } from "../help.js?v=1795297246";
+import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795297246";
+import { $, H, L, S, SOLO, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795297246";
+import { queueModal } from "./aides.js?v=1795297246";
+import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795297246";
+import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795297246";
+import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795297246";
+import { shield } from "./draw.js?v=1795297246";
+import { infoFromState, noteGame } from "./games.js?v=1795297246";
+import { badFormat, renderLobby } from "./lobby.js?v=1795297246";
+import { buildMap } from "./map.js?v=1795297246";
+import { recordPalmares } from "./overlays.js?v=1795297246";
+import { render } from "./render.js?v=1795297246";
 
 // ---------------------------------------------------------------------
 // réception des données
 // ---------------------------------------------------------------------
 export function onMeta() {
+  const host = L.meta && L.meta.host;
+  if (host && L.hostSeen && host !== L.hostSeen && host !== net.uid && L.state && L.state.phase !== "lobby") toast("L'arbitre a changé : un autre joueur fait maintenant tourner la partie.", "#6B5638", 4000);
+  if (host) L.hostSeen = host;
   if (!L.state || L.state.phase === "lobby") renderLobby();
   if (L.meta && L.meta.host === net.uid && !H.active) becomeHost();
   if (L.meta && L.meta.host !== net.uid && H.active) stopHost();
@@ -112,6 +116,8 @@ export function updateMsgBadge() {
 export function onState(st) {
   const prev = L.state;
   L.state = st;
+  const prob = E.formatProblem(st);
+  if (prob) { badFormat(prob, st); return; }
   if (!st || st.phase === "lobby") { L.ui = resetUi(); L.endClosed = false; renderLobby(); return; }
   show("game");
   if (!L.mapBuilt) buildMap();
@@ -140,6 +146,7 @@ export function onState(st) {
   if (prev && prev.leader !== st.leader && st.leader && st.round > 1 && st.round < st.maxRounds && ["dilemma", "interlude"].includes(st.phase)) {
     setTimeout(() => { toast(`${ICON.prestige}<b>La couronne passe à ${esc(houseName(st.leader))}</b>${st.leader === me() ? " : c'est toi ! Tout le monde va vouloir te faire tomber." : ". Battre ses armées rapporte 2 Prestige."}`, "#D9A441", 6000); A.play("horn"); }, 2400);
   }
+  if (!SOLO && L.code && (st.phase !== L.last.phase || st.round !== L.last.round || !L.noted)) { L.noted = true; noteGame(L.code, infoFromState(st, pid)); }
   L.last.round = st.round; L.last.phase = st.phase;
   render();
 }

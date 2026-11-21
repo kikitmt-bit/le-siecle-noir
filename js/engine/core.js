@@ -1,12 +1,23 @@
 // Constantes et petits utilitaires du moteur
-import { HOUSES } from "../content.js?v=1795296252";
-import { PROVINCES } from "../map.js?v=1795296252";
+import { HOUSES } from "../content.js?v=1795297246";
+import { PROVINCES } from "../map.js?v=1795297246";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 
 export const MAX_ROUNDS = 10;
 
 export const START_YEAR = 1347;
+// Format des parties enregistrées sur le serveur. À augmenter quand la forme de l'état change.
+// FORMAT_COMPATIBLE : les formats que cette version du jeu sait encore lire (le 1 et le 2 ont la même forme).
+export const FORMAT_VERSION = 2;
+export const FORMAT_COMPATIBLE = [1, 2];
+// null si la partie est lisible ; "plus-recent" si elle vient d'un jeu plus récent que le tien ; "plus-ancien" sinon.
+export function formatProblem(state) {
+  if (!state || !state.phase || state.phase === "lobby") return null;
+  const v = state.v || 1;
+  if (FORMAT_COMPATIBLE.includes(v)) return null;
+  return v > FORMAT_VERSION ? "plus-recent" : "plus-ancien";
+}
 
 export const COSTS = { poison: 4, seduction: 3, bribe: 6 };
 

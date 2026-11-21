@@ -425,7 +425,16 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
   .splash .sp-sub { font-size: 17px; padding: 0 16px; }
 }
 
-.resume-box { margin-top: 14px; }
+/* liste « Tes parties en cours » (accueil) */
+.games { margin: 4px 0 18px; padding: 10px 12px 12px; border: 2px solid var(--ink3); background: var(--parch2); text-align: left; }
+.games .ph { text-align: center; margin-bottom: 6px; }
+.games-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.game-row { display: flex; align-items: center; gap: 10px; }
+.game-crest { flex: 0 0 auto; display: inline-flex; width: 30px; }
+.game-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.game-info b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-sub { font-size: 12.5px; color: var(--ink3); }
+.game-row .btn-small { min-height: 36px; padding: 0 10px; flex: 0 0 auto; }
 
 .caplabel { font-family: var(--caps); font-size: 10.5px; font-weight: 700; fill: #2B1D12; paint-order: stroke; stroke: #F3E8D0; stroke-width: 3px; letter-spacing: .5px; }
 .capmark { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.45)); }

@@ -87,4 +87,13 @@ function phaseInfo(p) {
   });
 }
 
-module.exports = { chromium, BASE, OUT, PORT, sleep, launch, newPlayer, botStep, phaseInfo };
+// Lecture / écriture directe dans la base du faux serveur (pour vérifier ou préparer des données).
+const dbOp = (o) => fetch(`http://localhost:${PORT}/__db/op`, { method: "POST", body: JSON.stringify(o) }).then((r) => r.json());
+const dbGet = async (p) => (await dbOp({ op: "get", path: p })).value;
+const dbSet = (p, value) => dbOp({ op: "set", path: p, value });
+// L'état d'une partie (décodé) et les données privées d'un joueur, comme le jeu les range dans la base.
+const roomState = async (code) => { const v = await dbGet(`rooms/${code}/state`); return v ? JSON.parse(v.json) : null; };
+const roomPrivate = async (code, uid) => { const v = await dbGet(`rooms/${code}/private/${uid}`); return v ? JSON.parse(v) : null; };
+const uidOf = (p) => p.evaluate(() => localStorage.getItem("fake_uid"));
+
+module.exports = { chromium, BASE, OUT, PORT, sleep, launch, newPlayer, botStep, phaseInfo, dbGet, dbSet, roomState, roomPrivate, uidOf };

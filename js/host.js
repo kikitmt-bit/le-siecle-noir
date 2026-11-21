@@ -1,32 +1,73 @@
 // Arbitre : seul le navigateur de l'hôte exécute ce code
-import { HUMAN_HOUSES } from "./content.js?v=1795296252";
-import * as E from "./engine.js?v=1795296252";
-import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795296252";
-import { toast } from "./ui/common.js?v=1795296252";
-import { aiName } from "./ui/lobby.js?v=1795296252";
+import { HUMAN_HOUSES } from "./content.js?v=1795297246";
+import * as E from "./engine.js?v=1795297246";
+import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795297246";
+import { toast } from "./ui/common.js?v=1795297246";
+import { aiName } from "./ui/lobby.js?v=1795297246";
 
+// Lit une donnée sur le serveur en réessayant si la connexion est mauvaise (ok = false : lecture impossible).
+async function readRetry(fn, tries = 4) {
+  for (let i = 0; i < tries; i++) {
+    try { return { ok: true, value: await fn() }; }
+    catch (e) { console.warn("lecture ratée, nouvel essai", e); await new Promise((r) => setTimeout(r, 600 * (i + 1))); }
+  }
+  return { ok: false, value: null };
+}
+const emptyPriv = () => ({ used: [], objOffer: [], objectives: [], dilemma: null });
+
+// Ce navigateur devient l'arbitre. Si une partie est en cours (reprise après le départ de l'ancien arbitre),
+// on relit TOUT sur le serveur : l'état, les données privées de chaque joueur et celles des seigneurs ordinateur.
+// Si une lecture échoue, on ne touche à rien (on n'écrase jamais des données qu'on n'a pas pu lire) et on réessaie.
 export async function becomeHost() {
-  H.active = true;
-  H.state = await net.readState(L.code).catch(() => null);
-  if (H.state && H.state.phase && H.state.phase !== "lobby") {
-    H.priv = {};
-    for (const [u, p] of Object.entries(H.state.seats || {})) {
-      if (H.priv[p]) continue;
-      H.priv[p] = (await net.readPrivate(L.code, u).catch(() => null)) || { used: [], objOffer: [], objectives: [], dilemma: null };
+  H.active = true; H.since = 0; H.inputs = {};
+  const retryLater = (why) => {
+    H.active = false; H.state = null; H.priv = null;
+    toast(`${why} Nouvel essai dans quelques secondes…`, "#8E1B1B", 5000);
+    setTimeout(() => { if (L.code && L.meta && L.meta.host === net.uid && !H.active) becomeHost(); }, 5000);
+  };
+  const rs = await readRetry(() => net.readState(L.code));
+  if (!rs.ok) return retryLater("Impossible de relire la partie.");
+  const state = rs.value;
+  if (E.formatProblem(state)) { H.active = false; return; } // partie d'un autre format : on ne l'arbitre pas
+  if (state && state.phase && state.phase !== "lobby") {
+    const priv = {};
+    for (const [u, p] of Object.entries(state.seats || {})) {
+      if (priv[p]) continue;
+      const r = await readRetry(() => net.readPrivate(L.code, u));
+      if (!r.ok) return retryLater("Impossible de relire les données privées des joueurs.");
+      priv[p] = r.value || emptyPriv();
     }
-    // ordinateur
-    for (const p of H.state.order) if (!H.priv[p]) H.priv[p] = { used: [], objOffer: [], objectives: [], dilemma: null };
-    if (H.state.phase !== "end") toast("Tu es maintenant l'arbitre de la partie (ton navigateur calcule les manches).", "#D9A441");
-  } else H.state = null;
+    // seigneurs ordinateur : leurs données privées sont rangées sous leur nom (si le serveur ne les a pas, on repart de zéro)
+    for (const p of state.order) {
+      if (priv[p]) continue;
+      priv[p] = (await net.readPrivate(L.code, p).catch(() => null)) || emptyPriv();
+    }
+    H.state = state; H.priv = priv;
+    if (state.phase !== "end") toast("Tu es maintenant l'arbitre de la partie (ton navigateur calcule les manches).", "#D9A441");
+    giveGrace(); // les joueurs ont été absents : on redonne du temps à la phase en cours
+  } else { H.state = null; H.priv = null; }
   syncInputListeners();
+  H.since = Date.now(); // on laisse arriver les ordres déjà posés avant de faire avancer la partie
   keepAwake();
+}
+
+// Après une reprise, si le chrono de la phase est fini (ou presque), on lui redonne un temps de jeu complet.
+function giveGrace() {
+  const st = H.state;
+  if (!st || st.solo || !st.timer || st.timer === "none" || !st.deadline || st.phase === "end") return;
+  const now = net.now();
+  const mult = ({ relaxed: 2, normal: 1, fast: 0.7 }[st.timer] || 1) * SPEED;
+  const secs = { objectives: E.TIMES.objectives, draft: E.TIMES.draft, placement: E.TIMES.placement, dilemma: E.TIMES.dilemma, orders: E.ordersTime(st.round), reveal: 30, interlude: E.TIMES.interlude }[st.phase];
+  if (!secs || st.deadline - now > 10000 * SPEED) return;
+  st.deadline = now + secs * 1000 * mult;
+  hostWrite();
 }
 
 export async function keepAwake() { try { if (H.active && !wakeLock && navigator.wakeLock && document.visibilityState === "visible") { setWakeLock(await navigator.wakeLock.request("screen")); wakeLock.addEventListener("release", () => setWakeLock(null)); } } catch {} }
 
 document.addEventListener("visibilitychange", keepAwake);
 
-export function stopHost() { H.active = false; Object.values(H.inUnsub).forEach((u) => u()); H.inUnsub = {}; H.state = null; H.priv = null; }
+export function stopHost() { H.active = false; H.lastTick = 0; Object.values(H.inUnsub).forEach((u) => u()); H.inUnsub = {}; H.state = null; H.priv = null; }
 
 export function syncInputListeners() {
   for (const u of Object.keys(L.members)) if (!H.inUnsub[u]) H.inUnsub[u] = net.listenInput(L.code, u, (o) => { H.inputs[u] = o || {}; });
@@ -43,6 +84,8 @@ export function hostWrite(privToo = false) {
   H.state.seq = (H.state.seq || 0) + 1;
   net.writeState(L.code, H.state).catch((e) => console.error("écriture état", e));
   if (privToo) for (const [u, p] of Object.entries(H.state.seats || {})) net.writePrivate(L.code, u, H.priv[p] || {}).catch((e) => console.error(e));
+  // les seigneurs ordinateur aussi : si un autre joueur reprend l'arbitrage, rien n'est perdu
+  if (privToo) for (const p of H.state.order || []) if (H.state.players[p] && H.state.players[p].isBot && H.priv[p]) net.writePrivate(L.code, p, H.priv[p]).catch((e) => console.warn("données de l'ordinateur non sauvegardées", e));
 }
 
 export function hostStart(opts = {}) {
@@ -90,8 +133,22 @@ export function hostReplay() {
   net.writeState(L.code, H.state);
 }
 
+// Après une longue mise en veille de l'appareil, un autre joueur a peut-être repris l'arbitrage : on vérifie avant d'écrire quoi que ce soit.
+async function recheckHost() {
+  H.busy = true;
+  try {
+    const meta = await net.roomExists(L.code);
+    if (meta && meta.host !== net.uid) { stopHost(); toast("Un autre joueur a repris l'arbitrage pendant ta pause.", "#6B5638"); }
+  } catch (e) { console.warn(e); }
+  H.busy = false;
+}
+
 export function hostTick() {
-  if (!H.active || !H.state || !H.state.phase || H.state.phase === "lobby" || H.busy) return;
+  if (!H.active) { H.lastTick = 0; return; }
+  const t = Date.now(), gap = H.lastTick ? t - H.lastTick : 0; H.lastTick = t;
+  if (gap > 8000 && !SOLO) { recheckHost(); return; }
+  if (!H.state || !H.state.phase || H.state.phase === "lobby" || H.busy) return;
+  if (H.since && t - H.since < 2500) return;
   const st = H.state, now = net.now(), I = pidInputs();
   const m = ({ relaxed: 2, normal: 1, fast: 0.7 }[st.timer] || 1) * SPEED;
   const noClock = st.solo || st.timer === "none" || !st.timer;

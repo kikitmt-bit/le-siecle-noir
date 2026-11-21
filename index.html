@@ -6,11 +6,35 @@
 <meta name="theme-color" content="#1A120C">
 <title>Le Siècle Noir</title>
 <meta name="description" content="Jeu de conquête médiéval entre amis. France, 1347. Peste, trahisons et dynasties.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 74'%3E%3Cpath d='M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z' fill='%238E1B1B' stroke='%232B1D12' stroke-width='3'/%3E%3Cpath d='M22,42 v-20 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v20 Z' fill='%23E8C66A'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/blason.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Siècle Noir">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Le Siècle Noir">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Le Siècle Noir : jeu de stratégie médiéval entre amis">
+<meta property="og:description" content="France, 1347. La peste arrive, les rois meurent, les héritiers s'entretuent. Conquêtes, trahisons et dynasties, de 2 à 4 joueurs, directement dans le navigateur.">
+<meta property="og:url" content="https://kikitmt-bit.github.io/le-siecle-noir/">
+<meta property="og:image" content="https://kikitmt-bit.github.io/le-siecle-noir/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Le Siècle Noir : un blason rouge à la tour d'or, couronné, sur un parchemin">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Le Siècle Noir : jeu de stratégie médiéval entre amis">
+<meta name="twitter:description" content="France, 1347. La peste arrive, les rois meurent, les héritiers s'entretuent. À jouer à 2, 3 ou 4, dans le navigateur.">
+<meta name="twitter:image" content="https://kikitmt-bit.github.io/le-siecle-noir/og.png">
+<meta name="twitter:image:alt" content="Le Siècle Noir : un blason rouge à la tour d'or, couronné, sur un parchemin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795296252">
+<link rel="stylesheet" href="css/style.css?v=1795297246">
 </head>
 <body>
 <div id="app">
@@ -19,6 +43,7 @@
       <div class="home-crest" id="home-crest"></div>
       <h1 class="gothic">Le Siècle Noir</h1>
       <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches (ou sept) pour régner sur les cendres.</p>
+      <div id="games" class="games hidden"></div>
       <label class="field"><span>Ton nom de seigneur</span><input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Ex. : Étienne"></label>
       <label class="field"><span>Nom de ta maison <i>(facultatif)</i></span><input id="in-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon (sinon un nom est donné)"></label>
       <button id="btn-create" class="btn btn-red">Créer une partie</button>
@@ -113,6 +138,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795296252"></script>
+<script type="module" src="js/main.js?v=1795297246"></script>
 </body>
 </html>

@@ -1,12 +1,12 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795296252";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795296252";
-import { allied, attackMod, chron, computeLeader, provincesOf } from "./calc.js?v=1795296252";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795296252";
-import { validateOrders } from "./dilemmas.js?v=1795296252";
-import { addEpithet } from "./effects.js?v=1795296252";
-import { deName, king, mother, newPerson, personTitle } from "./people.js?v=1795296252";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795296252";
+import { PROVINCES } from "../map.js?v=1795297246";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795297246";
+import { allied, attackMod, chron, computeLeader, provincesOf } from "./calc.js?v=1795297246";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795297246";
+import { validateOrders } from "./dilemmas.js?v=1795297246";
+import { addEpithet } from "./effects.js?v=1795297246";
+import { deName, king, mother, newPerson, personTitle } from "./people.js?v=1795297246";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795297246";
 
 export function resolveRound(state, priv, inputs, rng) {
   const steps = [];

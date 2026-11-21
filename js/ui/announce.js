@@ -1,7 +1,7 @@
 // Écrans d'annonce animés, compte à rebours, narrateur vocal
-import * as A from "../audio.js?v=1795296252";
-import * as E from "../engine.js?v=1795296252";
-import { $, L, S, me, narrator } from "../state.js?v=1795296252";
+import * as A from "../audio.js?v=1795297246";
+import * as E from "../engine.js?v=1795297246";
+import { $, L, S, me, narrator } from "../state.js?v=1795297246";
 
 // ---- écrans d'annonce animés ----
 export function splash(st) {

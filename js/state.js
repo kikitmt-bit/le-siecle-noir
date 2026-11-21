@@ -1,6 +1,6 @@
 // État partagé de l'application (un seul exemplaire, importé par tous les modules)
-import { ICON } from "./help.js?v=1795296252";
-import * as remote from "./net.js?v=1795296252";
+import { ICON } from "./help.js?v=1795297246";
+import * as remote from "./net.js?v=1795297246";
 
 export const H_ICON = ICON;
 
@@ -67,7 +67,7 @@ export let lastTickSec = -1;
 export const setLastTickSec = (v) => { lastTickSec = v; };
 
 // arbitre (seul le navigateur de l'hôte l'utilise)
-export const H = { active: false, state: null, priv: null, inputs: {}, inUnsub: {}, lastReady: "", busy: false, draftTurnAt: 0 };
+export const H = { active: false, state: null, priv: null, inputs: {}, inUnsub: {}, lastReady: "", busy: false, draftTurnAt: 0, since: 0, lastTick: 0 };
 
 // l'arbitre garde son écran allumé (sur téléphone, un écran éteint mettrait la partie en pause)
 export let wakeLock = null;

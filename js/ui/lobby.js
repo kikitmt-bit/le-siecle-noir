@@ -1,15 +1,16 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795296252";
-import { HOUSES, HUMAN_HOUSES } from "../content.js?v=1795296252";
-import * as E from "../engine.js?v=1795296252";
-import { hostStart } from "../host.js?v=1795296252";
-import * as local from "../localnet.js?v=1795296252";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795296252";
-import { show, toast } from "./common.js?v=1795296252";
-import { shield } from "./draw.js?v=1795296252";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795296252";
-import { palmaresHtml } from "./overlays.js?v=1795296252";
-import { render } from "./render.js?v=1795296252";
+import * as A from "../audio.js?v=1795297246";
+import { HOUSES, HUMAN_HOUSES } from "../content.js?v=1795297246";
+import * as E from "../engine.js?v=1795297246";
+import { hostStart, stopHost } from "../host.js?v=1795297246";
+import * as local from "../localnet.js?v=1795297246";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795297246";
+import { show, toast } from "./common.js?v=1795297246";
+import { shield } from "./draw.js?v=1795297246";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795297246";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795297246";
+import { palmaresHtml } from "./overlays.js?v=1795297246";
+import { render } from "./render.js?v=1795297246";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
@@ -77,8 +78,8 @@ export async function joinGame(code, silent = false) {
 }
 
 export function enterRoom(code) {
-  L.code = code; L.joinedAt = Date.now();
-  if (!SOLO) { store.set("sn_room", code); history.replaceState(null, "", `${location.pathname}${new URLSearchParams(location.search).has("test") ? "?test" : ""}`); }
+  L.code = code; L.joinedAt = Date.now(); L.noted = false;
+  if (!SOLO) { noteGame(code, { name: store.get("sn_name") || undefined }); history.replaceState(null, "", `${location.pathname}${new URLSearchParams(location.search).has("test") ? "?test" : ""}`); }
   L.unsub.forEach((u) => u());
   L.unsub = [
     net.listen(code, "meta", (m) => { L.meta = m || {}; onMeta(); }),
@@ -92,6 +93,37 @@ export function enterRoom(code) {
   renderLobby();
 }
 
+
+// Reprendre une partie de la liste « Tes parties en cours »
+export async function resumeGame(code) {
+  const g = loadGames().find((x) => x.code === code) || {};
+  const name = (store.get("sn_name") || g.name || "").trim();
+  if (!name) { $("#home-msg").textContent = "Écris d'abord ton nom de seigneur, puis reprends la partie."; $("#in-name").focus(); return; }
+  $("#in-name").value = name; store.set("sn_name", name);
+  $("#home-msg").textContent = "Retour dans la partie…";
+  try {
+    const meta = await net.roomExists(code);
+    if (!meta) { dropGame(code); renderGames(resumeGame); $("#home-msg").textContent = "Cette partie n'existe plus."; return; }
+    await net.joinRoom(code, { name });
+    $("#home-msg").textContent = "";
+    enterRoom(code);
+  } catch (e) { console.error(e); $("#home-msg").textContent = "Impossible de reprendre la partie (connexion ?)."; }
+}
+
+// La partie a été créée avec un format que ce jeu ne sait pas lire : on revient à l'accueil avec un message clair.
+export function badFormat(prob, st) {
+  const code = L.code;
+  L.unsub.forEach((u) => u()); L.unsub = [];
+  if (H.active) stopHost();
+  L.code = null; L.state = null; L.meta = null; L.members = {};
+  if (code) dropGame(code);
+  show("home");
+  renderGames(resumeGame);
+  const v = (st && st.v) || 1;
+  $("#home-msg").textContent = prob === "plus-recent"
+    ? `Cette partie a été créée avec une version plus récente du jeu (format ${v}). Recharge la page pour avoir la dernière version (sur téléphone : ferme l'onglet et rouvre-le), puis rejoins-la de nouveau.`
+    : `Cette partie a été créée avec une ancienne version du jeu (format ${v}) : elle n'est plus compatible avec la version actuelle (format ${E.FORMAT_VERSION}). Crée une nouvelle partie pour jouer.`;
+}
 
 export function renderLobby() {
   if (L.state && L.state.phase && L.state.phase !== "lobby") return;

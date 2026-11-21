@@ -1,13 +1,13 @@
 // Création de partie, choix des provinces (draft) et placement
-import { OBJECTIVES } from "../content.js?v=1795296252";
-import { PROVINCES, REGIONS } from "../map.js?v=1795296252";
-import { MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795296252";
-import { makeFamily } from "./people.js?v=1795296252";
+import { OBJECTIVES } from "../content.js?v=1795297246";
+import { PROVINCES, REGIONS } from "../map.js?v=1795297246";
+import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795297246";
+import { makeFamily } from "./people.js?v=1795297246";
 
 export function createGame({ players, tutorial = false, randomDraft = false, code = "", rounds = MAX_ROUNDS }, rng) {
   // players: [{pid, name, house, isBot}]
   const state = {
-    v: 1, code, phase: "objectives", round: 0, maxRounds: Math.max(5, Math.min(MAX_ROUNDS, rounds | 0 || MAX_ROUNDS)), tutorial, randomDraft,
+    v: FORMAT_VERSION, code, phase: "objectives", round: 0, maxRounds: Math.max(5, Math.min(MAX_ROUNDS, rounds | 0 || MAX_ROUNDS)), tutorial, randomDraft,
     deadline: 0, players: {}, order: [], provinces: {}, families: {}, alliances: [],
     chronicle: [], news: [], reveal: null, proposals: {}, treaties: [], unsolved: [], leader: null, draft: null, result: null, seq: 0,
   };

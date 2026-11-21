@@ -1,13 +1,13 @@
 // Aides : fenêtres d'introduction, définitions, fiche province, coach
-import * as E from "../engine.js?v=1795296252";
-import { GLOSSARY, ICON, INTRO, term } from "../help.js?v=1795296252";
-import { PROVINCES, REGIONS } from "../map.js?v=1795296252";
-import { $, L, S, esc, me } from "../state.js?v=1795296252";
-import { houseName } from "./common.js?v=1795296252";
-import { dilLeft } from "./dilemmas.js?v=1795296252";
-import { shield } from "./draw.js?v=1795296252";
-import { openModal } from "./overlays.js?v=1795296252";
-import { revealProvinces } from "./reveal.js?v=1795296252";
+import * as E from "../engine.js?v=1795297246";
+import { GLOSSARY, ICON, INTRO, term } from "../help.js?v=1795297246";
+import { PROVINCES, REGIONS } from "../map.js?v=1795297246";
+import { $, L, S, esc, me } from "../state.js?v=1795297246";
+import { houseName } from "./common.js?v=1795297246";
+import { dilLeft } from "./dilemmas.js?v=1795297246";
+import { shield } from "./draw.js?v=1795297246";
+import { openModal } from "./overlays.js?v=1795297246";
+import { revealProvinces } from "./reveal.js?v=1795297246";
 
 export function queueModal(kind, data) { L.modalQueue.push({ kind, data }); if ($("#modal").classList.contains("hidden")) nextModal(); }
 

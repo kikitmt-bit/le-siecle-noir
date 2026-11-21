@@ -1,12 +1,13 @@
 // LE SIÈCLE NOIR — application : branche les boutons et démarre
-import * as A from "./audio.js?v=1795296252";
-import { TAUNTS } from "./content.js?v=1795296252";
-import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795296252";
-import { narratorIcon, speak } from "./ui/announce.js?v=1795296252";
-import { show, toast } from "./ui/common.js?v=1795296252";
-import { enterRoom, initHome, quitGame } from "./ui/lobby.js?v=1795296252";
-import { openModal } from "./ui/overlays.js?v=1795296252";
-import { render, renderTop } from "./ui/render.js?v=1795296252";
+import * as A from "./audio.js?v=1795297246";
+import { TAUNTS } from "./content.js?v=1795297246";
+import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795297246";
+import { narratorIcon, speak } from "./ui/announce.js?v=1795297246";
+import { show, toast } from "./ui/common.js?v=1795297246";
+import { refreshGames } from "./ui/games.js?v=1795297246";
+import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795297246";
+import { openModal } from "./ui/overlays.js?v=1795297246";
+import { render, renderTop } from "./ui/render.js?v=1795297246";
 import "./ui/clock.js?v=1795295940"; // boucle de temps (effets au chargement)
 
 // ---------------------------------------------------------------------
@@ -41,19 +42,18 @@ document.addEventListener("pointerdown", () => A.unlock(), { once: true });
   initHome();
   try { await net.init(); }
   catch (e) { console.error(e); $("#home-msg").textContent = "Connexion impossible au serveur de jeu. Vérifie ta connexion internet."; return; }
-  const params = new URLSearchParams(location.search);
-  const saved = (params.get("r") || store.get("sn_room") || "").toUpperCase();
-  if (saved && store.get("sn_name") && !params.has("test")) {
-    const meta = await net.roomExists(saved).catch(() => null);
-    if (meta) {
-      const members = await new Promise((res) => { const u = net.listen(saved, `members/${net.uid}`, (m) => { u(); res(m); }); });
-      if (members) {
-        // lien partagé (?r=) : on rentre directement ; sinon on propose de reprendre, sans forcer
-        if (params.get("r")) { await net.joinRoom(saved, { name: store.get("sn_name") }); enterRoom(saved); return; }
-        $("#home-msg").insertAdjacentHTML("beforebegin", `<div class="resume-box"><button id="btn-resume" class="btn btn-block">Reprendre la partie en cours (${esc(saved)})</button></div>`);
-        $("#btn-resume").onclick = async () => { await net.joinRoom(saved, { name: store.get("sn_name") }); enterRoom(saved); };
-      }
-    } else store.set("sn_room", "");
+  // lien d'invitation (?r=CODE) : si on est déjà dans cette partie, on y rentre directement
+  const r = (new URLSearchParams(location.search).get("r") || "").toUpperCase();
+  if (r && store.get("sn_name")) {
+    const meta = await net.roomExists(r).catch(() => null);
+    const member = meta && await new Promise((res) => { const u = net.listen(r, `members/${net.uid}`, (m) => { u(); res(m); }); });
+    if (member) { await net.joinRoom(r, { name: store.get("sn_name") }); enterRoom(r); return; }
   }
   show("home");
+  refreshGames(resumeGame); // « Tes parties en cours »
 })();
+
+// Appli installable : le service worker (« réseau d'abord ») ne sert qu'à garder une copie de secours hors connexion
+if ("serviceWorker" in navigator && !new URLSearchParams(location.search).has("test")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch((e) => console.warn("service worker", e)));
+}
