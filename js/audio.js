@@ -59,4 +59,4 @@ export function play(name) {
   if (muted || !ctx || !SOUNDS[name]) return;
   try { SOUNDS[name](ctx.currentTime + 0.02); } catch {}
 }
-export function vibrate(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch {} }
+export function vibrate(pattern) { try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(pattern); } catch {} }
