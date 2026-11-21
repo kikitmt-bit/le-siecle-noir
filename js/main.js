@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js?v=1795292594";
-import * as local from "./localnet.js?v=1795292594";
-import * as E from "./engine.js?v=1795292594";
-import { PROVINCES, REGIONS } from "./map.js?v=1795292594";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795292594";
-import * as A from "./audio.js?v=1795292594";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795292594";
+import * as remote from "./net.js?v=1795292829";
+import * as local from "./localnet.js?v=1795292829";
+import * as E from "./engine.js?v=1795292829";
+import { PROVINCES, REGIONS } from "./map.js?v=1795292829";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795292829";
+import * as A from "./audio.js?v=1795292829";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795292829";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local

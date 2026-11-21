@@ -2,11 +2,11 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795292594";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795292594";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795292594";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795292594";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795292594";
+import { DIL_COUR } from "./dil_cour.js?v=1795292829";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795292829";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795292829";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795292829";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795292829";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E1B1B", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
@@ -359,33 +359,33 @@ export const EVENTS = [
 // ---------------------------------------------------------------------
 export const OBJECTIVES = [
   { id: "paris", pts: 5, text: "Tenir l'Île-de-France (Paris) à la fin de la partie" },
-  { id: "huit", pts: 5, text: "Posséder au moins 8 provinces à la fin" },
-  { id: "deux_regions", pts: 8, text: "Tenir 2 régions complètes à la fin" },
-  { id: "poison2", pts: 8, text: "Tuer au moins 2 personnages par poison ou complot" },
+  { id: "huit", pts: 7, text: "Posséder au moins 8 provinces à la fin" },
+  { id: "deux_regions", pts: 12, text: "Tenir 2 régions complètes à la fin" },
+  { id: "poison2", pts: 6, text: "Tuer au moins 2 personnages par poison ou complot" },
   { id: "capitale_rivale", pts: 8, text: "Tenir la capitale d'une maison rivale à la fin" },
-  { id: "colere_basse", pts: 5, text: "Finir avec une Colère du peuple sous 30" },
+  { id: "colere_basse", pts: 3, text: "Finir avec une Colère du peuple sous 30" },
   { id: "peur_haute", pts: 5, text: "Finir avec au moins 60 de Peur" },
   { id: "famille", pts: 5, text: "Finir avec au moins 5 membres de ta famille vivants" },
   { id: "traitre", pts: 5, text: "Trahir un allié au moins une fois (attaquer sa belle-famille)" },
-  { id: "conquerant", pts: 8, text: "Conquérir au moins 6 provinces au cours de la partie" },
-  { id: "capitale_sauve", pts: 5, text: "Ne jamais perdre ta capitale" },
-  { id: "mer", pts: 5, text: "Tenir au moins 5 provinces côtières à la fin" },
+  { id: "conquerant", pts: 4, text: "Conquérir au moins 6 provinces au cours de la partie" },
+  { id: "capitale_sauve", pts: 3, text: "Ne jamais perdre ta capitale" },
+  { id: "mer", pts: 7, text: "Tenir au moins 5 provinces côtières à la fin" },
   { id: "riche", pts: 5, text: "Finir avec au moins 20 pièces d'or" },
   { id: "marie", pts: 5, text: "Marier au moins un de tes enfants à une maison rivale" },
   { id: "dix", pts: 10, text: "Posséder au moins 10 provinces à la fin" },
-  { id: "reg_nord", pts: 6, text: "Tenir toute la région Nord à la fin (Flandre, Picardie, Île-de-France, Champagne)" },
-  { id: "reg_ouest", pts: 6, text: "Tenir toute la région Ouest à la fin (Normandie, Bretagne, Anjou)" },
-  { id: "reg_est", pts: 6, text: "Tenir toute la région Est à la fin (Lorraine, Alsace, Franche-Comté, Bourgogne)" },
-  { id: "reg_centre", pts: 6, text: "Tenir toute la région Centre à la fin (Orléanais, Berry, Limousin, Auvergne)" },
-  { id: "reg_sudouest", pts: 6, text: "Tenir toute la région Sud-Ouest à la fin (Poitou, Guyenne, Gascogne)" },
-  { id: "reg_sudest", pts: 8, text: "Tenir toute la région Sud-Est à la fin (Lyonnais, Savoie, Provence, Languedoc, Corse)" },
-  { id: "treves", pts: 5, text: "Signer au moins 2 trêves au cours de la partie" },
+  { id: "reg_nord", pts: 9, text: "Tenir toute la région Nord à la fin (Flandre, Picardie, Île-de-France, Champagne)" },
+  { id: "reg_ouest", pts: 8, text: "Tenir toute la région Ouest à la fin (Normandie, Bretagne, Anjou)" },
+  { id: "reg_est", pts: 9, text: "Tenir toute la région Est à la fin (Lorraine, Alsace, Franche-Comté, Bourgogne)" },
+  { id: "reg_centre", pts: 9, text: "Tenir toute la région Centre à la fin (Orléanais, Berry, Limousin, Auvergne)" },
+  { id: "reg_sudouest", pts: 8, text: "Tenir toute la région Sud-Ouest à la fin (Poitou, Guyenne, Gascogne)" },
+  { id: "reg_sudest", pts: 10, text: "Tenir toute la région Sud-Est à la fin (Lyonnais, Savoie, Provence, Languedoc, Corse)" },
+  { id: "treves", pts: 3, text: "Signer au moins 2 trêves au cours de la partie" },
   { id: "accusateur", pts: 8, text: "Démasquer au moins un crime anonyme par une accusation juste" },
   { id: "batards", pts: 8, text: "Semer au moins 2 bâtards dans des familles rivales" },
   { id: "vieux_roi", pts: 8, text: "Ton roi de départ est encore vivant à la fin" },
   { id: "trois_rois", pts: 5, text: "Avoir eu au moins 3 souverains successifs (le chaos te sied)" },
   { id: "invaincu", pts: 8, text: "Attaquer au moins 3 fois sans jamais perdre une bataille" },
-  { id: "genereux", pts: 5, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
+  { id: "genereux", pts: 6, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
   { id: "pacifique", pts: 10, text: "N'attaquer personne de toute la partie" },
 ];
 DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES, ...DIL_FAMILLES);

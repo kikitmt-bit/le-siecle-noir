@@ -2,8 +2,8 @@
 //  LE SIÈCLE NOIR — moteur de règles (pur JS, sans DOM ni réseau)
 //  L'hôte (arbitre) est le seul à appeler ces fonctions.
 // =====================================================================
-import { PROVINCES, REGIONS } from "./map.js?v=1795292594";
-import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795292594";
+import { PROVINCES, REGIONS } from "./map.js?v=1795292829";
+import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795292829";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 export const MAX_ROUNDS = 10;
@@ -629,6 +629,18 @@ export function startRound(state, priv, rng) {
   for (const pid of state.order) {
     const k = king(state, pid);
     if (k && k.health >= 3 && !heirs(state, pid).length) { const t = `${capitalize(kingLabel(state, pid))} est ${k.health >= 4 ? "mourant" : "gravement malade"}, et ${maisonName(state, pid)} n'a aucun héritier. Les barons affûtent leurs couteaux.`; out.push({ kind: "text", text: t, pid }); }
+  }
+  // sursaut des malmenés : la maison la plus en retard reçoit de l'aide (pour qu'un mauvais départ ne soit jamais perdu d'avance)
+  if (state.round >= 3 && state.order.length >= 3) {
+    const sc = state.order.filter((p) => !state.players[p].exiled && provincesOf(state, p).length).map((p) => ({ p, s: estimateScore(state, {}, p).total })).sort((a, b) => a.s - b.s);
+    if (sc.length >= 2 && sc[sc.length - 1].s - sc[0].s >= 8) {
+      const low = sc[0].p, pl = state.players[low];
+      const cap = pl.capital && state.provinces[pl.capital] && state.provinces[pl.capital].owner === low ? pl.capital : provincesOf(state, low)[0];
+      if (cap) state.provinces[cap].armies += 2;
+      pl.gold += 2;
+      const t = `Les déshérités, les routiers et les bannis se rallient à ${maisonName(state, low)}, la plus malmenée du royaume : +2 armées et +2 or.`;
+      out.push({ kind: "text", text: t, pid: low }); chron(state, t, "text");
+    }
   }
   rollDice(state, rng, priv);
   dealDilemmas(state, priv, rng);
