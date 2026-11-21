@@ -531,3 +531,14 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
   body.rv-on .rv-btns .btn { min-height: 44px; }
   body.rv-on .rv-opts { margin-top: 4px; }
 }
+/* présentation de la famille */
+.fam-hero { display: flex; gap: 16px; align-items: center; margin: 8px 0 6px; }
+.fam-hero .portrait { flex-shrink: 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); animation: famin .5s ease-out; }
+@keyframes famin { from { transform: scale(.85) rotate(-3deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.fam-role { font-family: var(--caps); font-size: 12px; letter-spacing: 1.5px; color: var(--red); text-transform: uppercase; }
+.fam-age { font-size: 14px; color: var(--ink2); }
+.fam-flavor { font-style: italic; font-size: 17px; line-height: 1.45; border-left: 3px solid var(--gold); padding-left: 10px; }
+.fam-trait { padding: 8px 10px; border-radius: 4px; font-size: 15px; margin-bottom: 8px; }
+.fam-trait.good { background: #DDE8CF; border: 1px solid #2F5233; }
+.fam-trait.bad { background: #F1D2C6; border: 1px solid #8E1B1B; }
+@media (max-width: 600px) { .fam-hero .portrait { width: 90px; height: 105px; } .fam-flavor { font-size: 15.5px; } }

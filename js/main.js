@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js?v=1795290540";
-import * as local from "./localnet.js?v=1795290540";
-import * as E from "./engine.js?v=1795290540";
-import { PROVINCES, REGIONS } from "./map.js?v=1795290540";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795290540";
-import * as A from "./audio.js?v=1795290540";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795290540";
+import * as remote from "./net.js?v=1795292025";
+import * as local from "./localnet.js?v=1795292025";
+import * as E from "./engine.js?v=1795292025";
+import { PROVINCES, REGIONS } from "./map.js?v=1795292025";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795292025";
+import * as A from "./audio.js?v=1795292025";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795292025";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
@@ -327,6 +327,7 @@ function onState(st) {
   }
   if (st.phase !== L.last.phase || st.round !== L.last.round) splash(st);
   if (st.phase !== L.last.phase && ["orders", "placement", "draft", "reveal"].includes(st.phase)) L.ui.tab = "panel";
+  if (st.phase === "placement" && me() && st.families && st.families[me()] && !store.get(`sn_fam_${st.gameId}`)) { store.set(`sn_fam_${st.gameId}`, "1"); setTimeout(() => queueModal("family", 0), 2400); }
   if (prev && prev.leader !== st.leader && st.leader && st.round > 1 && st.round < st.maxRounds && ["dilemma", "interlude"].includes(st.phase)) {
     setTimeout(() => { toast(`${ICON.prestige}<b>La couronne passe à ${esc(houseName(st.leader))}</b>${st.leader === me() ? " : c'est toi ! Tout le monde va vouloir te faire tomber." : ". Battre ses armées rapporte 2 Prestige."}`, "#D9A441", 6000); A.play("horn"); }, 2400);
   }
@@ -1265,17 +1266,89 @@ function houseHtml(pid, full) {
   const myObj = pid === me() && L.priv && L.priv.objectives ? L.priv.objectives : [];
   const est = pid === me() ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null;
   const spied = pid !== me() && L.priv && L.priv.spied && L.priv.spied.target === pid ? L.priv.spied.objectives : null;
-  return `<div class="house-head">${shield(p.house, 44)}<div><div class="hn">Maison ${esc(h.name)}</div><div class="hm">« ${esc(h.motto)} » · ${esc(p.name)}${p.isBot ? " (ordinateur)" : ""}</div></div></div>
+  return `<div class="house-head">${shield(p.house, 44)}<div><div class="hn">Maison ${esc(houseName(pid))}</div><div class="hm">« ${esc(h.motto)} » · ${esc(p.name)}${p.isBot ? " (ordinateur)" : ""}</div></div></div>
     ${est ? `<div class="score-box"><span class="ph" style="margin:0">Score estimé si la partie finissait maintenant</span><br><b>${est.total}</b> points <span class="hint">(Prestige ${est.prestige} + provinces ${est.provinces} + régions ${est.regions} + objectifs ${est.objectives} + famille ${est.family})</span></div>` : ""}
     ${spied ? `<div class="pbox"><p class="ph red">Objectifs secrets (volés par tes espions)</p>${spied.map((oid) => `<p class="ptext" style="margin:2px 0;font-size:14px">• ${esc((OBJECTIVES.find((o) => o.id === oid) || {}).text || "")}</p>`).join("")}</div>` : ""}
     <div class="kv"><span><b>Or</b> ${p.gold}</span><span><b>Prestige</b> ${hide ? "?" : p.prestige}</span><span><b>Provinces</b> ${E.provincesOf(st, pid).length}</span><span><b>Régions</b> ${E.regionsOf(st, pid).length}</span></div>
     <div class="stat-row"><div class="stat"><div class="stat-l"><span>Colère du peuple</span><span>${p.colere}</span></div><div class="gauge"><div style="width:${p.colere}%;background:#8E1B1B"></div></div></div><div class="stat"><div class="stat-l"><span>Peur</span><span>${p.peur}</span></div><div class="gauge"><div style="width:${p.peur}%;background:#2B1D12"></div></div></div></div>
     <p class="hint" style="margin:-4px 0 12px">Colère à 80 : une province se révolte. Peur : +1 en défense tous les 25 points, mais à 50 plus personne n'épouse tes enfants.</p>
     ${k && TRAITS[k.trait] ? `<p class="ptext" style="font-size:14px"><b>Effet du souverain :</b> ${esc(k.trait)}, ${esc(TRAITS[k.trait].desc.toLowerCase())}.</p>` : ""}
-    <p class="ph">La famille</p>${consort && consort.alive && !fam.members.includes(consort) ? `<p class="hint" style="margin-top:0">Époux${consort.sex === "f" ? "se" : ""} du souverain : ${esc(E.personTitle(consort))} (${esc(houseName(E.ownerOf(st, consort)))})</p>` : ""}${famHtml}
+    <p class="ph">La famille ${pid === me() ? `<button class="btn btn-small" data-famintro="1" style="margin-left:8px;min-height:30px">Présentation</button>` : ""}</p>${consort && consort.alive && !fam.members.includes(consort) ? `<p class="hint" style="margin-top:0">Époux${consort.sex === "f" ? "se" : ""} du souverain : ${esc(E.personTitle(consort))} (${esc(houseName(E.ownerOf(st, consort)))})</p>` : ""}${famHtml}
     ${myObj.length ? `<p class="ph" style="margin-top:14px">Tes objectifs secrets</p>${myObj.map((oid) => { const o = OBJECTIVES.find((x) => x.id === oid); const ok = E.objectiveDone(st, pid, oid); return `<div class="obj"><span class="${ok ? "ok" : "ko"}">${ok ? "✓" : "○"}</span><span>${esc(o.text)} <i>(+${o.pts})</i></span></div>`; }).join("")}` : ""}`;
 }
-function renderHouseTab() { const pid = me(); $("#tab-house").innerHTML = pid ? houseHtml(pid, true) : "<p class='ptext'>Tu es spectateur.</p>"; }
+function renderHouseTab() { const pid = me(); $("#tab-house").innerHTML = pid ? houseHtml(pid, true) : "<p class='ptext'>Tu es spectateur.</p>"; const b = $("#tab-house [data-famintro]"); if (b) b.onclick = () => openModal("family", 0); }
+// ---- présentation de la famille, personnage par personnage ----
+const TRAIT_FLAVOR = {
+  "Rusé": ["Il sourit toujours une seconde trop tard. Personne ne sait ce qu'il pense, et c'est très bien ainsi.", "Elle écoute aux portes depuis l'âge de six ans. Elle n'a jamais été prise."],
+  "Brillant stratège": ["Il dessine des batailles sur la nappe pendant les repas. Il les gagne toutes.", "Elle joue aux échecs contre les évêques et les laisse parfois gagner, par politesse."],
+  "Sanguinaire": ["Il chasse le loup à mains nues, dit-on. Les loups, eux, ne disent plus rien.", "Elle assiste aux exécutions au premier rang, et elle applaudit."],
+  "Pieux": ["Il prie quatre heures par jour. Le peuple l'aime. Les capitaines s'ennuient.", "Elle porte un cilice sous ses robes de soie. Le peuple la vénère."],
+  "Séduisant": ["La moitié des dames de la cour lui ont écrit des poèmes. L'autre moitié ment.", "Trois chevaliers se sont battus en duel pour un de ses regards. Deux sont morts."],
+  "Robuste": ["Il a survécu à deux pestes, une chute de cheval et un cuisinier empoisonneur.", "Elle a accouché le matin et chassé le cerf l'après-midi."],
+  "Paranoïaque": ["Il fait goûter son vin par trois hommes différents. Il a raison.", "Elle dort avec une dague sous l'oreiller et change de chambre chaque nuit."],
+  "Simple d'esprit": ["Il rit aux enterrements et pleure aux mariages. On l'aime bien, mais pas pour régner.", "Elle parle aux pigeons. Les pigeons, au moins, l'écoutent."],
+  "Lâche": ["Il a perdu sa première bataille en s'enfuyant avant qu'elle commence.", "Elle s'évanouit à la vue du sang. Même le sien. Surtout le sien."],
+  "Fragile": ["Il tousse depuis l'enfance. Les médecins le saignent une fois par semaine, ce qui n'aide pas.", "Elle est pâle comme un cierge, et l'on prie beaucoup pour elle."],
+  "Débauché": ["Il a plus de dettes chez les taverniers que de soldats dans ses armées.", "Elle organise des fêtes que l'évêque refuse de décrire."],
+  "Cruel": ["Il fait couper la langue des bavards. La cour est devenue très silencieuse.", "Elle collectionne les ongles de ses servantes. On ne lui pose pas de questions."],
+};
+function portraitSvg(m, color) {
+  const f = m.sex === "f", baby = m.age < 6, old = m.age >= 55;
+  const ink = "#1A120C";
+  const headR = baby ? 15 : 19;
+  const hy = baby ? 82 : 66;
+  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="pc-${m.id}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
+    <ellipse cx="60" cy="70" rx="56" ry="66" fill="${color}" opacity=".35"/><g clip-path="url(#pc-${m.id})">
+    <g opacity=".25" stroke="${ink}" stroke-width="1">${Array.from({ length: 12 }, (_, i) => `<path d="M0,${i * 12 + 4} H120"/>`).join("")}</g>`;
+  if (baby) h += `<path d="M30,140 Q30,96 60,94 Q90,96 90,140 Z" fill="#E9DCBD" stroke="${ink}" stroke-width="2"/><path d="M36,112 Q60,124 84,112 M38,126 Q60,138 82,126" stroke="${ink}" stroke-width="1.4" fill="none"/>`;
+  else h += `<path d="M14,140 Q16,100 60,${hy + 28} Q104,100 106,140 Z" fill="${ink}"/>`;
+  if (f && !baby) h += `<path d="M${60 - headR - 6},${hy + 34} Q${60 - headR - 8},${hy - 8} 60,${hy - headR - 6} Q${60 + headR + 8},${hy - 8} ${60 + headR + 6},${hy + 34} Z" fill="${ink}"/>`;
+  h += `<ellipse cx="60" cy="${hy}" rx="${headR - 2}" ry="${headR}" fill="#E9DCBD" stroke="${ink}" stroke-width="2"/>`;
+  h += `<path d="M53,${hy - 2} h3 M64,${hy - 2} h3" stroke="${ink}" stroke-width="2"/><path d="M56,${hy + 9} Q60,${hy + 11} 64,${hy + 9}" stroke="${ink}" stroke-width="1.5" fill="none"/>`;
+  if (!f && old) h += `<path d="M46,${hy + 6} Q48,${hy + 34} 60,${hy + 38} Q72,${hy + 34} 74,${hy + 6} Q66,${hy + 16} 60,${hy + 16} Q54,${hy + 16} 46,${hy + 6} Z" fill="#CFC4AE" stroke="${ink}" stroke-width="1.5"/>`;
+  if (!f && !baby && !old) h += `<path d="M42,${hy - 6} Q44,${hy - headR - 6} 60,${hy - headR - 4} Q76,${hy - headR - 6} 78,${hy - 6} Q70,${hy - 14} 60,${hy - 14} Q50,${hy - 14} 42,${hy - 6} Z" fill="${ink}"/>`;
+  if (m.role === "king" || m.role === "queen") { const cy = hy - headR + 2; h += `<path d="M${f ? 46 : 41},${cy} L${f ? 48 : 44},${cy - 14} L${f ? 54 : 52},${cy - 6} L60,${cy - 18} L${f ? 66 : 68},${cy - 6} L${f ? 72 : 76},${cy - 14} L${f ? 74 : 79},${cy} Z" fill="#D9A441" stroke="${ink}" stroke-width="1.5"/>`; }
+  if (m.trait === "Sanguinaire" || m.trait === "Cruel") h += `<path d="M66,${hy + 2} l8,8" stroke="#8E1B1B" stroke-width="2.5"/>`;
+  if (/Borgne/.test(m.infirm || "")) h += `<path d="M62,${hy - 5} h8 v6 h-8 Z" fill="${ink}"/><path d="M42,${hy - 8} L78,${hy - 2}" stroke="${ink}" stroke-width="1.2"/>`;
+  h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
+  return h;
+}
+function familyCards(pid) {
+  const st = S(), fam = st.families[pid];
+  const order = ["king", "queen", "child"];
+  const ms = fam.members.filter((m) => m.alive && order.includes(m.role)).sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || b.age - a.age);
+  const k = E.king(st, pid), co = E.consort(st, pid);
+  if (co && co.alive && !ms.includes(co)) ms.splice(1, 0, co);
+  return ms;
+}
+function familyHtml(i) {
+  const st = S(), pid = me();
+  const p = st.players[pid], color = HOUSES[p.house].color;
+  const ms = familyCards(pid);
+  const heirs = E.heirs(st, pid);
+  const k = E.king(st, pid), co = E.consort(st, pid);
+  const total = ms.length + 1;
+  const nav = (j) => `<div class="intro-dots">${Array.from({ length: total }, (_, x) => `<span class="${x === j ? "on" : ""}"></span>`).join("")}</div>
+    <div class="row">${j > 0 ? `<button class="btn grow" data-fam="${j - 1}">← Précédent</button>` : `<button class="btn grow" id="md-close">Passer</button>`}${j < total - 1 ? `<button class="btn btn-red grow" data-fam="${j + 1}">${j === 0 ? "Découvrir ma famille →" : "Suivant →"}</button>` : `<button class="btn btn-red grow" id="md-close">Prendre le pouvoir</button>`}</div>`;
+  if (i === 0) {
+    return `<div class="card fam-card"><span class="card-kicker">TA DYNASTIE</span><div style="text-align:center;margin:6px 0">${shield(p.house, 70)}</div><h2 style="text-align:center">La maison ${esc(E.deName(st, pid))}</h2><p style="text-align:center;font-style:italic">« ${esc(HOUSES[p.house].motto)} »</p>
+      <p>Voici ceux qui portent ton nom. Ils vont vieillir, se marier, tomber malades, peut-être être empoisonnés. Ils comptent dans ton score (1 point par membre vivant), et beaucoup de dilemmes parleront d'eux.</p>
+      <p><b>Si ton souverain meurt</b>, l'aîné des fils hérite (sinon l'aînée des filles). <b>Sans héritier, c'est la guerre civile</b> : tu perds un tiers de tes provinces.</p>${nav(0)}</div>`;
+  }
+  const m = ms[i - 1];
+  const tr = TRAITS[m.trait];
+  const isKing = k && m.id === k.id;
+  const hIdx = heirs.findIndex((x) => x.id === m.id);
+  const role = isKing ? (m.sex === "f" ? "Reine régnante" : "Le roi, ton souverain") : m.role === "queen" || (co && m.id === co.id) ? (m.sex === "f" ? "La reine" : "Le prince consort") : hIdx === 0 ? (m.sex === "f" ? "Ton héritière" : "Ton héritier") : m.sex === "f" ? "Ta fille" : "Ton fils";
+  const fl = TRAIT_FLAVOR[m.trait] ? TRAIT_FLAVOR[m.trait][m.sex === "f" ? 1 : 0] : "";
+  const effect = tr ? `${tr.desc}${isKing ? "" : " (compte surtout quand il ou elle règne)"}` : "";
+  return `<div class="card fam-card"><span class="card-kicker">TA FAMILLE · ${i} SUR ${ms.length}</span>
+    <div class="fam-hero">${portraitSvg(m, color)}<div><div class="fam-role">${esc(role)}</div><h2 style="margin:2px 0 4px">${esc(E.personTitle(m))}</h2><div class="fam-age">${m.age} ans${["king", "queen"].includes(m.role) || m.health >= 2 ? ` · ${HEALTH[m.health]}` : ""}${hIdx > 0 ? ` · ${hIdx + 1}e dans l'ordre de succession` : ""}</div></div></div>
+    <p class="fam-flavor">${esc(fl)}</p>
+    ${tr ? `<div class="fam-trait ${tr.good ? "good" : "bad"}"><b>${esc(m.trait)}</b> : ${esc(effect)}</div>` : ""}
+    ${m.infirm ? `<p class="hint">Son surnom, « ${esc(m.infirm)} », la cour le lui a donné. Personne n'ose le dire devant ${m.sex === "f" ? "elle" : "lui"}.</p>` : ""}
+    ${nav(i)}</div>`;
+}
 function renderLog() {
   const st = S();
   const c = (st.chronicle || []).slice().reverse();
@@ -1438,6 +1511,7 @@ function openModal(kind, data) {
   const m = $("#modal");
   let html = "";
   if (kind === "intro") html = introHtml(data || 0);
+  if (kind === "family") html = familyHtml(data || 0);
   if (kind === "unlock") { const u = UNLOCK_INFO[data]; html = `<div class="card"><span class="card-kicker">PREMIÈRE PARTIE · MANCHE ${S().round}</span><div class="intro-icon">${u.icon.replace('width="16" height="16"', 'width="56" height="56"')}</div><h2 style="text-align:center">${u.title}</h2><p>${u.text}</p><button class="btn btn-red btn-block" id="md-close">Compris</button></div>`; }
   if (kind === "score") { const st = S(), pid = me(); const e = pid ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null; html = `<div class="card"><span class="card-kicker">COMMENT GAGNER</span><h2>Le score</h2><p>${GLOSSARY.score[1]}</p>${e ? `<div class="score-box"><b>${e.total}</b> points aujourd'hui :<br>${ICON.prestige}Prestige ${e.prestige} · ${ICON.province}provinces ${e.provinces} · régions ${e.regions} · objectifs ${e.objectives} · ${ICON.family}famille ${e.family}</div>` : ""}<p class="hint">Les objectifs secrets ne comptent que s'ils sont réussis à la fin. Détail dans l'onglet « Ma maison ».</p><button class="btn btn-block" id="md-close">Fermer</button></div>`; }
   if (kind === "house") html = `<div class="card">${houseHtml(L.ui.viewHouse, false)}<button class="btn btn-block" id="md-close" style="margin-top:12px">Fermer</button></div>`;
@@ -1454,7 +1528,8 @@ function openModal(kind, data) {
   const close = () => { m.classList.add("hidden"); setTimeout(nextModal, 50); };
   m.querySelectorAll("#md-close").forEach((b) => (b.onclick = close));
   m.querySelectorAll("[data-intro]").forEach((b) => (b.onclick = () => openModal("intro", +b.dataset.intro)));
-  m.onclick = (e) => { if (e.target === m && kind !== "intro" && kind !== "unlock") close(); };
+  m.querySelectorAll("[data-fam]").forEach((b) => (b.onclick = () => { A.play("click"); openModal("family", +b.dataset.fam); }));
+  m.onclick = (e) => { if (e.target === m && !["intro", "unlock", "family"].includes(kind)) close(); };
 }
 function phaseTutos() {
   const st = S();
