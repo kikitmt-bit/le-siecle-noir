@@ -401,7 +401,7 @@ function fx(kind, prov, color) {
 function render() {
   const st = S();
   if (!st || st.phase === "lobby") return;
-  renderTop(); renderPlayers();
+  renderTop(); renderPlayers(); renderGuide();
   MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null;
   let arrows = [];
   const panel = renderPanel();
@@ -420,6 +420,83 @@ function render() {
   document.querySelectorAll("#side-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === L.ui.tab));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === `tab-${L.ui.tab}`));
   phaseTutos();
+}
+// ---- bandeau « que dois-je faire ? » ----
+function renderGuide() {
+  const st = S(), pid = me(), el = $("#guide");
+  if (!el) return;
+  let step = "", text = "", btn = "", mine = false;
+  const prep = (n, label) => `PRÉPARATIFS · ÉTAPE ${n} SUR 3 · ${label}`;
+  const round = (n, label) => `MANCHE ${st.round} SUR ${st.maxRounds} · ${n}/3 · ${label}`;
+  if (!pid) { step = "SPECTATEUR"; text = "Tu regardes la partie."; }
+  else switch (st.phase) {
+    case "objectives": {
+      const done = (L.myInput.objPick || []).length === 2;
+      step = prep(1, "OBJECTIFS SECRETS");
+      text = done ? "Tes objectifs sont choisis. On attend les autres seigneurs…" : "<b>À toi :</b> choisis 2 objectifs secrets parmi les 3 proposés, puis valide.";
+      if (!done) { btn = `<button class="btn btn-red" data-guide="obj">Choisir mes objectifs</button>`; mine = true; }
+      break;
+    }
+    case "draft": {
+      const cur = E.currentDrafter(st);
+      step = prep(2, "CHOIX DES PROVINCES");
+      if (cur === pid) { mine = true; text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Ce sera ta <b>capitale</b>."; }
+      else text = `${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))}) choisit une province… Attends ton tour.`;
+      break;
+    }
+    case "placement": {
+      const sent = L.myInput.placement && L.myInput.placement.ok;
+      step = prep(3, "PLACEMENT DES ARMÉES");
+      if (sent) text = "Placement validé. On attend les autres…";
+      else {
+        const mineP = E.provincesOf(st, pid);
+        const used = mineP.reduce((s2, id) => s2 + ((L.ui.placement || {})[id] || 1), 0);
+        text = `<b>À toi :</b> clique sur tes provinces pour y ajouter des armées (il en reste <b>${E.START_ARMIES - used}</b>), puis valide. Ou laisse le jeu les placer.`;
+        btn = `<button class="btn" data-guide="plauto">Placement auto</button><button class="btn btn-red" data-guide="plok">Valider</button>`; mine = true;
+      }
+      break;
+    }
+    case "dilemma": {
+      const d = L.priv && L.priv.dilemma && L.priv.dilemma.round === st.round;
+      const done = L.myInput.dilemma && L.myInput.dilemma.round === st.round;
+      step = round(1, "LE DILEMME");
+      if (!d) text = "Pas de dilemme pour toi cette manche. On attend les autres…";
+      else if (done) text = "Ton choix est scellé. Pendant que les autres décident, tu peux négocier (onglet Messages, diplomatie).";
+      else { text = "<b>À toi :</b> un dilemme t'attend. Lis-le, choisis une option, puis clique « Sceller ce choix »."; btn = `<button class="btn btn-red" data-guide="dil">Ouvrir le dilemme</button>`; mine = true; }
+      break;
+    }
+    case "orders": {
+      const sealed = L.myInput.orders && L.myInput.orders.round === st.round && L.myInput.orders.sealed;
+      step = round(2, "LES ORDRES");
+      if (sealed) text = "Ordres scellés. On attend les autres… (tu peux encore les modifier dans le panneau Actions)";
+      else {
+        const dv = myDice().filter((v) => v).length, n = L.ui.orders.length;
+        text = `<b>À toi :</b> donne un ordre à chacun de tes dés : clique un dé dans le panneau Actions, choisis Frapper, Marcher, Lever ou Intriguer, puis suis les indications. Ordres donnés : <b>${n} sur ${dv}</b>. Quand tu as fini, scelle tes ordres.`;
+        btn = `<button class="btn" data-guide="actions">Voir mes dés</button><button class="btn btn-red" data-guide="seal">Sceller mes ordres</button>`; mine = true;
+      }
+      break;
+    }
+    case "reveal": step = round(3, "RÉVÉLATION"); text = "Tous les ordres sont révélés en même temps. Regarde la carte et le récit en bas."; break;
+    case "interlude": step = `FIN DE LA MANCHE ${st.round}`; text = "Trois années passent… La chronique raconte ce qui s'est passé."; break;
+    case "end": step = "FIN DE LA PARTIE"; text = "La partie est terminée."; btn = `<button class="btn btn-red" data-guide="end">Voir les résultats</button>`; break;
+  }
+  el.className = `guide ${mine ? "" : "wait"}`;
+  const key = step + text + btn;
+  if (el.dataset.k !== key) {
+    el.dataset.k = key;
+    el.innerHTML = `<span class="g-step">${step}</span><span class="g-text">${text}</span>${btn}`;
+    if (mine && el.dataset.last !== st.phase + st.round) { el.dataset.last = st.phase + st.round; el.classList.add("mine"); }
+  }
+  el.querySelectorAll("[data-guide]").forEach((b) => (b.onclick = () => {
+    const g = b.dataset.guide;
+    if (g === "obj") { L.objClosed = false; render(); }
+    if (g === "dil") { L.dilemmaClosed = false; render(); }
+    if (g === "end") { L.endClosed = false; render(); }
+    if (g === "plauto") { setInput("placement", { ok: true }); A.play("seal"); render(); }
+    if (g === "plok") { const mineP = E.provincesOf(st, pid); const alloc = { ok: true }; mineP.forEach((id) => (alloc[id] = (L.ui.placement || {})[id] || 1)); setInput("placement", alloc); A.play("seal"); render(); }
+    if (g === "actions") { L.ui.tab = "panel"; render(); document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
+    if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
+  }));
 }
 const PHASE_LABEL = { objectives: "Objectifs secrets", draft: "Choix des provinces", placement: "Placement des armées", dilemma: "Le dilemme", orders: "Ordres secrets", reveal: "Révélation", interlude: "Chronique", end: "Fin de partie" };
 function renderTop() {
@@ -592,7 +669,7 @@ function panelOrders() {
   } else builder = builderStep(b);
   return { html: `<p class="ph">Tes dés d'ordres</p>${diceHtml}${builder}
     ${L.ui.orders.length ? `<p class="ph">Tes ordres</p><ul class="orderlist">${L.ui.orders.map((o, i) => `<li><span>${orderText(o)}</span>${sealed ? "" : `<button class="x" data-del="${i}" aria-label="Supprimer cet ordre">×</button>`}</li>`).join("")}</ul>` : ""}
-    ${sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">Sceller mes ordres</button><p class="hint">Les ordres non scellés comptent quand même à la fin du chrono.</p>`}
+    ${sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">Sceller mes ordres</button>${S().solo ? "" : '<p class="hint">Les ordres non scellés comptent quand même à la fin du chrono.</p>'}`}
     ${diplomacyHtml()}
     <div class="kv" style="margin-top:12px"><span><b>Or</b> ${pl.gold}${goldPlanned() ? ` (−${goldPlanned()} prévus)` : ""}</span></div>
     ${dicePreview()}`,
@@ -971,7 +1048,7 @@ function phaseTutos() {
 let lastTickSec = -1;
 setInterval(() => {
   const st = S();
-  if (st && st.phase !== "lobby" && st.deadline && !["end", "reveal", "interlude"].includes(st.phase)) {
+  if (st && st.phase !== "lobby" && st.deadline && !st.solo && !["end", "reveal", "interlude"].includes(st.phase)) {
     const ms = st.deadline - net.now();
     const t = fmtTime(ms);
     $("#tb-timer").textContent = t;
@@ -1041,6 +1118,7 @@ function hostStart(opts = {}) {
   if (players.length === 2) players.push({ pid: "bot-anglais", name: "Édouard", house: "anglais", isBot: true });
   const tutorial = !!opts.tutorial, randomDraft = !!opts.randomDraft;
   const { state, priv } = E.createGame({ players, tutorial, randomDraft, code: L.code }, Math.random);
+  state.solo = SOLO; // en solo : pas de chrono, on attend que tu valides
   state.seats = {};
   players.filter((p) => !p.isBot).forEach((p) => (state.seats[p.pid] = p.pid));
   state.deadline = net.now() + E.TIMES.objectives * 1000 * (tutorial ? 1.5 : 1) * SPEED;
@@ -1091,11 +1169,12 @@ function hostTick() {
       }
     }
   }
+  const late = () => !st.solo && now > st.deadline;
   const go = (phaseDeadlineSec) => { st.deadline = now + phaseDeadlineSec * 1000 * m; st.ready = {}; H.lastReady = ""; };
   try {
     switch (st.phase) {
       case "objectives":
-        if (allReady || now > st.deadline) {
+        if (allReady || late()) {
           E.finishObjectives(st, H.priv, I);
           E.startDraft(st, Math.random);
           if (E.draftDone(st)) { st.phase = "placement"; go(E.TIMES.placement); }
@@ -1110,7 +1189,7 @@ function hostTick() {
         else {
           const dp = I[cur] && I[cur].draftPick;
           if (dp && dp.idx === st.draft.idx && st.provinces[dp.prov] && !st.provinces[dp.prov].owner) prov = dp.prov;
-          else if (now > st.deadline) prov = E.autoPickProvince(st, cur, Math.random);
+          else if (late()) prov = E.autoPickProvince(st, cur, Math.random);
         }
         if (prov) {
           E.draftPick(st, cur, prov);
@@ -1121,7 +1200,7 @@ function hostTick() {
         break;
       }
       case "placement":
-        if (allReady || now > st.deadline) {
+        if (allReady || late()) {
           E.finishPlacement(st, I);
           E.startRound(st, H.priv, Math.random);
           go(E.TIMES.dilemma);
@@ -1129,14 +1208,14 @@ function hostTick() {
         }
         break;
       case "dilemma":
-        if (allReady || now > st.deadline) {
+        if (allReady || late()) {
           E.finishDilemmas(st, H.priv, I, Math.random);
           go(E.ordersTime(st.round));
           hostWrite(true); return;
         }
         break;
       case "orders":
-        if (allReady || now > st.deadline) {
+        if (allReady || late()) {
           E.resolveRound(st, H.priv, I, Math.random);
           st.revealStart = now + 600;
           st.deadline = now + 600 + st.reveal.steps.length * STEP_MS + 2600 * SPEED;

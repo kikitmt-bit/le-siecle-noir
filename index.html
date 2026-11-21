@@ -51,7 +51,7 @@
       <ul id="lobby-members" class="lobby-members"></ul>
       <div id="lobby-ai" class="hidden"><button id="btn-add-ai" class="btn btn-small" style="margin-top:10px">Ajouter un seigneur joué par l'ordinateur</button></div>
       <div id="lobby-host" class="lobby-host hidden">
-        <label class="check"><input type="checkbox" id="opt-tuto"> <span><b>Mode tuto</b> : des bulles expliquent chaque étape, pas d'attaque à la première manche, chronos plus longs</span></label>
+        <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Mode tuto</b> : des bulles expliquent chaque étape, pas d'attaque à la première manche, chronos plus longs</span></label>
         <label class="check"><input type="checkbox" id="opt-random"> <span><b>Provinces au hasard</b> : pas de choix des provinces, on commence tout de suite</span></label>
         <button id="btn-start" class="btn btn-red">Lancer la partie</button>
         <p class="hint">À deux joueurs sans ordinateur ajouté, la couronne d'Angleterre entre dans la partie.</p>
@@ -72,6 +72,7 @@
       </div>
     </header>
     <div id="playersbar" class="playersbar"></div>
+    <div id="guide" class="guide" role="status" aria-live="polite"></div>
     <div class="board">
       <div class="mapwrap" id="mapwrap">
         <svg id="map" viewBox="0 0 840 780" role="img" aria-label="Carte de France"></svg>
