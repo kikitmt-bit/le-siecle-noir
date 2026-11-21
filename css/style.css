@@ -424,3 +424,5 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
   .splash .sp-title { font-size: 46px; }
   .splash .sp-sub { font-size: 17px; padding: 0 16px; }
 }
+
+.resume-box { margin-top: 14px; }

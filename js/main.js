@@ -1211,7 +1211,7 @@ function endHtml() {
     <p class="ph" style="margin-top:14px">Les moments forts</p><div class="moments">${momentsForts().map((c) => `<div class="moment"><b>${c.year}</b>${c.title ? `« ${esc(c.title)} » — ${esc(c.choice || "")}. ` : ""}${esc(c.text)}</div>`).join("")}</div>
     <p class="ph">Les titres</p><div class="titles">${titles}</div>${palmaresHtml()}
     <p class="ph">La Grande Chronique</p><div class="chron-full">${(st.chronicle || []).map((e) => `<div class="log-entry ch-entry"><span class="yr">${e.year}</span>${entryHtml(e)}</div>`).join("")}</div>
-    <div class="row"><button class="btn grow" id="ov-close">Voir la carte</button>${isHost ? `<button class="btn btn-red grow" id="btn-replay">Nouvelle partie</button>` : ""}</div></div>`;
+    <div class="row"><button class="btn grow" id="ov-close">Voir la carte</button>${isHost ? `<button class="btn btn-red grow" id="btn-replay">Rejouer avec les mêmes</button>` : ""}<button class="btn grow" id="btn-home">Retour à l'accueil</button></div></div>`;
 }
 function bindOverlay() {
   const st = S();
@@ -1230,6 +1230,7 @@ function bindOverlay() {
     A.play("seal"); L.dilemmaClosed = true; render();
   };
   if ($("#btn-replay")) $("#btn-replay").onclick = () => hostReplay();
+  if ($("#btn-home")) $("#btn-home").onclick = () => { store.set("sn_room", ""); location.href = location.pathname + (new URLSearchParams(location.search).has("test") ? "?test" : ""); };
   if ($("#btn-next")) $("#btn-next").onclick = () => { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); };
 }
 function openModal(kind, data) {
@@ -1572,6 +1573,12 @@ function checkHostAlive() {
 // ---------------------------------------------------------------------
 $("#btn-mute").onclick = () => { A.unlock(); A.setMuted(!A.isMuted()); renderTop(); };
 $("#btn-rules").onclick = () => openModal("rules");
+function quitGame() {
+  if (!confirm("Quitter cette partie et revenir à l'accueil ?\n\nEn ligne, tu pourras la reprendre depuis l'accueil tant qu'elle existe.")) return;
+  try { speechSynthesis.cancel(); } catch {}
+  location.href = location.pathname + (new URLSearchParams(location.search).has("test") ? "?test" : "");
+}
+$("#btn-quit").onclick = quitGame;
 function narratorIcon() { $("#btn-narr").innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h6" stroke="currentColor" stroke-width="2"/>${narrator ? "" : '<path d="M3 21L21 3" stroke="#D94A3A" stroke-width="2.4"/>'}</svg>`; $("#btn-narr").title = narrator ? "Narrateur activé (lit la révélation à voix haute)" : "Narrateur coupé"; }
 $("#btn-narr").onclick = () => { narrator = !narrator; store.set("sn_narrator", narrator ? "1" : "0"); narratorIcon(); toast(narrator ? "Le narrateur lira la révélation à voix haute." : "Narrateur coupé.", "#D9A441", 2500); if (narrator) speak("Le narrateur est prêt."); };
 narratorIcon();
@@ -1595,10 +1602,14 @@ document.addEventListener("pointerdown", () => A.unlock(), { once: true });
   if (saved && store.get("sn_name") && !params.has("test")) {
     const meta = await net.roomExists(saved).catch(() => null);
     if (meta) {
-      // reconnexion automatique si on faisait déjà partie de ce salon
       const members = await new Promise((res) => { const u = net.listen(saved, `members/${net.uid}`, (m) => { u(); res(m); }); });
-      if (members) { await net.joinRoom(saved, { name: store.get("sn_name") }); enterRoom(saved); return; }
-    }
+      if (members) {
+        // lien partagé (?r=) : on rentre directement ; sinon on propose de reprendre, sans forcer
+        if (params.get("r")) { await net.joinRoom(saved, { name: store.get("sn_name") }); enterRoom(saved); return; }
+        $("#home-msg").insertAdjacentHTML("beforebegin", `<div class="resume-box"><button id="btn-resume" class="btn btn-block">Reprendre la partie en cours (${esc(saved)})</button></div>`);
+        $("#btn-resume").onclick = async () => { await net.joinRoom(saved, { name: store.get("sn_name") }); enterRoom(saved); };
+      }
+    } else store.set("sn_room", "");
   }
   show("home");
 })();
