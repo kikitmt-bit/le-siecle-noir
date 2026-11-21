@@ -270,3 +270,20 @@ input:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outl
 }
 @media (max-width: 420px) { .tb-left .tb-title { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+.solo-opts [aria-pressed="true"] { background: var(--ink); color: var(--parch); }
+.badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--red); color: #F6ECD6; font-size: 11px; line-height: 18px; }
+.msg-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.msg-item { padding: 8px 10px; border-radius: 4px; background: #F3E8D0; border: 1px solid #B9A27A; font-size: 15px; }
+.msg-item.sent { background: #E4D5B3; margin-left: 30px; }
+.msg-item b { font-family: var(--caps); font-size: 11px; display: block; margin-bottom: 2px; }
+.msg-input { width: 100%; font-size: 16px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.presets button { border: 1px solid var(--ink3); background: #F6ECD6; border-radius: 14px; padding: 6px 10px; font-size: 13px; cursor: pointer; text-align: left; }
+.die.hidden-die { border-style: dotted; border-color: var(--red); }
+.die .die-eye { position: absolute; top: -9px; right: -6px; background: var(--red); color: #F6ECD6; font-family: var(--caps); font-size: 9px; padding: 1px 4px; border-radius: 3px; }
+.qdie { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 2px dashed #8E1B1B; border-radius: 5px; font-family: var(--caps); font-weight: 700; color: #8E1B1B; background: #F6ECD6; }
+.rel { font-family: var(--caps); font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #1F3A5F; color: #F6ECD6; margin-left: 4px; }
+.rel.treaty { background: #2F5233; }
+.score-box { border: 2px solid var(--ink); border-radius: 4px; padding: 10px 12px; margin-bottom: 12px; background: #F6E3A8; }
+.score-box b { font-family: var(--caps); font-size: 22px; }

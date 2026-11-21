@@ -66,3 +66,6 @@ export function listenInput(code, seatUid, cb) {
   return () => off(r, "value", h);
 }
 export function setHost(code, newHost) { return update(R(code, "meta"), { host: newHost }); }
+export function updateMeta(code, data) { return update(R(code, "meta"), data); }
+export function sendWhisper(code, to, data) { return push(R(code, `whispers/${to}`), { ...data, t: serverTimestamp() }); }
+export function listenWhispers(code, who, cb) { return listen(code, `whispers/${who}`, (v) => cb(v || {})); }

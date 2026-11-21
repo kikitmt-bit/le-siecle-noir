@@ -2,6 +2,11 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
+import { DIL_COUR } from "./dil_cour.js";
+import { DIL_GUERRE } from "./dil_guerre.js";
+import { DIL_PACTES } from "./dil_pactes.js";
+import { DIL_INTRIGUES } from "./dil_intrigues.js";
+
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E1B1B", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
   morlanges: { name: "Morlanges", color: "#1F3A5F", light: "#4F74A3", charge: "fish", motto: "Patience et poison" },
@@ -41,7 +46,7 @@ export const TRAITS = {
 };
 export const TRAIT_POOL = ["Rusé", "Rusé", "Brillant stratège", "Sanguinaire", "Pieux", "Séduisant", "Robuste", "Robuste", "Paranoïaque", "Simple d'esprit", "Lâche", "Fragile", "Fragile", "Débauché", "Cruel"];
 
-export const HEALTH = ["Robuste", "Bonne santé", "Fragile", "Malade", "Mourant"];
+export const HEALTH = ["Vigoureux", "Bonne santé", "Fragile", "Malade", "Mourant"];
 export const DEATH_CHANCE = [0.01, 0.03, 0.09, 0.22, 0.5];
 
 // ---------------------------------------------------------------------
@@ -341,11 +346,11 @@ export const DILEMMAS = [
 // ÉVÉNEMENTS DU MONDE (tirés au hasard entre les manches)
 // ---------------------------------------------------------------------
 export const EVENTS = [
-  { id: "debarquement", weight: 3, title: "Débarquement anglais", chron: "Les Anglais débarquèrent {prov_en}." },
-  { id: "peste", weight: 3, title: "La peste revient", chron: "La peste noire réapparut {prov_en}." },
-  { id: "recolte", weight: 2, title: "Une bonne récolte", chron: "Les blés furent beaux cette année. Pour une fois, on mangea à sa faim." },
-  { id: "comete", weight: 2, title: "La comète", chron: "Une comète traversa le ciel. Les prêcheurs annoncèrent la fin du monde." },
-  { id: "hiver", weight: 2, title: "Le grand hiver", chron: "Le grand hiver gela les rivières. Les armées moururent de froid dans leurs camps." },
+  { id: "debarquement", weight: 4 }, { id: "peste", weight: 4 }, { id: "recolte", weight: 2 }, { id: "comete", weight: 2 }, { id: "hiver", weight: 2 },
+  { id: "famine", weight: 2 }, { id: "croisade", weight: 2 }, { id: "schisme", weight: 1 }, { id: "compagnie", weight: 2 }, { id: "foire", weight: 2 },
+  { id: "seisme", weight: 1 }, { id: "miracle", weight: 2 }, { id: "sauterelles", weight: 1 }, { id: "vin", weight: 2 }, { id: "vacance", weight: 2 },
+  { id: "inondation", weight: 1 }, { id: "tournoi", weight: 2 }, { id: "bourgeois", weight: 2 }, { id: "eclipse", weight: 1 }, { id: "fievre", weight: 2 },
+  { id: "cathares", weight: 1 }, { id: "monstre", weight: 1 }, { id: "templiers", weight: 1 }, { id: "espions", weight: 2 }, { id: "noces", weight: 2 },
 ];
 
 // ---------------------------------------------------------------------
@@ -366,10 +371,35 @@ export const OBJECTIVES = [
   { id: "mer", pts: 5, text: "Tenir au moins 5 provinces côtières à la fin" },
   { id: "riche", pts: 5, text: "Finir avec au moins 20 pièces d'or" },
   { id: "marie", pts: 5, text: "Marier au moins un de tes enfants à une maison rivale" },
+  { id: "dix", pts: 10, text: "Posséder au moins 10 provinces à la fin" },
+  { id: "reg_nord", pts: 6, text: "Tenir toute la région Nord à la fin (Flandre, Picardie, Île-de-France, Champagne)" },
+  { id: "reg_ouest", pts: 6, text: "Tenir toute la région Ouest à la fin (Normandie, Bretagne, Anjou)" },
+  { id: "reg_est", pts: 6, text: "Tenir toute la région Est à la fin (Lorraine, Alsace, Franche-Comté, Bourgogne)" },
+  { id: "reg_centre", pts: 6, text: "Tenir toute la région Centre à la fin (Orléanais, Berry, Limousin, Auvergne)" },
+  { id: "reg_sudouest", pts: 6, text: "Tenir toute la région Sud-Ouest à la fin (Poitou, Guyenne, Gascogne)" },
+  { id: "reg_sudest", pts: 8, text: "Tenir toute la région Sud-Est à la fin (Lyonnais, Savoie, Provence, Languedoc, Corse)" },
+  { id: "treves", pts: 5, text: "Signer au moins 2 trêves au cours de la partie" },
+  { id: "accusateur", pts: 8, text: "Démasquer au moins un crime anonyme par une accusation juste" },
+  { id: "batards", pts: 8, text: "Semer au moins 2 bâtards dans des familles rivales" },
+  { id: "vieux_roi", pts: 8, text: "Ton roi de départ est encore vivant à la fin" },
+  { id: "trois_rois", pts: 5, text: "Avoir eu au moins 3 souverains successifs (le chaos te sied)" },
+  { id: "invaincu", pts: 8, text: "Attaquer au moins 3 fois sans jamais perdre une bataille" },
+  { id: "genereux", pts: 5, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
+  { id: "pacifique", pts: 10, text: "N'attaquer personne de toute la partie" },
 ];
+DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES);
+// vérification des identifiants uniques
+{ const seen = new Set(); for (const d of DILEMMAS) { if (seen.has(d.id)) console.warn("Dilemme en double :", d.id); seen.add(d.id); } }
 
 // Provocations rapides
-export const TAUNTS = ["Tu me le paieras.", "Une alliance ?", "Traître !", "Je n'ai rien fait.", "Dieu est avec moi.", "Ta mère était une Anglaise.", "Pitié…", "Ha ! Ha ! Ha !"];
+export const TAUNTS = ["Tu me le paieras.", "Une alliance ?", "Traître !", "Je n'ai rien fait.", "Dieu est avec moi.", "Ta mère était une Anglaise.", "Pitié…", "Ha ! Ha ! Ha !", "Je sais ce que tu as fait.", "Mon dé caché est un 6.", "Regarde ta frontière.", "On se reverra en enfer."];
+export const WHISPERS = ["Je n'attaquerai pas tes terres cette manche.", "Attaquons ensemble le leader.", "Mon dé caché est énorme. Réfléchis bien.", "Je sais qui a versé le poison.", "Ton allié prépare quelque chose contre toi.", "Envoie-moi de l'or et je te laisse tranquille.", "Accepte mon mariage, tu ne le regretteras pas.", "Fais-moi confiance."];
+export const AI_REPLIES = {
+  conquerant: ["Tes paroles ne valent rien. Seules les épées comptent.", "Peut-être. Ou peut-être que je viendrai chercher ta capitale.", "Je n'ai pas d'amis. J'ai des voisins.", "Si tu es faible, je le saurai."],
+  intrigant: ["Bien sûr, très cher. Tu as ma parole… pour ce qu'elle vaut.", "Intéressant. Et que m'offres-tu en échange ?", "Je n'oublierai pas cette conversation. Je n'oublie jamais rien.", "Méfie-toi plutôt de ceux qui sourient trop."],
+  prudent: ["La paix me convient. Gardons nos frontières tranquilles.", "Je ne cherche pas la guerre, mais je ne la crains pas.", "Une trêve serait sage, pour nous deux.", "Je réfléchirai. Je réfléchis toujours avant d'agir."],
+  anglais: ["God save the King.", "La France sera anglaise.", "Nous débarquerons quand il nous plaira."],
+};
 
 export const TITLES = [
   { id: "boucher", name: "Le Boucher", desc: "le plus d'armées ennemies massacrées", stat: "armiesKilled" },

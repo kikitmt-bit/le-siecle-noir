@@ -26,6 +26,14 @@
         <input id="in-code" maxlength="4" placeholder="CODE" autocapitalize="characters" aria-label="Code de la partie">
         <button id="btn-join" class="btn">Rejoindre</button>
       </div>
+      <div class="or">ou</div>
+      <button id="btn-solo" class="btn btn-dark btn-block">Jouer seul contre l'ordinateur</button>
+      <div id="solo-opts" class="solo-opts hidden">
+        <p class="ph" style="margin-top:12px">Combien d'adversaires ?</p>
+        <div class="row" style="justify-content:center"><button class="btn btn-small" data-solo="2" aria-pressed="true">2 ordinateurs</button><button class="btn btn-small" data-solo="3" aria-pressed="false">3 ordinateurs</button></div>
+        <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Mode tuto</b> : des bulles expliquent chaque étape</span></label>
+        <button id="btn-solo-go" class="btn btn-red btn-block" style="margin-top:10px">Commencer la partie</button>
+      </div>
       <p id="home-msg" class="msg" role="status"></p>
       <p class="home-foot">De 2 à 4 joueurs · environ 30 minutes · à jouer sur PC, tablette ou téléphone</p>
     </div>
@@ -41,11 +49,12 @@
       <div id="house-pick" class="house-pick"></div>
       <h3>Seigneurs présents</h3>
       <ul id="lobby-members" class="lobby-members"></ul>
+      <div id="lobby-ai" class="hidden"><button id="btn-add-ai" class="btn btn-small" style="margin-top:10px">Ajouter un seigneur joué par l'ordinateur</button></div>
       <div id="lobby-host" class="lobby-host hidden">
         <label class="check"><input type="checkbox" id="opt-tuto"> <span><b>Mode tuto</b> : des bulles expliquent chaque étape, pas d'attaque à la première manche, chronos plus longs</span></label>
         <label class="check"><input type="checkbox" id="opt-random"> <span><b>Provinces au hasard</b> : pas de choix des provinces, on commence tout de suite</span></label>
         <button id="btn-start" class="btn btn-red">Lancer la partie</button>
-        <p class="hint">À deux joueurs, la couronne d'Angleterre entre dans la partie, jouée par l'ordinateur.</p>
+        <p class="hint">À deux joueurs sans ordinateur ajouté, la couronne d'Angleterre entre dans la partie.</p>
       </div>
       <p id="lobby-wait" class="hint hidden">En attente du lancement par l'hôte…</p>
     </div>
@@ -73,10 +82,12 @@
         <nav class="side-tabs" id="side-tabs">
           <button data-tab="panel" class="active">Actions</button>
           <button data-tab="house">Ma maison</button>
+          <button data-tab="msg" id="tab-msg-btn">Messages</button>
           <button data-tab="log">Chronique</button>
         </nav>
         <div id="tab-panel" class="tab"></div>
         <div id="tab-house" class="tab"></div>
+        <div id="tab-msg" class="tab"></div>
         <div id="tab-log" class="tab"></div>
       </aside>
     </div>

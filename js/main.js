@@ -1,12 +1,15 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as net from "./net.js";
+import * as remote from "./net.js";
+import * as local from "./localnet.js";
 import * as E from "./engine.js";
 import { PROVINCES, REGIONS } from "./map.js";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH } from "./content.js";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js";
 import * as A from "./audio.js";
 
+let net = remote; // en solo, on bascule sur le réseau local
+let SOLO = false;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
@@ -21,7 +24,7 @@ const L = {
   last: { round: -1, phase: null, revealIdx: -1, seq: -1, newsSeen: -1 },
   ui: resetUi(), modalOpen: null, endClosed: false, dilemmaClosed: false, objClosed: false, tutoQueue: [],
 };
-function resetUi() { return { tab: "panel", objPick: [], placement: null, dChoice: null, dTarget: null, orders: [], build: null, proposeTo: [], answers: {}, viewHouse: null }; }
+function resetUi() { return { tab: "panel", objPick: [], placement: null, dChoice: null, dTarget: null, orders: [], build: null, offers: [], answers: {}, gifts: [], giftTo: null, giftAmt: 1, accuse: null, accuseCrime: null, msgTo: null, viewHouse: null }; }
 const me = () => (L.state && L.state.seats && L.state.seats[net.uid]) || null;
 const S = () => L.state;
 const tm = () => (L.state && L.state.tutorial ? 1.5 : 1);
@@ -105,6 +108,9 @@ function initHome() {
   $("#btn-create").onclick = () => { A.unlock(); createGame(); };
   $("#btn-join").onclick = () => { A.unlock(); joinGame(($("#in-code").value || "").trim().toUpperCase()); };
   $("#in-code").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#btn-join").click(); });
+  $("#btn-solo").onclick = () => { A.unlock(); $("#solo-opts").classList.toggle("hidden"); };
+  document.querySelectorAll("[data-solo]").forEach((b) => (b.onclick = () => { document.querySelectorAll("[data-solo]").forEach((x) => x.setAttribute("aria-pressed", x === b)); }));
+  $("#btn-solo-go").onclick = () => { A.unlock(); soloStart(); };
 }
 function nameOk() {
   const n = ($("#in-name").value || "").trim();
@@ -112,6 +118,22 @@ function nameOk() {
   store.set("sn_name", n);
   return n;
 }
+async function soloStart() {
+  const name = nameOk(); if (!name) return;
+  const n = +(document.querySelector('[data-solo][aria-pressed="true"]') || { dataset: { solo: 2 } }).dataset.solo;
+  SOLO = true; net = local;
+  await net.init();
+  const code = "SOLO";
+  await net.createRoom(code, { name, house: "valcourt", joined: Date.now() });
+  const pers = ["conquerant", "intrigant", "prudent"].sort(() => Math.random() - 0.5);
+  const ais = {};
+  ["morlanges", "ravenel", "aubrac"].slice(0, n).forEach((h, i) => { ais[`ia-${h}`] = { name: aiName(pers[i % 3]), house: h, ai: pers[i % 3] }; });
+  await net.updateMeta(code, { ais });
+  enterRoom(code);
+  const tuto = $("#solo-tuto").checked;
+  const wait = setInterval(() => { if (H.active && L.meta && L.meta.ais) { clearInterval(wait); hostStart({ tutorial: tuto, randomDraft: false }); } }, 100);
+}
+function aiName(p) { return { conquerant: "Le Conquérant", intrigant: "L'Intrigant", prudent: "Le Prudent" }[p] || "Ordinateur"; }
 async function createGame() {
   const name = nameOk(); if (!name) return;
   $("#home-msg").textContent = "Fondation du royaume…";
@@ -131,8 +153,7 @@ async function joinGame(code, silent = false) {
 }
 function enterRoom(code) {
   L.code = code; L.joinedAt = Date.now();
-  store.set("sn_room", code);
-  history.replaceState(null, "", `${location.pathname}?r=${code}${new URLSearchParams(location.search).has("test") ? "&test" : ""}`);
+  if (!SOLO) { store.set("sn_room", code); history.replaceState(null, "", `${location.pathname}?r=${code}${new URLSearchParams(location.search).has("test") ? "&test" : ""}`); }
   L.unsub.forEach((u) => u());
   L.unsub = [
     net.listen(code, "meta", (m) => { L.meta = m || {}; onMeta(); }),
@@ -141,6 +162,7 @@ function enterRoom(code) {
     net.listen(code, `private/${net.uid}`, (p) => { L.priv = p; render(); }, true),
     net.listenInput(code, net.uid, (o) => { L.myInput = o || {}; }),
     net.listen(code, "taunts", (t) => onTaunts(t || {})),
+    net.listenWhispers(code, net.uid, (w) => onWhispers(w)),
   ];
   renderLobby();
 }
@@ -150,15 +172,26 @@ function renderLobby() {
   show("lobby");
   $("#lobby-code").textContent = L.code;
   const mine = L.members[net.uid] || {};
-  const taken = Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false).map(([, m]) => m.house);
+  const taken = [...Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false).map(([, m]) => m.house), ...Object.values((L.meta && L.meta.ais) || {}).map((a) => a.house)];
   $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${mine.house === h}" ${taken.includes(h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small></button>`).join("");
   $("#house-pick").querySelectorAll("button").forEach((b) => (b.onclick = () => { A.play("click"); net.updateMember(L.code, { house: b.dataset.h }); }));
   const list = Object.entries(L.members).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0));
-  $("#lobby-members").innerHTML = list.map(([u, m]) => `<li>${m.house ? shield(m.house, 24) : ""}<span>${esc(m.name || "?")}</span><span class="tag">${u === (L.meta && L.meta.host) ? "hôte" : ""}${m.online === false ? " · hors ligne" : ""}</span></li>`).join("");
+  const ais = (L.meta && L.meta.ais) || {};
   const isHost = L.meta && L.meta.host === net.uid;
+  $("#lobby-members").innerHTML = list.map(([u, m]) => `<li>${m.house ? shield(m.house, 24) : ""}<span>${esc(m.name || "?")}</span><span class="tag">${u === (L.meta && L.meta.host) ? "hôte" : ""}${m.online === false ? " · hors ligne" : ""}</span></li>`).join("")
+    + Object.entries(ais).map(([k, a]) => `<li>${shield(a.house, 24)}<span>${esc(a.name)}</span><span class="tag">ordinateur${isHost ? ` <button class="btn btn-small" data-rmai="${k}" style="min-height:30px">Retirer</button>` : ""}</span></li>`).join("");
+  document.querySelectorAll("[data-rmai]").forEach((b) => (b.onclick = () => { const a = { ...ais }; delete a[b.dataset.rmai]; net.updateMeta(L.code, { ais: a }); }));
+  $("#lobby-ai").classList.toggle("hidden", !isHost || list.filter(([, m]) => m.online !== false).length + Object.keys(ais).length >= 4);
+  $("#btn-add-ai").onclick = () => {
+    const usedH = new Set([...Object.values(L.members).map((m) => m.house), ...Object.values(ais).map((a) => a.house)]);
+    const h = HUMAN_HOUSES.find((x) => !usedH.has(x)); if (!h) return;
+    const usedP = Object.values(ais).map((a) => a.ai);
+    const pers = ["conquerant", "intrigant", "prudent"].find((x) => !usedP.includes(x)) || "intrigant";
+    net.updateMeta(L.code, { ais: { ...ais, [`ia-${h}`]: { name: aiName(pers), house: h, ai: pers } } });
+  };
   $("#lobby-host").classList.toggle("hidden", !isHost);
   $("#lobby-wait").classList.toggle("hidden", isHost);
-  const n = list.filter(([, m]) => m.online !== false).length;
+  const n = list.filter(([, m]) => m.online !== false).length + Object.keys(ais).length;
   $("#btn-start").disabled = n < 2;
   $("#btn-start").textContent = n < 2 ? "Il faut au moins 2 joueurs" : `Lancer la partie à ${Math.min(n, 4)}`;
 }
@@ -167,12 +200,13 @@ $("#btn-share").onclick = async () => {
   try { if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ title: "Le Siècle Noir", text: `Rejoins ma partie du Siècle Noir (code ${L.code})`, url }); else { await navigator.clipboard.writeText(url); toast("Lien copié. Envoie-le à tes amis."); } }
   catch { prompt("Copie ce lien :", url); }
 };
-$("#btn-start").onclick = () => { A.unlock(); hostStart(); };
+$("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto").checked, randomDraft: $("#opt-random").checked }); };
 
 // ---------------------------------------------------------------------
 // réception des données
 // ---------------------------------------------------------------------
 function onMeta() {
+  if (!L.state || L.state.phase === "lobby") renderLobby();
   if (L.meta && L.meta.host === net.uid && !H.active) becomeHost();
   if (L.meta && L.meta.host !== net.uid && H.active) stopHost();
   render();
@@ -191,6 +225,52 @@ function onTaunts(t) {
       A.play("taunt");
     }
   }
+}
+// ---- messages privés ----
+L.whispers = {}; L.unread = 0;
+function onWhispers(w) {
+  for (const [k, v] of Object.entries(w)) {
+    if (L.whispers[k]) continue;
+    L.whispers[k] = v;
+    if (!v.sent && (v.t || 0) > L.joinedAt - 2000) {
+      L.unread++;
+      toast(`<b>Message secret de ${esc(houseName(v.from))}</b><br>« ${esc(v.text)} »`, houseColor(v.from), 6000);
+      A.play("taunt");
+    }
+  }
+  if (L.state && L.state.phase !== "lobby") { renderMessages(); updateMsgBadge(); }
+}
+function updateMsgBadge() { const b = $("#tab-msg-btn"); if (b) b.innerHTML = `Messages${L.unread ? `<span class="badge">${L.unread}</span>` : ""}`; }
+function seatUidsOf(pid) { const st = S(); return Object.entries(st.seats || {}).filter(([, v]) => v === pid).map(([u]) => u); }
+function sendWhisper(to, text) {
+  const st = S(), from = me();
+  if (!from || !text.trim()) return;
+  text = text.trim().slice(0, 160);
+  for (const u of seatUidsOf(to)) net.sendWhisper(L.code, u, { from, to, text });
+  net.sendWhisper(L.code, net.uid, { from, to, text, sent: true });
+  const tp = st.players[to];
+  if (tp && tp.isBot) {
+    const pool = AI_REPLIES[tp.ai || "anglais"] || AI_REPLIES.anglais;
+    setTimeout(() => net.sendWhisper(L.code, net.uid, { from: to, to: from, text: pool[Math.floor(Math.random() * pool.length)] }), 1500 + Math.random() * 2500);
+  }
+  A.play("click");
+}
+function renderMessages() {
+  const st = S(), pid = me();
+  const el = $("#tab-msg");
+  if (!el || !st || !pid) return;
+  const others = st.order.filter((p) => p !== pid && st.players[p].house !== "anglais");
+  if (!L.ui.msgTo || !others.includes(L.ui.msgTo)) L.ui.msgTo = others[0] || null;
+  const list = Object.values(L.whispers).sort((a, b) => (b.t || 0) - (a.t || 0));
+  el.innerHTML = `<p class="ph">Messages secrets</p><p class="hint" style="margin-top:0">Seul le destinataire les lit. Promesses, menaces, mensonges : tout est permis.</p>
+    <div class="row wrap">${others.map((o) => `<button class="btn btn-small ${L.ui.msgTo === o ? "btn-dark" : ""}" data-msgto="${o}">${shield(st.players[o].house, 16)} ${esc(houseName(o))}</button>`).join("")}</div>
+    <div class="presets">${WHISPERS.map((w) => `<button data-preset="${esc(w)}">${esc(w)}</button>`).join("")}</div>
+    <div class="row"><input id="msg-in" class="msg-input grow" maxlength="160" placeholder="Ton message…" aria-label="Ton message"><button class="btn btn-red" id="msg-send">Envoyer</button></div>
+    <div class="msg-list">${list.length ? list.map((m) => `<div class="msg-item ${m.sent ? "sent" : ""}"><b style="color:${houseColor(m.sent ? m.to : m.from)}">${m.sent ? `À ${esc(houseName(m.to))}` : `De ${esc(houseName(m.from))}`}</b>${esc(m.text)}</div>`).join("") : '<p class="wait">Aucun message pour l\'instant.</p>'}</div>`;
+  el.querySelectorAll("[data-msgto]").forEach((b) => (b.onclick = () => { L.ui.msgTo = b.dataset.msgto; renderMessages(); }));
+  el.querySelectorAll("[data-preset]").forEach((b) => (b.onclick = () => { $("#msg-in").value = b.dataset.preset; }));
+  $("#msg-send").onclick = () => { if (L.ui.msgTo) { sendWhisper(L.ui.msgTo, $("#msg-in").value); $("#msg-in").value = ""; } };
+  $("#msg-in").onkeydown = (e) => { if (e.key === "Enter") $("#msg-send").click(); };
 }
 function onState(st) {
   const prev = L.state;
@@ -329,6 +409,9 @@ function render() {
   if (panel.bind) panel.bind();
   if (panel.arrows) arrows = panel.arrows;
   renderHouseTab(); renderLog();
+  if (L.ui.tab !== "msg" || !document.activeElement || document.activeElement.id !== "msg-in") renderMessages();
+  if (L.ui.tab === "msg") L.unread = 0;
+  updateMsgBadge();
   // carte : pendant la révélation, on montre l'état « avant » puis on applique les étapes
   if (st.phase === "reveal") updateMap(revealProvinces()); else updateMap(st.provinces);
   if (st.phase !== "reveal") drawArrows(arrows);
@@ -452,16 +535,21 @@ function panelDilemma() {
 }
 function dicePreview() {
   const st = S();
-  return `<div class="pbox"><p class="ph">Les dés de cette manche</p>${st.order.map((pid) => `<div class="row" style="margin-bottom:6px">${shield(st.players[pid].house, 18)}<span style="min-width:90px;font-family:var(--caps);font-size:12px">${esc(houseName(pid))}</span><span class="row" style="gap:4px">${st.players[pid].dice.map((v) => dieSvg(v, 26, true)).join("")}</span></div>`).join("")}<p class="hint">Tout le monde voit les dés de tout le monde. Un double donne un dé de 2 en plus.</p></div>`;
+  return `<div class="pbox"><p class="ph">Les dés de cette manche</p>${st.order.map((pid) => `<div class="row" style="margin-bottom:6px">${shield(st.players[pid].house, 18)}<span style="min-width:90px;font-family:var(--caps);font-size:12px">${esc(houseName(pid))}</span><span class="row" style="gap:4px">${(pid === me() ? myDice() : st.players[pid].dice).map((v, i) => (v ? dieSvg(v, 26, true) : '<span class="qdie" title="Dé caché">?</span>')).join("")}</span></div>`).join("")}<p class="hint">Chacun voit les dés des autres, sauf un dé caché par joueur. Un double donne un dé de 2 en plus.</p></div>`;
 }
 
 // ---- ordres ----
+function myDice() {
+  const st = S(), pl = st.players[me()];
+  const h = L.priv && L.priv.hidden;
+  return pl.dice.map((v, i) => (i === pl.hiddenIdx && h && h.round === st.round ? h.v : v));
+}
 function committed(provId, exceptIdx = -1) { return L.ui.orders.reduce((s, o, i) => s + (i !== exceptIdx && (o.type === "strike" || o.type === "march") && o.from === provId ? o.n : 0), 0); }
 function avail(provId) { const p = S().provinces[provId]; return p.armies - 1 - committed(provId); }
 function goldPlanned() { return L.ui.orders.reduce((s, o) => s + (o.type === "intrigue" ? E.COSTS[o.kind] || 0 : 0), 0); }
 function orderText(o) {
   const st = S();
-  const v = st.players[me()].dice[o.die];
+  const v = myDice()[o.die];
   if (o.type === "strike") { const prob = Math.round(E.winProb(o.n + v + E.attackMod(st, me()), E.defenseOf(st, o.to)) * 100); return `<b>Frapper</b> ${esc(PROVINCES[o.to].art)} depuis ${esc(PROVINCES[o.from].name)} avec ${o.n} armées <span class="pct">${prob} %</span>`; }
   if (o.type === "march") return `<b>Marcher</b> : ${o.n} armées de ${esc(PROVINCES[o.from].name)} vers ${esc(PROVINCES[o.to].name)}`;
   if (o.type === "levy") return `<b>Lever</b> ${E.levyAmount(v)} armées ${esc(PROVINCES[o.to].en)}`;
@@ -471,7 +559,7 @@ function orderText(o) {
     const prob = Math.round(E.intrigueProb(v, bonus, E.NEED[o.kind]) * 100);
     if (o.kind === "poison") { const p = st.families[o.target].members.find((m) => m.id === o.person); return `<b>Poison</b> sur ${esc(p ? E.personTitle(p) : "?")} (${esc(houseName(o.target))}) <span class="pct">${prob} %</span>`; }
     if (o.kind === "seduction") return `<b>Séduction</b> de la reine ${esc(E.deName(st, o.target))} <span class="pct">${prob} %</span>`;
-    if (o.kind === "bribe") return `<b>Corruption</b> de la garnison de ${esc(PROVINCES[o.prov].city)} <span class="pct">${prob} %</span>`;
+    if (o.kind === "bribe") return `<b>Corruption</b> de la garnison ${esc(E.deC(PROVINCES[o.prov].city))} <span class="pct">${prob} %</span>`;
   }
   return "";
 }
@@ -484,7 +572,8 @@ function panelOrders() {
   const usedDice = new Set(L.ui.orders.map((o) => o.die));
   const arrows = L.ui.orders.filter((o) => o.type === "strike" || o.type === "march").map((o) => ({ from: o.from, to: o.to, color: o.type === "strike" ? "#8E1B1B" : "#2B1D12", dashed: o.type === "march" }));
   const tag = { strike: "FRAPPER", march: "MARCHER", levy: "LEVER", intrigue: "INTRIGUE" };
-  const diceHtml = `<div class="dice-row">${pl.dice.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); return `<button class="die ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === pl.dice.length - 1 ? "extra" : ""} ${rollDiceAnim ? "rolling" : ""}" data-die="${i}" ${sealed ? "disabled" : ""} aria-label="Dé ${v}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${o ? `<span class="die-tag">${tag[o.type]}</span>` : ""}</button>`; }).join("")}</div>`;
+  const dv = myDice();
+  const diceHtml = `<div class="dice-row">${dv.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); const hid = i === pl.hiddenIdx; return `<button class="die ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === dv.length - 1 ? "extra" : ""} ${hid ? "hidden-die" : ""} ${rollDiceAnim ? "rolling" : ""}" data-die="${i}" ${sealed || !v ? "disabled" : ""} aria-label="Dé ${v}${hid ? ", caché aux autres" : ""}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${hid ? '<span class="die-eye">CACHÉ</span>' : ""}${o ? `<span class="die-tag">${tag[o.type]}</span>` : ""}</button>`; }).join("")}</div><p class="hint" style="margin-top:-4px">Le dé marqué CACHÉ, les autres ne le voient pas : à toi de bluffer.</p>`;
   if (rollDiceAnim) { rollDiceAnim = false; A.play("dice"); }
   let builder = "";
   if (sealed) {
@@ -492,7 +581,7 @@ function panelOrders() {
   } else if (!b) {
     builder = `<p class="ptext">${usedDice.size < pl.dice.length ? "Clique un dé pour lui donner un ordre." : "Tous tes dés ont un ordre."}</p>`;
   } else if (!b.type) {
-    const v = pl.dice[b.die];
+    const v = dv[b.die];
     const noStrike = st.tutorial && st.round === 1;
     builder = `<p class="ph">Dé de ${v} : que fais-tu ?</p><div class="actgrid">
       <button class="actbtn" data-act="strike" ${noStrike ? "disabled" : ""}><b>Frapper</b><span>${noStrike ? "Pas d'attaque à la manche 1 du tuto" : `Attaque une province voisine, +${v} en force`}</span></button>
@@ -511,7 +600,7 @@ function panelOrders() {
 }
 function builderStep(b) {
   const st = S(), pid = me(), pl = st.players[pid];
-  const v = pl.dice[b.die];
+  const v = myDice()[b.die];
   const mine = E.provincesOf(st, pid);
   const cancel = `<button class="btn btn-small" id="b-cancel">Annuler</button>`;
   if (b.type === "strike") {
@@ -587,7 +676,7 @@ function bindOrders(b, sealed) {
   const slider = $("#b-n");
   if (slider) slider.oninput = () => {
     b.n = +slider.value; $("#b-nv").textContent = b.n;
-    if ($("#b-pct")) { const st = S(); $("#b-pct").textContent = Math.round(E.winProb(b.n + st.players[me()].dice[b.die] + E.attackMod(st, me()), E.defenseOf(st, b.to)) * 100) + " %"; }
+    if ($("#b-pct")) { const st = S(); $("#b-pct").textContent = Math.round(E.winProb(b.n + myDice()[b.die] + E.attackMod(st, me()), E.defenseOf(st, b.to)) * 100) + " %"; }
   };
   if ($("#b-ok")) $("#b-ok").onclick = () => { L.ui.orders.push({ die: b.die, type: b.type, from: b.from, to: b.to, n: b.n }); L.ui.build = null; saveOrders(); A.play("click"); render(); };
   if ($("#btn-seal")) $("#btn-seal").onclick = () => { L.ui.build = null; saveOrders(true); A.play("seal"); render(); };
@@ -595,41 +684,76 @@ function bindOrders(b, sealed) {
   bindDiplomacy();
 }
 
-// ---- diplomatie (mariages) ----
+// ---- diplomatie : mariages, trêves, dons d'or, accusations ----
+function myOffers() { const st = S(); const o = L.myInput.offers; return o && o.round === st.round ? o.items || [] : []; }
+function myGifts() { const st = S(); const g = L.myInput.gifts; return g && g.round === st.round ? g.items || [] : []; }
 function diplomacyHtml() {
   const st = S(), pid = me();
-  const others = st.order.filter((p) => p !== pid && !st.players[p].isBot);
+  const others = st.order.filter((p) => p !== pid && st.players[p].house !== "anglais");
   if (!others.length) return "";
+  const pl = st.players[pid];
   const incoming = Object.entries(st.proposals || {}).filter(([, pr]) => pr.to === pid);
+  const offers = myOffers();
+  const gifts = myGifts();
   const myChild = E.marriageable(st, pid);
-  let h = `<div class="pbox"><p class="ph">Diplomatie : les mariages</p><p class="hint" style="margin-top:0">Un mariage unit deux maisons : +1 or par manche chacune, et attaquer sa belle-famille devient une trahison.</p>`;
+  let h = `<div class="pbox"><p class="ph">Diplomatie</p><p class="hint" style="margin-top:0">Mariage : alliance permanente (+1 or par manche). Trêve : 3 manches. Attaquer un allié ou rompre une trêve = trahison (−5 Prestige).</p>`;
   for (const [key, pr] of incoming) {
     const ans = L.ui.answers[key] ?? (L.myInput.answers || {})[key];
+    const kind = pr.kind || "marriage";
     const theirChild = E.marriageable(st, pr.from);
-    h += `<div class="proposal" style="margin:8px 0"><span class="grow"><b>${esc(houseName(pr.from))}</b> demande la main de ${esc(myChild ? E.personTitle(myChild) : "ton enfant")} pour ${esc(theirChild ? E.personTitle(theirChild) : "son enfant")}.</span>
-      ${ans === undefined ? `<button class="btn btn-small btn-red" data-ans="${key}" data-v="1">Accepter</button><button class="btn btn-small" data-ans="${key}" data-v="0">Refuser</button>` : `<i>${ans ? "Acceptée (noces à la révélation)" : "Refusée"}</i>`}</div>`;
+    const what = kind === "treaty" ? "propose une trêve de 3 manches" : `demande la main de ${esc(myChild ? E.personTitle(myChild) : "ton enfant")} pour ${esc(theirChild ? E.personTitle(theirChild) : "son enfant")}`;
+    h += `<div class="proposal" style="margin:8px 0"><span class="grow"><b>${esc(houseName(pr.from))}</b> ${what}.</span>
+      ${ans === undefined ? `<button class="btn btn-small btn-red" data-ans="${key}" data-v="1">Accepter</button><button class="btn btn-small" data-ans="${key}" data-v="0">Refuser</button>` : `<i>${ans ? "Accepté (effet à la révélation)" : "Refusé"}</i>`}</div>`;
   }
   for (const o of others) {
-    if (E.allied(st, pid, o)) { h += `<div class="row" style="margin:6px 0">${shield(st.players[o].house, 18)}<span>${esc(houseName(o))} : <b>alliée par mariage</b></span></div>`; continue; }
-    const asked = L.ui.proposeTo.includes(o) || ((L.myInput.propose || {}).round === st.round && (L.myInput.propose.to || []).includes(o));
-    const can = E.canPropose(st, pid, o);
-    h += `<div class="row" style="margin:6px 0">${shield(st.players[o].house, 18)}<span class="grow">${esc(houseName(o))}</span>${asked ? "<i>Demande envoyée</i>" : `<button class="btn btn-small" data-prop="${o}" ${can ? "" : "disabled"} title="${can ? "" : "Il faut un enfant à marier de chaque côté, et moins de 50 de Peur"}">Proposer un mariage</button>`}</div>`;
+    const al = E.allied(st, pid, o);
+    const tr = (st.treaties || []).find((t) => ((t.a === pid && t.b === o) || (t.b === pid && t.a === o)) && t.until >= st.round);
+    const askedM = offers.some((x) => x.to === o && x.kind === "marriage");
+    const askedT = offers.some((x) => x.to === o && x.kind === "treaty");
+    const gift = gifts.find((g) => g.to === o);
+    h += `<div style="margin:8px 0;padding-top:6px;border-top:1px solid #D9C7A0"><div class="row">${shield(st.players[o].house, 18)}<span class="grow">${esc(houseName(o))}${st.players[o].isBot ? " <i>(ordinateur)</i>" : ""}${al ? '<span class="rel">ALLIÉ</span>' : ""}${tr ? `<span class="rel treaty">TRÊVE → ${E.yearOf(tr.until)}</span>` : ""}</span></div>
+      <div class="row wrap" style="margin-top:6px">
+        ${al ? "" : askedM ? "<i>Mariage proposé</i>" : `<button class="btn btn-small" data-offer="marriage" data-to="${o}" ${E.canPropose(st, pid, o, "marriage") ? "" : "disabled"} title="Il faut un enfant à marier de chaque côté, et moins de 50 de Peur">Mariage</button>`}
+        ${al || tr ? "" : askedT ? "<i>Trêve proposée</i>" : `<button class="btn btn-small" data-offer="treaty" data-to="${o}">Trêve</button>`}
+        ${gift ? `<i>${gift.amount} or envoyés</i>` : `<button class="btn btn-small" data-giftto="${o}" ${pl.gold < 1 ? "disabled" : ""}>Envoyer de l'or</button>`}
+      </div>
+      ${L.ui.giftTo === o ? `<div class="row" style="margin-top:6px"><span class="stepper"><button data-gm="-1" aria-label="Moins">−</button><b>${L.ui.giftAmt}</b><button data-gm="1" aria-label="Plus">+</button></span><span class="grow">or</span><button class="btn btn-small btn-red" id="gift-ok">Envoyer</button></div>` : ""}</div>`;
   }
-  return h + `</div>`;
+  h += `</div>`;
+  // accusations
+  const uns = (st.unsolved || []);
+  if (uns.length) {
+    const acc = L.myInput.accuse && L.myInput.accuse.round === st.round ? L.myInput.accuse : null;
+    h += `<div class="pbox"><p class="ph">Crimes non élucidés</p><p class="hint" style="margin-top:0">Accuse la bonne maison : elle perd 4 Prestige et tu en gagnes 2. Accuse à tort : −2 pour toi. Une accusation par manche.</p>`;
+    for (const u of uns) {
+      h += `<div style="margin:8px 0"><p class="ptext" style="font-size:14px;margin:0 0 6px"><i>${esc(u.text)}</i></p>`;
+      if (acc) h += acc.crime === u.id ? `<i>Tu accuses ${esc(houseName(acc.target))}. Verdict à la révélation.</i>` : "";
+      else h += `<div class="row wrap">${st.order.filter((p) => p !== pid).map((p) => `<button class="btn btn-small" data-acc="${u.id}" data-tgt-acc="${p}">Accuser ${esc(houseName(p))}</button>`).join("")}</div>`;
+      h += `</div>`;
+    }
+    h += `</div>`;
+  }
+  return h;
 }
 function bindDiplomacy() {
-  document.querySelectorAll("[data-prop]").forEach((el) => (el.onclick = () => {
-    const st = S();
-    const prev = (L.myInput.propose || {}).round === st.round ? L.myInput.propose.to || [] : [];
-    L.ui.proposeTo = [...new Set([...prev, ...L.ui.proposeTo, el.dataset.prop])];
-    setInput("propose", { round: st.round, to: L.ui.proposeTo });
-    A.play("bells"); render();
+  const st = S();
+  document.querySelectorAll("[data-offer]").forEach((el) => (el.onclick = () => {
+    const items = [...myOffers(), { kind: el.dataset.offer, to: el.dataset.to }];
+    setInput("offers", { round: st.round, items });
+    A.play(el.dataset.offer === "marriage" ? "bells" : "seal"); render();
   }));
   document.querySelectorAll("[data-ans]").forEach((el) => (el.onclick = () => {
     L.ui.answers[el.dataset.ans] = el.dataset.v === "1";
     setInput("answers", { ...(L.myInput.answers || {}), ...L.ui.answers });
     render();
   }));
+  document.querySelectorAll("[data-giftto]").forEach((el) => (el.onclick = () => { L.ui.giftTo = el.dataset.giftto; L.ui.giftAmt = 1; render(); }));
+  document.querySelectorAll("[data-gm]").forEach((el) => (el.onclick = () => { const max = st.players[me()].gold; L.ui.giftAmt = Math.max(1, Math.min(max, L.ui.giftAmt + +el.dataset.gm)); render(); }));
+  if ($("#gift-ok")) $("#gift-ok").onclick = () => {
+    const items = [...myGifts().filter((g) => g.to !== L.ui.giftTo), { to: L.ui.giftTo, amount: L.ui.giftAmt }];
+    setInput("gifts", { round: st.round, items }); L.ui.giftTo = null; A.play("coins"); render();
+  };
+  document.querySelectorAll("[data-acc]").forEach((el) => (el.onclick = () => { setInput("accuse", { round: st.round, crime: el.dataset.acc, target: el.dataset.tgtAcc }); A.play("seal"); render(); }));
 }
 
 // ---- révélation ----
@@ -656,7 +780,7 @@ function tickReveal() {
   L.last.revealIdx = idx;
   if (idx < 0) { $("#banner").classList.add("hidden"); updateMap(st.revealFrom); return; }
   const s = st.reveal.steps[idx];
-  const label = { dilemma: "DÉCISION", battle: "BATAILLE", death: "MORT", birth: "NAISSANCE", intrigue: "INTRIGUE", bribe: "CORRUPTION", move: "MOUVEMENTS", marriage: "NOCES", betrayal: "TRAHISON", claim: "REVENDICATION", exile: "EXIL", plague: "PESTE", event: "ÉVÉNEMENT", revolt: "JACQUERIE", text: "CHRONIQUE" }[s.kind] || "CHRONIQUE";
+  const label = { dilemma: "DÉCISION", battle: "BATAILLE", death: "MORT", birth: "NAISSANCE", intrigue: "INTRIGUE", bribe: "CORRUPTION", move: "MOUVEMENTS", marriage: "NOCES", betrayal: "TRAHISON", claim: "REVENDICATION", exile: "EXIL", plague: "PESTE", event: "ÉVÉNEMENT", revolt: "JACQUERIE", text: "CHRONIQUE", treaty: "TRÊVE", gift: "OR" }[s.kind] || "CHRONIQUE";
   $("#banner").innerHTML = `<b>${label}</b>${esc(s.text)}`;
   $("#banner").classList.remove("hidden");
   $("#banner").style.animation = "none"; void $("#banner").offsetWidth; $("#banner").style.animation = "";
@@ -675,6 +799,8 @@ function tickReveal() {
   else if (s.kind === "claim") A.play("horn");
   else if (s.kind === "move") A.play("drum");
   else if (s.kind === "exile") A.play("knell");
+  else if (s.kind === "treaty") A.play("seal");
+  else if (s.kind === "gift") A.play("coins");
   else A.play("click");
   $("#tab-panel").innerHTML = panelReveal().html;
 }
@@ -705,7 +831,11 @@ function houseHtml(pid, full) {
       ${m.alive ? `<div class="chips" style="margin-top:4px"><span class="chip ${tr && tr.good ? "good" : "bad"}" title="${esc(tr ? tr.desc : "")}">${esc(m.trait)}</span>${["king", "queen", "widow"].includes(m.role) || m.health >= 2 ? `<span class="chip ${m.health >= 3 ? "bad" : ""}">${HEALTH[m.health]}</span>` : ""}${m.bastard && !m.legit && pid === me() ? '<span class="chip gold">Bâtard</span>' : ""}${m.bastard && m.legit ? '<span class="chip gold">Bâtard légitimé</span>' : ""}${spouse ? `<span class="chip blue">Marié${m.sex === "f" ? "e" : ""} à ${esc(spouse.name)} (${esc(houseName(m.spouse.pid))})</span>` : ""}</div>` : ""}</div>`;
   }).join("");
   const myObj = pid === me() && L.priv && L.priv.objectives ? L.priv.objectives : [];
+  const est = pid === me() ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null;
+  const spied = pid !== me() && L.priv && L.priv.spied && L.priv.spied.target === pid ? L.priv.spied.objectives : null;
   return `<div class="house-head">${shield(p.house, 44)}<div><div class="hn">Maison ${esc(h.name)}</div><div class="hm">« ${esc(h.motto)} » · ${esc(p.name)}${p.isBot ? " (ordinateur)" : ""}</div></div></div>
+    ${est ? `<div class="score-box"><span class="ph" style="margin:0">Score estimé si la partie finissait maintenant</span><br><b>${est.total}</b> points <span class="hint">(Prestige ${est.prestige} + provinces ${est.provinces} + régions ${est.regions} + objectifs ${est.objectives} + famille ${est.family})</span></div>` : ""}
+    ${spied ? `<div class="pbox"><p class="ph red">Objectifs secrets (volés par tes espions)</p>${spied.map((oid) => `<p class="ptext" style="margin:2px 0;font-size:14px">• ${esc((OBJECTIVES.find((o) => o.id === oid) || {}).text || "")}</p>`).join("")}</div>` : ""}
     <div class="kv"><span><b>Or</b> ${p.gold}</span><span><b>Prestige</b> ${hide ? "?" : p.prestige}</span><span><b>Provinces</b> ${E.provincesOf(st, pid).length}</span><span><b>Régions</b> ${E.regionsOf(st, pid).length}</span></div>
     <div class="stat-row"><div class="stat"><div class="stat-l"><span>Colère du peuple</span><span>${p.colere}</span></div><div class="gauge"><div style="width:${p.colere}%;background:#8E1B1B"></div></div></div><div class="stat"><div class="stat-l"><span>Peur</span><span>${p.peur}</span></div><div class="gauge"><div style="width:${p.peur}%;background:#2B1D12"></div></div></div></div>
     <p class="hint" style="margin:-4px 0 12px">Colère à 80 : une province se révolte. Peur : +1 en défense tous les 25 points, mais à 50 plus personne n'épouse tes enfants.</p>
@@ -812,7 +942,7 @@ function openModal(kind) {
     <h3>Une manche</h3><ul><li><b>Revenus</b> : 1 or par province, 2 armées dans ta capitale, bonus de régions.</li><li><b>Dilemme</b> secret (parfois avec un autre joueur).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (recrute 2 à 4 armées), Intriguer (poison, séduction, corruption).</li><li><b>Révélation</b> : dilemmes, intrigues, mouvements, puis batailles.</li></ul>
     <h3>Batailles</h3><p>Force = armées + bonus + un petit dé (0 à 2). Le défenseur gagne les égalités. Le vainqueur perd la moitié des armées adverses. Les survivants du défenseur rentrent à sa capitale. Perdre sa capitale : −5 Prestige, +20 Colère, un tiers de l'or pillé.</p>
     <h3>Dynastie</h3><p>Chaque manche = 3 ans. Les rois vieillissent et meurent. L'aîné hérite (les fils d'abord). Sans héritier : guerre civile. Un bâtard semé chez l'ennemi te permet de revendiquer une province à la mort de son roi.</p>
-    <h3>Mariages</h3><p>+1 or par manche pour chaque maison. Attaquer sa belle-famille = trahison (−5 Prestige).</p>
+    <h3>Bluff et diplomatie</h3><ul><li><b>Dé caché</b> : chaque joueur a un dé que les autres ne voient pas.</li><li><b>Mariage</b> : alliance permanente, +1 or par manche. <b>Trêve</b> : 3 manches. Attaquer un allié ou rompre une trêve = trahison (−5 Prestige).</li><li><b>Or</b> : tu peux envoyer de l'or à qui tu veux (pot-de-vin, rançon, promesse).</li><li><b>Crimes anonymes</b> : un poison réussi ou un coup bas reste anonyme. Accuse la bonne maison (+2 / elle −4), ou passe pour un calomniateur (−2).</li><li><b>Messages secrets</b> : onglet Messages, lus seulement par le destinataire.</li></ul>
     <h3>Jauges</h3><p>Colère à 80 : une province se révolte. Peur : +1 en défense tous les 25 points, mais à 50 plus aucun mariage.</p>
     <h3>Le favori</h3><p>Le joueur en tête porte la couronne : battre ses armées rapporte +2 Prestige. Dernière manche : le Couronnement, conquêtes à 3 Prestige et scores cachés.</p>
     <button class="btn btn-block" id="md-close">Fermer</button></div>`;
@@ -827,8 +957,8 @@ function phaseTutos() {
     objectives: ["Objectifs secrets", "Tu tires 3 objectifs, garde-en 2. Ils rapportent des points à la fin et personne d'autre ne les voit."],
     draft: ["Le choix des provinces", "Chacun choisit une province à tour de rôle. <b>Ta première province devient ta capitale.</b> Regroupe tes terres et vise une région entière : elle rapporte des armées et du Prestige à chaque manche."],
     placement: ["Le placement", "Répartis 12 armées sur tes provinces. Clique une province pour y ajouter une armée. Renforce celles qui touchent tes voisins."],
-    dilemma: ["Le dilemme", "Chaque manche commence par un dilemme secret. Il n'y a jamais de bon choix. Certains dilemmes impliquent un autre joueur, qui choisit en même temps que toi. Tu peux aussi proposer des mariages pendant cette phase."],
-    orders: ["Les dés d'ordres", "Clique un dé, puis choisis un ordre : <b>Frapper</b> (attaque, le dé s'ajoute à ta force), <b>Marcher</b>, <b>Lever</b> (recruter) ou <b>Intriguer</b>. Tout le monde voit les dés de tout le monde. Quand tu as fini, scelle tes ordres. En mode tuto, pas d'attaque à la manche 1."],
+    dilemma: ["Le dilemme", "Chaque manche commence par un dilemme secret. Il n'y a jamais de bon choix. Certains dilemmes impliquent un autre joueur, qui choisit en même temps que toi. Pendant cette phase, tu peux aussi négocier : mariages, trêves, or, et messages secrets (onglet Messages)."],
+    orders: ["Les dés d'ordres", "Clique un dé, puis choisis un ordre : <b>Frapper</b> (attaque, le dé s'ajoute à ta force), <b>Marcher</b>, <b>Lever</b> (recruter) ou <b>Intriguer</b>. Tout le monde voit tes dés, sauf ton <b>dé caché</b> : profites-en pour bluffer. Quand tu as fini, scelle tes ordres. En mode tuto, pas d'attaque à la manche 1."],
     reveal: ["La révélation", "Tous les ordres sont révélés en même temps : décisions des dilemmes, intrigues, mouvements, puis batailles. Suis le récit en bas de la carte."],
     interlude: ["La chronique", "Entre deux manches, 3 ans passent : les rois vieillissent, des enfants naissent, d'autres meurent. Ta famille est dans l'onglet « Ma maison »."],
   };
@@ -896,18 +1026,20 @@ function hostWrite(privToo = false) {
   net.writeState(L.code, H.state).catch((e) => console.error("écriture état", e));
   if (privToo) for (const [u, p] of Object.entries(H.state.seats || {})) net.writePrivate(L.code, u, H.priv[p] || {}).catch((e) => console.error(e));
 }
-function hostStart() {
+function hostStart(opts = {}) {
   if (!(L.meta && L.meta.host === net.uid)) return;
   const list = Object.entries(L.members).filter(([, m]) => m.name && m.online !== false).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0)).slice(0, 4);
-  if (list.length < 2) return;
-  const used = new Set();
+  const ais = Object.entries((L.meta && L.meta.ais) || {});
+  if (list.length + ais.length < 2) return;
+  const used = new Set(ais.map(([, a]) => a.house));
   const players = list.map(([u, m]) => {
     let house = m.house && !used.has(m.house) ? m.house : HUMAN_HOUSES.find((h) => !used.has(h));
     used.add(house);
     return { pid: u, name: m.name, house };
   });
+  for (const [k, a] of ais) if (players.length < 4) players.push({ pid: k, name: a.name, house: a.house, isBot: true, ai: a.ai });
   if (players.length === 2) players.push({ pid: "bot-anglais", name: "Édouard", house: "anglais", isBot: true });
-  const tutorial = $("#opt-tuto").checked, randomDraft = $("#opt-random").checked;
+  const tutorial = !!opts.tutorial, randomDraft = !!opts.randomDraft;
   const { state, priv } = E.createGame({ players, tutorial, randomDraft, code: L.code }, Math.random);
   state.seats = {};
   players.filter((p) => !p.isBot).forEach((p) => (state.seats[p.pid] = p.pid));
@@ -951,9 +1083,12 @@ function hostTick() {
   if (st.phase === "dilemma" || st.phase === "orders") {
     st.proposals = st.proposals || {};
     for (const p of humans) {
-      const pr = I[p] && I[p].propose;
-      if (!pr || pr.round !== st.round) continue;
-      for (const to of pr.to || []) { const key = `${p}__${to}`; if (!st.proposals[key] && E.canPropose(st, p, to)) { st.proposals[key] = { from: p, to }; changed = true; } }
+      const of = I[p] && I[p].offers;
+      if (!of || of.round !== st.round) continue;
+      for (const it of of.items || []) {
+        const key = `${it.kind}:${p}__${it.to}`;
+        if (!st.proposals[key] && E.canPropose(st, p, it.to, it.kind)) { st.proposals[key] = { kind: it.kind, from: p, to: it.to }; changed = true; }
+      }
     }
   }
   const go = (phaseDeadlineSec) => { st.deadline = now + phaseDeadlineSec * 1000 * m; st.ready = {}; H.lastReady = ""; };
@@ -996,7 +1131,7 @@ function hostTick() {
       case "dilemma":
         if (allReady || now > st.deadline) {
           E.finishDilemmas(st, H.priv, I, Math.random);
-          go(E.TIMES.orders);
+          go(E.ordersTime(st.round));
           hostWrite(true); return;
         }
         break;
