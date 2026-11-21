@@ -103,6 +103,7 @@ function renderTuto() {
 // ---------------------------------------------------------------------
 function initHome() {
   $("#home-crest").innerHTML = HUMAN_HOUSES.map((h) => shield(h, 34)).join("");
+  const ph = palmaresHtml(); if (ph) $("#home-msg").insertAdjacentHTML("afterend", ph);
   $("#in-name").value = store.get("sn_name") || "";
   const params = new URLSearchParams(location.search);
   const r = (params.get("r") || "").toUpperCase();
@@ -309,16 +310,71 @@ function onState(st) {
   if (st.phase !== L.last.phase) {
     if (st.phase === "orders") restoreOrders();
     if (st.phase === "interlude") { A.play("bell"); L.modalOpen = null; }
-    if (st.phase === "end") { A.play("fanfare"); L.endClosed = false; }
+    if (st.phase === "end") { A.play("fanfare"); L.endClosed = false; recordPalmares(st); }
     if (st.phase === "objectives") { L.objClosed = false; if (me() && (st.tutorial || !store.get("sn_intro_seen"))) { store.set("sn_intro_seen", "1"); queueModal("intro", 0); } }
     if (st.phase === "dilemma") { L.dilemmaClosed = false; playNewsSounds(st); }
     if (st.phase === "reveal") L.last.revealIdx = -1;
     if (st.phase === "draft") A.play("drum");
   }
+  if (st.phase !== L.last.phase || st.round !== L.last.round) splash(st);
+  if (st.phase !== L.last.phase && ["orders", "placement", "draft"].includes(st.phase)) L.ui.tab = "panel";
+  if (prev && prev.leader !== st.leader && st.leader && st.round > 1 && st.round < st.maxRounds && ["dilemma", "interlude"].includes(st.phase)) {
+    setTimeout(() => { toast(`${ICON.prestige}<b>La couronne passe à ${esc(houseName(st.leader))}</b>${st.leader === me() ? " : c'est toi ! Tout le monde va vouloir te faire tomber." : ". Battre ses armées rapporte 2 Prestige."}`, "#D9A441", 6000); A.play("horn"); }, 2400);
+  }
   L.last.round = st.round; L.last.phase = st.phase;
   render();
 }
 let rollDiceAnim = false;
+// ---- écrans d'annonce animés ----
+function splash(st) {
+  if (!L.lastSplash) L.lastSplash = "";
+  const key = st.phase + st.round;
+  if (L.lastSplash === key) return;
+  L.lastSplash = key;
+  const N = st.round;
+  const D = {
+    objectives: ["PRÉPARATIFS", "Tes ambitions", "Choisis 2 objectifs secrets. Personne d'autre ne les connaît."],
+    draft: ["PRÉPARATIFS", "Le partage de la France", "Chacun choisit ses provinces à tour de rôle. La première sera ta capitale."],
+    placement: ["PRÉPARATIFS", "Aux armes", "Répartis tes 12 armées sur tes provinces."],
+    dilemma: [`MANCHE ${N} SUR ${st.maxRounds}${N === st.maxRounds ? " · LE COURONNEMENT" : ""}`, "Le dilemme", "Une décision secrète. Aucune n'est bonne. Négociez à voix haute si vous osez."],
+    orders: [`MANCHE ${N} · ÉTAPE 2`, "Les ordres", "Un ordre par dé. Bluffez, promettez, trahissez : tout se révèle en même temps."],
+    interlude: [`FIN DE LA MANCHE ${N}`, `An ${E.yearOf(N)}`, "Trois années ont passé."],
+    end: ["FIN DE LA PARTIE", "Le Couronnement", ""],
+  };
+  if (st.phase === "reveal") return countdown(st);
+  const d = D[st.phase]; if (!d) return;
+  document.querySelectorAll(".splash").forEach((x) => x.remove());
+  const el = document.createElement("div");
+  el.className = "splash";
+  el.innerHTML = `<div class="sp-card"><div class="sp-kick">${d[0]}</div><div class="sp-title">${d[1]}</div>${d[2] ? `<div class="sp-sub">${d[2]}</div>` : ""}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2300);
+}
+function countdown(st) {
+  document.querySelectorAll(".splash").forEach((x) => x.remove());
+  const el = document.createElement("div");
+  el.className = "splash"; el.style.animationDuration = "2.6s";
+  el.innerHTML = `<div class="sp-card" style="animation-duration:2.6s"><div class="sp-kick">LES SCEAUX SE BRISENT</div><div class="sp-count">3</div><div class="sp-sub">Révélation des choix de chacun…</div></div>`;
+  document.body.appendChild(el);
+  const c = el.querySelector(".sp-count");
+  A.play("drum");
+  setTimeout(() => { c.textContent = "2"; c.style.animation = "none"; void c.offsetWidth; c.style.animation = ""; }, 800);
+  setTimeout(() => { c.textContent = "1"; c.style.animation = "none"; void c.offsetWidth; c.style.animation = ""; }, 1600);
+  setTimeout(() => el.remove(), 2600);
+}
+// ---- narrateur vocal (optionnel) ----
+let narrator = store.get("sn_narrator") === "1";
+function speak(text) {
+  if (!narrator || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[«»]/g, ""));
+    u.lang = "fr-FR"; u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find((x) => /^fr/i.test(x.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
+}
 function playNewsSounds(st) {
   const kinds = new Set((st.news || []).map((n) => n.kind));
   if (kinds.has("death")) setTimeout(() => A.play("knell"), 400);
@@ -450,8 +506,9 @@ function renderGuide() {
   const st = S(), pid = me(), el = $("#guide");
   if (!el) return;
   let step = "", text = "", btn = "", mine = false;
-  const prep = (n, label) => `PRÉPARATIFS · ÉTAPE ${n} SUR 3 · ${label}`;
-  const round = (n, label) => `MANCHE ${st.round} SUR ${st.maxRounds} · ${n}/3 · ${label}`;
+  let stage = -1, prepStage = -1;
+  const prep = (n, label) => { prepStage = n - 1; return label; };
+  const round = (n, label) => { stage = n - 1; return label; };
   if (!pid) { step = "SPECTATEUR"; text = "Tu regardes la partie."; }
   else switch (st.phase) {
     case "objectives": {
@@ -515,18 +572,23 @@ function renderGuide() {
   }
   const waiting = !mine && ["objectives", "draft", "placement", "dilemma", "orders", "interlude"].includes(st.phase);
   if (waiting && H.active && !st.solo && (st.timer === "none" || !st.timer)) btn += `<button class="btn btn-small" data-guide="force" title="Passer à la suite sans attendre les retardataires">Forcer la suite</button>`;
+  L.hudScore = "";
   if (pid && st.round > 0) {
     const est = E.estimateScore(st, { [pid]: L.priv || {} }, pid);
     const hide = st.round === st.maxRounds && st.phase !== "end";
     const all = st.order.map((p) => ({ p, v: p === pid ? est.total : E.estimateScore(st, {}, p).total })).sort((a, b) => b.v - a.v);
     const rank = all.findIndex((x) => x.p === pid) + 1;
-    btn += `<button class="g-score" data-guide="score" title="Comment est calculé le score">${hide ? `${est.total} pts` : `${rank}${rank === 1 ? "er" : "e"} sur ${st.order.length} · ${est.total} pts`}</button>`;
+    L.hudScore = `<button class="g-score" data-guide="score" title="Comment est calculé le score">${ICON.prestige}${hide ? `${est.total} pts` : `<b>${rank}${rank === 1 ? "er" : "e"}</b> sur ${st.order.length} · ${est.total} pts`}</button>`;
   }
   el.className = `guide ${mine ? "" : "wait"}`;
   const key = step + text + btn;
   if (el.dataset.k !== key) {
     el.dataset.k = key;
-    el.innerHTML = `<span class="g-step">${step}</span><span class="g-text">${text}</span>${btn}`;
+    const track = st.round > 0 ? `<div class="hud-track" title="Les 10 manches">${Array.from({ length: st.maxRounds }, (_, i) => `<span class="${i + 1 < st.round ? "past" : i + 1 === st.round ? "now" : ""} ${i + 1 === st.maxRounds ? "last" : ""}">${i + 1 === st.maxRounds ? "♛" : i + 1}</span>`).join("")}</div>` : `<div class="hud-track prep"><span class="now">Préparatifs</span></div>`;
+    const stages = st.round > 0 ? ["Dilemme", "Ordres", "Révélation"] : ["Objectifs", "Provinces", "Armées"];
+    const cur = st.round > 0 ? stage : prepStage;
+    const stepper = `<div class="hud-steps">${stages.map((n, i) => `<span class="${i < cur ? "done" : i === cur ? "cur" : ""}">${i + 1}. ${n}</span>`).join('<i>›</i>')}</div>`;
+    el.innerHTML = `<div class="hud-left">${track}${stepper}</div><div class="hud-main"><span class="g-text">${text}</span><span class="hud-btns">${btn}</span></div><div class="hud-right">${L.hudScore || ""}<span class="hud-goal">But : avoir le plus de points après 10 manches</span></div>`;
     if (mine && el.dataset.last !== st.phase + st.round) { el.dataset.last = st.phase + st.round; el.classList.add("mine"); }
   }
   el.querySelectorAll("[data-guide]").forEach((b) => (b.onclick = () => {
@@ -557,7 +619,10 @@ function renderPlayers() {
   const st = S();
   const hide = st.round === st.maxRounds && st.phase !== "end";
   const meP = me();
-  $("#playersbar").innerHTML = st.order.map((pid) => {
+  const pub = (pid) => E.estimateScore(st, {}, pid).total;
+  const order = st.round > 0 && !hide ? st.order.slice().sort((a, b) => pub(b) - pub(a)) : st.order;
+  const top = Math.max(1, ...st.order.map(pub));
+  $("#playersbar").innerHTML = order.map((pid, rank) => {
     const p = st.players[pid];
     const seatUids = Object.entries(st.seats || {}).filter(([, v]) => v === pid).map(([u]) => u);
     const online = p.isBot || seatUids.some((u) => L.members[u] && L.members[u].online !== false);
@@ -568,9 +633,9 @@ function renderPlayers() {
     const rel = meP && pid !== meP ? (E.allied(st, meP, pid) ? '<span class="rel">ALLIÉ</span>' : E.bound(st, meP, pid) ? '<span class="rel treaty">TRÊVE</span>' : "") : "";
     return `<button class="pchip ${pid === meP ? "me" : ""}" data-pid="${pid}" aria-label="Voir la maison ${esc(HOUSES[p.house].name)}">
       ${st.leader === pid && !hide ? '<svg class="crown" width="22" height="14" viewBox="-12 -8 24 15" aria-hidden="true"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.2"/></svg>' : ""}
-      ${shield(p.house, 26)}
+      ${st.round > 0 && !hide ? `<span class="rankno">${rank + 1}</span>` : ""}${shield(p.house, 26)}
       <span><span class="pc-name">${pid === meP ? "Toi · " : ""}${esc(HOUSES[p.house].name)}${p.isBot ? " · ordi" : ""}${rel}</span>
-      <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "interlude"].includes(st.phase) ? ' <span class="ready">prêt ✓</span>' : ""}</span></span>
+      <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "interlude"].includes(st.phase) ? ' <span class="ready">prêt ✓</span>' : ""}</span>${st.round > 0 && !hide ? `<span class="racebar" title="Score estimé (sans les objectifs secrets) : ${pub(pid)}"><div style="width:${Math.max(4, (pub(pid) / top) * 100)}%;background:${HOUSES[p.house].color}"></div></span>` : ""}</span>
     </button>`;
   }).join("");
   $("#playersbar").querySelectorAll(".pchip").forEach((b) => (b.onclick = () => { L.ui.viewHouse = b.dataset.pid; openModal("house"); }));
@@ -953,7 +1018,14 @@ function tickReveal() {
   if (idx < 0) { $("#banner").classList.add("hidden"); updateMap(st.revealFrom); return; }
   const s = st.reveal.steps[idx];
   const label = { dilemma: "DÉCISION", battle: "BATAILLE", death: "MORT", birth: "NAISSANCE", intrigue: "INTRIGUE", bribe: "CORRUPTION", move: "MOUVEMENTS", marriage: "NOCES", betrayal: "TRAHISON", claim: "REVENDICATION", exile: "EXIL", plague: "PESTE", event: "ÉVÉNEMENT", revolt: "JACQUERIE", text: "CHRONIQUE", treaty: "TRÊVE", gift: "OR" }[s.kind] || "CHRONIQUE";
-  $("#banner").innerHTML = `<b>${label}${s.title ? ` · ${esc(houseName(s.pid))}` : ""}</b>${s.title ? entryHtml(s) : esc(s.text)}`;
+  let body = s.title ? entryHtml(s) : esc(s.text);
+  if (s.kind === "battle" && s.atk) {
+    const a = s.atk[0];
+    const side = (pid, name, n, bonus, total, win) => `<div class="side ${win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 30) : '<svg width="30" height="34" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#2B1D12" stroke-width="3"/></svg>'}<span class="nm">${esc(name)}</span><span class="fc">${total}</span><span class="dt">${n} armée${n > 1 ? "s" : ""}${bonus ? ` + ${bonus}` : ""} + hasard</span></div>`;
+    body = `<div class="duel">${side(a.pid, houseName(a.pid) + (s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""), a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.def ? houseName(s.def) : "Milice", s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div><span class="verdict">${s.attWins ? `${esc(houseName(a.pid))} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? esc(houseName(s.def)) : "La milice"} tient ${esc(PROVINCES[s.prov].art)}.`}</span>`;
+  }
+  $("#banner").innerHTML = `<b>${label}${s.title ? ` · ${esc(houseName(s.pid))}` : ""}${s.kind === "battle" ? ` · ${esc(PROVINCES[s.prov].city)}` : ""}</b>${body}`;
+  speak(s.kind === "battle" && s.atk ? (s.attWins ? `${houseName(s.atk[0].pid)} prend ${PROVINCES[s.prov].art}.` : `${PROVINCES[s.prov].art} résiste.`) : s.text);
   $("#banner").classList.remove("hidden");
   $("#banner").style.animation = "none"; void $("#banner").offsetWidth; $("#banner").style.animation = "";
   updateMap(revealProvinces());
@@ -1103,6 +1175,27 @@ function interludeHtml() {
   return `<div class="interlude"><span class="kick">FIN DE LA MANCHE ${st.round} SUR ${st.maxRounds}</span>${woodcut(380, 210, st.round)}<h1>Anno Domini ${E.yearOf(st.round)}</h1>${summaryHtml()}${interludeLines().map((l, i) => `<p class="ch-entry" style="animation-delay:${0.3 + i * 0.9}s">${l.title ? `<b>${esc(houseName(l.pid))}</b> ` : ""}${entryHtml(l)}</p>`).join("")}
     ${pid && waitAll ? `<button class="btn btn-red" id="btn-next" ${ready ? "disabled" : ""}>${ready ? "On attend les autres…" : st.round >= st.maxRounds ? "Voir le résultat" : `Passer à la manche ${st.round + 1}`}</button>` : ""}</div>`;
 }
+function momentsForts() {
+  const st = S();
+  const score = (c) => (c.kind === "betrayal" ? 6 : c.kind === "claim" ? 6 : /mise à sac/.test(c.text) ? 6 : c.kind === "death" && /trône|cousin|Guerre civile/.test(c.text) ? 5 : c.kind === "death" ? 4 : c.kind === "marriage" ? 3 : c.kind === "revolt" || c.kind === "exile" ? 4 : c.kind === "dilemma" && c.title && /tue|tuer|étrangl|brûl|empoison|exécut|massacr/i.test(c.choice || "") ? 4 : c.kind === "battle" && /prend/.test(c.text) ? 2 : 0);
+  return (st.chronicle || []).filter((c) => score(c) > 0).map((c, i) => ({ c, v: score(c) + Math.random() * 0.5 })).sort((a, b) => b.v - a.v).filter((x, i, arr) => arr.findIndex((y) => y.c.kind === x.c.kind && y.c.round === x.c.round) === i).slice(0, 6).sort((a, b) => a.c.round - b.c.round).map((x) => x.c);
+}
+function recordPalmares(st) {
+  const pid = me();
+  if (!pid || !st.result || store.get(`sn_done_${st.gameId}`)) return;
+  store.set(`sn_done_${st.gameId}`, "1");
+  let pal = {}; try { pal = JSON.parse(store.get("sn_palmares") || "{}"); } catch {}
+  pal.games = (pal.games || 0) + 1;
+  if (st.result.winner === pid) pal.wins = (pal.wins || 0) + 1;
+  const row = st.result.rows.find((r) => r.pid === pid);
+  if (row) pal.best = Math.max(pal.best || 0, row.total);
+  store.set("sn_palmares", JSON.stringify(pal));
+}
+function palmaresHtml() {
+  let pal = {}; try { pal = JSON.parse(store.get("sn_palmares") || "{}"); } catch {}
+  if (!pal.games) return "";
+  return `<div class="palmares">${ICON.prestige}<b>Ton palmarès</b> : ${pal.games} partie${pal.games > 1 ? "s" : ""} · ${pal.wins || 0} victoire${(pal.wins || 0) > 1 ? "s" : ""} · meilleur score ${pal.best || 0} points</div>`;
+}
 function endHtml() {
   const st = S();
   const r = st.result;
@@ -1115,7 +1208,8 @@ function endHtml() {
   return `<div class="card end-card"><span class="card-kicker">FIN DE LA PARTIE</span><h2>${esc(houseName(w))} règne sur la France</h2><p>${esc((st.chronicle || []).filter((c) => c.kind === "end").slice(-1)[0]?.text || "")}</p>
     <div class="scorewrap"><table class="scoretable"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${objs ? `<p class="ph">Les objectifs secrets</p>${objs}` : ""}
-    <p class="ph" style="margin-top:14px">Les titres</p><div class="titles">${titles}</div>
+    <p class="ph" style="margin-top:14px">Les moments forts</p><div class="moments">${momentsForts().map((c) => `<div class="moment"><b>${c.year}</b>${c.title ? `« ${esc(c.title)} » — ${esc(c.choice || "")}. ` : ""}${esc(c.text)}</div>`).join("")}</div>
+    <p class="ph">Les titres</p><div class="titles">${titles}</div>${palmaresHtml()}
     <p class="ph">La Grande Chronique</p><div class="chron-full">${(st.chronicle || []).map((e) => `<div class="log-entry ch-entry"><span class="yr">${e.year}</span>${entryHtml(e)}</div>`).join("")}</div>
     <div class="row"><button class="btn grow" id="ov-close">Voir la carte</button>${isHost ? `<button class="btn btn-red grow" id="btn-replay">Nouvelle partie</button>` : ""}</div></div>`;
 }
@@ -1434,8 +1528,8 @@ function hostTick() {
       case "orders":
         if (allReady || late()) {
           E.resolveRound(st, H.priv, I, Math.random);
-          st.revealStart = now + 600;
-          st.deadline = now + 600 + st.reveal.steps.length * STEP_MS + 2600 * SPEED;
+          st.revealStart = now + 2700;
+          st.deadline = now + 2700 + st.reveal.steps.length * STEP_MS + 2600 * SPEED;
           st.ready = {}; H.lastReady = "";
           hostWrite(true); return;
         }
@@ -1478,6 +1572,9 @@ function checkHostAlive() {
 // ---------------------------------------------------------------------
 $("#btn-mute").onclick = () => { A.unlock(); A.setMuted(!A.isMuted()); renderTop(); };
 $("#btn-rules").onclick = () => openModal("rules");
+function narratorIcon() { $("#btn-narr").innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h6" stroke="currentColor" stroke-width="2"/>${narrator ? "" : '<path d="M3 21L21 3" stroke="#D94A3A" stroke-width="2.4"/>'}</svg>`; $("#btn-narr").title = narrator ? "Narrateur activé (lit la révélation à voix haute)" : "Narrateur coupé"; }
+$("#btn-narr").onclick = () => { narrator = !narrator; store.set("sn_narrator", narrator ? "1" : "0"); narratorIcon(); toast(narrator ? "Le narrateur lira la révélation à voix haute." : "Narrateur coupé.", "#D9A441", 2500); if (narrator) speak("Le narrateur est prêt."); };
+narratorIcon();
 $("#btn-taunt").onclick = (e) => {
   e.stopPropagation();
   const pop = $("#taunt-pop");

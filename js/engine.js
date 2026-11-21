@@ -1027,7 +1027,8 @@ export function resolveRound(state, priv, inputs, rng) {
       if (def && totals.some((a) => leaderLost(a.pid)) && def !== state.leader) { state.players[def].prestige += 2; text += ` Le favori plie : +2 Prestige.`; }
       set = snap(to, ...totals.flatMap((a) => a.froms));
     }
-    steps.push({ kind: "battle", text, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle" });
+    steps.push({ kind: "battle", text, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle",
+      atk: totals.map((a) => ({ pid: a.pid, n: a.n, bonus: a.bonus, total: a.total })), def, defArmies, defTotal, defBonus: peurBonus(state.players[def]) });
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
   }
   // 4. diplomatie : mariages, trêves, dons, accusations
