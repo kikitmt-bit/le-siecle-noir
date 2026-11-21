@@ -1,13 +1,13 @@
 // Distribution des dilemmes et fin de la phase dilemme, validation des ordres
-import { DILEMMAS, TRAITS } from "../content.js?v=1795295887";
-import { PROVINCES } from "../map.js?v=1795295887";
-import { aiDilemma } from "./ai.js?v=1795295887";
-import { allied, ctxFor, provincesOf, situationOf } from "./calc.js?v=1795295887";
-import { capitalize, fill, maisonName, pick, shuffle } from "./core.js?v=1795295887";
-import { applyFx } from "./effects.js?v=1795295887";
-import { consort, heirs, king, queen } from "./people.js?v=1795295887";
-import { realDice } from "./rounds.js?v=1795295887";
-import { marriageable } from "./succession.js?v=1795295887";
+import { DILEMMAS, TRAITS } from "../content.js?v=1795296252";
+import { PROVINCES } from "../map.js?v=1795296252";
+import { aiDilemma } from "./ai.js?v=1795296252";
+import { allied, ctxFor, provincesOf, situationOf } from "./calc.js?v=1795296252";
+import { capitalize, fill, maisonName, pick, shuffle } from "./core.js?v=1795296252";
+import { applyFx } from "./effects.js?v=1795296252";
+import { consort, heirs, king, queen } from "./people.js?v=1795296252";
+import { realDice } from "./rounds.js?v=1795296252";
+import { marriageable } from "./succession.js?v=1795296252";
 
 // ---------- distribution des dilemmes ----------
 export function reqOk(state, pid, req, pair) {

@@ -1,6 +1,6 @@
 // Famille : accesseurs et création des personnages
-import { HOUSES, INFIRMITIES, NAMES, TRAIT_POOL } from "../content.js?v=1795295887";
-import { pick, uid } from "./core.js?v=1795295887";
+import { HOUSES, INFIRMITIES, NAMES, TRAIT_POOL } from "../content.js?v=1795296252";
+import { pick, uid } from "./core.js?v=1795296252";
 
 // ---------- famille ----------
 export function family(state, pid) { return state.families[pid]; }

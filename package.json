@@ -1,1 +1,7 @@
-{"type":"module"}
+{
+  "type": "module",
+  "scripts": {
+    "test": "node tests/sim.mjs && node tests/validate.mjs",
+    "test:browser": "node tests/run-browser.mjs"
+  }
+}
