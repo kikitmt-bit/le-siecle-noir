@@ -31,7 +31,7 @@
       <div id="solo-opts" class="solo-opts hidden">
         <p class="ph" style="margin-top:12px">Combien d'adversaires ?</p>
         <div class="row" style="justify-content:center"><button class="btn btn-small" data-solo="2" aria-pressed="true">2 ordinateurs</button><button class="btn btn-small" data-solo="3" aria-pressed="false">3 ordinateurs</button></div>
-        <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Mode tuto</b> : des bulles expliquent chaque étape</span></label>
+        <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Première partie</b> : les règles arrivent petit à petit, avec des explications</span></label>
         <button id="btn-solo-go" class="btn btn-red btn-block" style="margin-top:10px">Commencer la partie</button>
       </div>
       <p id="home-msg" class="msg" role="status"></p>
@@ -51,7 +51,9 @@
       <ul id="lobby-members" class="lobby-members"></ul>
       <div id="lobby-ai" class="hidden"><button id="btn-add-ai" class="btn btn-small" style="margin-top:10px">Ajouter un seigneur joué par l'ordinateur</button></div>
       <div id="lobby-host" class="lobby-host hidden">
-        <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Mode tuto</b> : des bulles expliquent chaque étape, pas d'attaque à la première manche, chronos plus longs</span></label>
+        <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Première partie</b> : les règles arrivent petit à petit (intrigues manche 3, diplomatie manche 4, bluff manche 5), avec des explications à chaque étape</span></label>
+        <label class="field" style="margin:4px 0 0"><span>Temps pour jouer</span>
+          <select id="opt-timer"><option value="none" selected>Pas de chrono : on attend tout le monde</option><option value="relaxed">Détendu (temps doublé)</option><option value="normal">Normal</option><option value="fast">Rapide</option></select></label>
         <label class="check"><input type="checkbox" id="opt-random"> <span><b>Provinces au hasard</b> : pas de choix des provinces, on commence tout de suite</span></label>
         <button id="btn-start" class="btn btn-red">Lancer la partie</button>
         <p class="hint">À deux joueurs sans ordinateur ajouté, la couronne d'Angleterre entre dans la partie.</p>
@@ -76,19 +78,21 @@
     <div class="board">
       <div class="mapwrap" id="mapwrap">
         <svg id="map" viewBox="0 0 840 780" role="img" aria-label="Carte de France"></svg>
+        <div class="map-tools"><button class="icon-btn dark" id="zoom-in" aria-label="Zoomer">+</button><button class="icon-btn dark" id="zoom-out" aria-label="Dézoomer">−</button><button class="icon-btn dark" id="zoom-reset" aria-label="Revoir toute la carte">⟲</button><button class="btn btn-small" id="btn-legend">Légende</button></div>
+        <div id="legend" class="legend hidden"></div>
         <div id="banner" class="banner hidden"></div>
         <div id="crown-banner" class="crown-banner hidden">Le Couronnement : chaque conquête rapporte 3 Prestige, et les scores sont cachés.</div>
       </div>
       <aside class="side">
         <nav class="side-tabs" id="side-tabs">
           <button data-tab="panel" class="active">Actions</button>
+          <button data-tab="diplo" id="tab-diplo-btn">Diplomatie</button>
           <button data-tab="house">Ma maison</button>
-          <button data-tab="msg" id="tab-msg-btn">Messages</button>
           <button data-tab="log">Chronique</button>
         </nav>
         <div id="tab-panel" class="tab"></div>
         <div id="tab-house" class="tab"></div>
-        <div id="tab-msg" class="tab"></div>
+        <div id="tab-diplo" class="tab"></div>
         <div id="tab-log" class="tab"></div>
       </aside>
     </div>
@@ -99,6 +103,7 @@
 <div id="modal" class="overlay hidden"></div>
 <div id="tuto" class="tuto hidden" role="dialog" aria-live="polite"></div>
 <div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
 <script type="module" src="js/main.js"></script>
 </body>

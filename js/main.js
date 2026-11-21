@@ -7,6 +7,8 @@ import * as E from "./engine.js";
 import { PROVINCES, REGIONS } from "./map.js";
 import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js";
 import * as A from "./audio.js";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js";
+const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
 let SOLO = false;
@@ -81,7 +83,7 @@ function fmtTime(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Ma
 function setInput(field, value) { if (!L.code) return; L.myInput[field] = value; net.setInput(L.code, field, value).catch((e) => console.warn(e)); }
 function tuto(key, title, text) {
   if (!S() || !S().tutorial) return;
-  const k = `sn_tuto_${L.code}_${key}`;
+  const k = `sn_tuto_${S().gameId || L.code}_${key}`;
   if (store.get(k)) return;
   if (L.tutoQueue.some((t) => t.key === key)) return;
   L.tutoQueue.push({ key, title, text, k });
@@ -200,7 +202,7 @@ $("#btn-share").onclick = async () => {
   try { if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ title: "Le Siècle Noir", text: `Rejoins ma partie du Siècle Noir (code ${L.code})`, url }); else { await navigator.clipboard.writeText(url); toast("Lien copié. Envoie-le à tes amis."); } }
   catch { prompt("Copie ce lien :", url); }
 };
-$("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto").checked, randomDraft: $("#opt-random").checked }); };
+$("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto").checked, randomDraft: $("#opt-random").checked, timer: $("#opt-timer").value }); };
 
 // ---------------------------------------------------------------------
 // réception des données
@@ -240,7 +242,7 @@ function onWhispers(w) {
   }
   if (L.state && L.state.phase !== "lobby") { renderMessages(); updateMsgBadge(); }
 }
-function updateMsgBadge() { const b = $("#tab-msg-btn"); if (b) b.innerHTML = `Messages${L.unread ? `<span class="badge">${L.unread}</span>` : ""}`; }
+
 function seatUidsOf(pid) { const st = S(); return Object.entries(st.seats || {}).filter(([, v]) => v === pid).map(([u]) => u); }
 function sendWhisper(to, text) {
   const st = S(), from = me();
@@ -255,22 +257,39 @@ function sendWhisper(to, text) {
   }
   A.play("click");
 }
-function renderMessages() {
+function renderMessages() { renderDiplo(); }
+function renderDiplo() {
   const st = S(), pid = me();
-  const el = $("#tab-msg");
-  if (!el || !st || !pid) return;
+  const el = $("#tab-diplo");
+  if (!el || !st || !pid || st.phase === "lobby") return;
+  if (!E.unlocked(st, "diplomacy")) {
+    el.innerHTML = `<div class="locked-box">${ICON.ring}<br><b>La diplomatie se débloque à la manche ${E.UNLOCK.diplomacy}.</b><br>Mariages, trêves, or et messages secrets : tu pourras négocier avec les autres maisons.</div>`;
+    return;
+  }
+  if (document.activeElement && document.activeElement.id === "msg-in") return;
   const others = st.order.filter((p) => p !== pid && st.players[p].house !== "anglais");
   if (!L.ui.msgTo || !others.includes(L.ui.msgTo)) L.ui.msgTo = others[0] || null;
-  const list = Object.values(L.whispers).sort((a, b) => (b.t || 0) - (a.t || 0));
-  el.innerHTML = `<p class="ph">Messages secrets</p><p class="hint" style="margin-top:0">Seul le destinataire les lit. Promesses, menaces, mensonges : tout est permis.</p>
+  const list = Object.values(L.whispers).sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, 30);
+  const diplo = ["dilemma", "orders"].includes(st.phase) ? diplomacyHtml() : `<div class="pbox"><p class="ph">Diplomatie</p><p class="ptext" style="margin:0">Les propositions (${term("mariage")}, ${term("treve", "trêve")}, or) se font pendant le dilemme et les ordres. Tu peux envoyer des messages à tout moment.</p></div>`;
+  el.innerHTML = `${diplo}
+    <div class="pbox"><p class="ph">Messages secrets</p><p class="hint" style="margin-top:0">Seul le destinataire les lit. Promesses, menaces, mensonges : tout est permis.</p>
     <div class="row wrap">${others.map((o) => `<button class="btn btn-small ${L.ui.msgTo === o ? "btn-dark" : ""}" data-msgto="${o}">${shield(st.players[o].house, 16)} ${esc(houseName(o))}</button>`).join("")}</div>
     <div class="presets">${WHISPERS.map((w) => `<button data-preset="${esc(w)}">${esc(w)}</button>`).join("")}</div>
     <div class="row"><input id="msg-in" class="msg-input grow" maxlength="160" placeholder="Ton message…" aria-label="Ton message"><button class="btn btn-red" id="msg-send">Envoyer</button></div>
-    <div class="msg-list">${list.length ? list.map((m) => `<div class="msg-item ${m.sent ? "sent" : ""}"><b style="color:${houseColor(m.sent ? m.to : m.from)}">${m.sent ? `À ${esc(houseName(m.to))}` : `De ${esc(houseName(m.from))}`}</b>${esc(m.text)}</div>`).join("") : '<p class="wait">Aucun message pour l\'instant.</p>'}</div>`;
-  el.querySelectorAll("[data-msgto]").forEach((b) => (b.onclick = () => { L.ui.msgTo = b.dataset.msgto; renderMessages(); }));
+    <div class="msg-list">${list.length ? list.map((m) => `<div class="msg-item ${m.sent ? "sent" : ""}"><b style="color:${houseColor(m.sent ? m.to : m.from)}">${m.sent ? `À ${esc(houseName(m.to))}` : `De ${esc(houseName(m.from))}`}</b>${esc(m.text)}</div>`).join("") : '<p class="wait">Aucun message pour l\'instant.</p>'}</div></div>`;
+  if (["dilemma", "orders"].includes(st.phase)) bindDiplomacy();
+  el.querySelectorAll("[data-msgto]").forEach((b) => (b.onclick = () => { L.ui.msgTo = b.dataset.msgto; renderDiplo(); }));
   el.querySelectorAll("[data-preset]").forEach((b) => (b.onclick = () => { $("#msg-in").value = b.dataset.preset; }));
   $("#msg-send").onclick = () => { if (L.ui.msgTo) { sendWhisper(L.ui.msgTo, $("#msg-in").value); $("#msg-in").value = ""; } };
   $("#msg-in").onkeydown = (e) => { if (e.key === "Enter") $("#msg-send").click(); };
+}
+function updateMsgBadge() {
+  const st = S(), pid = me();
+  const b = $("#tab-diplo-btn");
+  if (!b || !st) return;
+  const props = pid ? Object.entries(st.proposals || {}).filter(([k, pr]) => pr.to === pid && (L.ui.answers[k] ?? (L.myInput.answers || {})[k]) === undefined).length : 0;
+  const n = props + (L.unread || 0);
+  b.innerHTML = `Diplomatie${n ? `<span class="badge">${n}</span>` : ""}`;
 }
 function onState(st) {
   const prev = L.state;
@@ -284,13 +303,14 @@ function onState(st) {
     L.ui.orders = []; L.ui.build = null; L.ui.dChoice = null; L.ui.dTarget = null; L.ui.proposeTo = []; L.ui.answers = {};
     L.dilemmaClosed = false;
     if (st.round > 0) { A.play("bell"); rollDiceAnim = true; }
+    if (st.tutorial && me()) for (const [k, r] of Object.entries(E.UNLOCK)) if (st.round === r && !store.get(`sn_unl_${st.gameId}_${k}`)) { store.set(`sn_unl_${st.gameId}_${k}`, "1"); queueModal("unlock", k); }
     if (st.round === st.maxRounds) { A.play("drum"); tuto("round10", "Le Couronnement", "Dernière manche ! Chaque conquête rapporte 3 Prestige et les scores sont cachés jusqu'à la fin."); }
   }
   if (st.phase !== L.last.phase) {
     if (st.phase === "orders") restoreOrders();
     if (st.phase === "interlude") { A.play("bell"); L.modalOpen = null; }
     if (st.phase === "end") { A.play("fanfare"); L.endClosed = false; }
-    if (st.phase === "objectives") L.objClosed = false;
+    if (st.phase === "objectives") { L.objClosed = false; if (me() && (st.tutorial || !store.get("sn_intro_seen"))) { store.set("sn_intro_seen", "1"); queueModal("intro", 0); } }
     if (st.phase === "dilemma") { L.dilemmaClosed = false; playNewsSounds(st); }
     if (st.phase === "reveal") L.last.revealIdx = -1;
     if (st.phase === "draft") A.play("drum");
@@ -315,7 +335,7 @@ function restoreOrders() {
 // ---------------------------------------------------------------------
 // CARTE
 // ---------------------------------------------------------------------
-const MAP = { sel: new Set(), hl: new Set(), hlRed: new Set(), onPick: null, display: null };
+const MAP = { sel: new Set(), hl: new Set(), hlRed: new Set(), onPick: null, display: null, badges: [] };
 function buildMap() {
   const svg = $("#map");
   let h = `<defs>
@@ -330,14 +350,16 @@ function buildMap() {
   for (const [id, p] of Object.entries(PROVINCES)) h += `<text class="plabel" x="${p.cx}" y="${p.cy - 16}" text-anchor="middle">${esc(p.name.toUpperCase())}</text>`;
   h += `</g><g id="m-caps"></g><g id="m-banners">`;
   for (const [id, p] of Object.entries(PROVINCES)) h += `<g class="banner-g" id="b-${id}" transform="translate(${p.cx},${p.cy - 6})"><path d="M-13,0 L13,0 L13,23 L0,17 L-13,23 Z" stroke="#2B1D12" stroke-width="1.2" fill="#5A4A36"/><text x="0" y="15" text-anchor="middle">0</text></g>`;
-  h += `</g><g id="m-fx"></g>`;
+  h += `</g><g id="m-badges"></g><g id="m-fx"></g>`;
   h += `<g transform="translate(92,690)" aria-hidden="true"><circle r="30" fill="none" stroke="#2B1D12" stroke-width="1.2"/><path d="M0,-38 L6,0 L0,38 L-6,0 Z" fill="#2B1D12"/><path d="M-38,0 L0,5 L38,0 L0,-5 Z" fill="#2B1D12" opacity="0.6"/><text y="-44" text-anchor="middle" font-family="Cinzel" font-size="12" fill="#2B1D12">N</text></g>`;
   svg.innerHTML = h;
   svg.addEventListener("click", (e) => {
     const t = e.target.closest(".prov, .banner-g");
     if (!t) return;
     const id = t.dataset.id || t.id.replace(/^b-/, "");
-    if (MAP.sel.has(id) && MAP.onPick) { A.play("click"); MAP.onPick(id); }
+    if (L.justPanned && Date.now() - L.justPanned < 300) return;
+    if (MAP.sel.has(id) && MAP.onPick) { hidePopover(); A.play("click"); MAP.onPick(id); }
+    else if (S() && S().phase !== "lobby") showPopover(provinceCard(id), e.clientX, e.clientY);
   });
   // un clic sur la bannière compte comme un clic sur la province
   svg.querySelectorAll(".banner-g").forEach((g) => (g.style.pointerEvents = "auto"));
@@ -373,6 +395,7 @@ function updateMap(provs) {
     if (st.leader === pid && st.round < st.maxRounds) caps += `<g transform="translate(${P.cx},${P.cy - 40})" pointer-events="none"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.2"/></g>`;
   }
   $("#m-caps").innerHTML = caps;
+  $("#m-badges").innerHTML = MAP.badges.map((b) => { const P = PROVINCES[b.prov]; return `<g class="pct-badge" transform="translate(${P.cx},${P.cy + 34})" pointer-events="none"><rect x="-26" y="-12" width="52" height="22" rx="11" fill="${b.color}" stroke="#F6ECD6" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="#F6ECD6">${b.text}</text></g>`; }).join("");
 }
 function drawArrows(list) {
   // list: [{from, to, color, dashed}]
@@ -402,15 +425,15 @@ function render() {
   const st = S();
   if (!st || st.phase === "lobby") return;
   renderTop(); renderPlayers(); renderGuide();
-  MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null;
+  MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null; MAP.badges = [];
   let arrows = [];
   const panel = renderPanel();
   $("#tab-panel").innerHTML = panel.html;
   if (panel.bind) panel.bind();
   if (panel.arrows) arrows = panel.arrows;
   renderHouseTab(); renderLog();
-  if (L.ui.tab !== "msg" || !document.activeElement || document.activeElement.id !== "msg-in") renderMessages();
-  if (L.ui.tab === "msg") L.unread = 0;
+  renderDiplo();
+  if (L.ui.tab === "diplo") L.unread = 0;
   updateMsgBadge();
   // carte : pendant la révélation, on montre l'état « avant » puis on applique les étapes
   if (st.phase === "reveal") updateMap(revealProvinces()); else updateMap(st.provinces);
@@ -420,6 +443,7 @@ function render() {
   document.querySelectorAll("#side-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === L.ui.tab));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === `tab-${L.ui.tab}`));
   phaseTutos();
+  applyCoach();
 }
 // ---- bandeau « que dois-je faire ? » ----
 function renderGuide() {
@@ -471,7 +495,7 @@ function renderGuide() {
       if (sealed) text = "Ordres scellés. On attend les autres… (tu peux encore les modifier dans le panneau Actions)";
       else {
         const dv = myDice().filter((v) => v).length, n = L.ui.orders.length;
-        text = `<b>À toi :</b> donne un ordre à chacun de tes dés : clique un dé dans le panneau Actions, choisis Frapper, Marcher, Lever ou Intriguer, puis suis les indications. Ordres donnés : <b>${n} sur ${dv}</b>. Quand tu as fini, scelle tes ordres.`;
+        text = L.ui.build ? `<b>À toi :</b> suis les étapes dans le panneau Actions (dé ${myDice()[L.ui.build.die]}).` : n < dv ? `<b>À toi :</b> clique un dé dans le panneau Actions et choisis son ordre. Ordres donnés : <b>${n} sur ${dv}</b>.` : `<b>À toi :</b> tous tes dés ont un ordre. Vérifie, puis scelle tes ordres.`;
         btn = `<button class="btn" data-guide="actions">Voir mes dés</button><button class="btn btn-red" data-guide="seal">Sceller mes ordres</button>`; mine = true;
       }
       break;
@@ -479,6 +503,20 @@ function renderGuide() {
     case "reveal": step = round(3, "RÉVÉLATION"); text = "Tous les ordres sont révélés en même temps. Regarde la carte et le récit en bas."; break;
     case "interlude": step = `FIN DE LA MANCHE ${st.round}`; text = "Trois années passent… La chronique raconte ce qui s'est passé."; break;
     case "end": step = "FIN DE LA PARTIE"; text = "La partie est terminée."; btn = `<button class="btn btn-red" data-guide="end">Voir les résultats</button>`; break;
+  }
+  if (st.phase === "interlude" && pid && (st.solo || st.timer === "none")) {
+    const rd = L.myInput.next && L.myInput.next.round === st.round;
+    text = rd ? "On attend que les autres soient prêts…" : "<b>À toi :</b> lis le résumé de ta manche, puis passe à la suite.";
+    if (!rd) { btn = `<button class="btn btn-red" data-guide="next">Continuer</button>`; mine = true; }
+  }
+  const waiting = !mine && ["objectives", "draft", "placement", "dilemma", "orders", "interlude"].includes(st.phase);
+  if (waiting && H.active && !st.solo && (st.timer === "none" || !st.timer)) btn += `<button class="btn btn-small" data-guide="force" title="Passer à la suite sans attendre les retardataires">Forcer la suite</button>`;
+  if (pid && st.round > 0) {
+    const est = E.estimateScore(st, { [pid]: L.priv || {} }, pid);
+    const hide = st.round === st.maxRounds && st.phase !== "end";
+    const all = st.order.map((p) => ({ p, v: p === pid ? est.total : E.estimateScore(st, {}, p).total })).sort((a, b) => b.v - a.v);
+    const rank = all.findIndex((x) => x.p === pid) + 1;
+    btn += `<button class="g-score" data-guide="score" title="Comment est calculé le score">${hide ? `${est.total} pts` : `${rank}${rank === 1 ? "er" : "e"} sur ${st.order.length} · ${est.total} pts`}</button>`;
   }
   el.className = `guide ${mine ? "" : "wait"}`;
   const key = step + text + btn;
@@ -496,6 +534,9 @@ function renderGuide() {
     if (g === "plok") { const mineP = E.provincesOf(st, pid); const alloc = { ok: true }; mineP.forEach((id) => (alloc[id] = (L.ui.placement || {})[id] || 1)); setInput("placement", alloc); A.play("seal"); render(); }
     if (g === "actions") { L.ui.tab = "panel"; render(); document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
     if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
+    if (g === "next") { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); }
+    if (g === "force") { H.force = true; toast("La partie avance sans attendre les retardataires (leur intendant choisit pour eux).", "#D9A441"); }
+    if (g === "score") openModal("score");
   }));
 }
 const PHASE_LABEL = { objectives: "Objectifs secrets", draft: "Choix des provinces", placement: "Placement des armées", dilemma: "Le dilemme", orders: "Ordres secrets", reveal: "Révélation", interlude: "Chronique", end: "Fin de partie" };
@@ -510,22 +551,25 @@ function renderTop() {
 function renderPlayers() {
   const st = S();
   const hide = st.round === st.maxRounds && st.phase !== "end";
+  const meP = me();
   $("#playersbar").innerHTML = st.order.map((pid) => {
     const p = st.players[pid];
     const seatUids = Object.entries(st.seats || {}).filter(([, v]) => v === pid).map(([u]) => u);
     const online = p.isBot || seatUids.some((u) => L.members[u] && L.members[u].online !== false);
     const ready = st.ready && st.ready[pid];
     const nprov = E.provincesOf(st, pid).length;
-    return `<button class="pchip ${pid === me() ? "me" : ""}" data-pid="${pid}" aria-label="Voir la maison ${esc(HOUSES[p.house].name)}">
+    const dice = pid === meP ? myDice() : p.dice || [];
+    const showDice = ["dilemma", "orders"].includes(st.phase) && dice.length;
+    const rel = meP && pid !== meP ? (E.allied(st, meP, pid) ? '<span class="rel">ALLIÉ</span>' : E.bound(st, meP, pid) ? '<span class="rel treaty">TRÊVE</span>' : "") : "";
+    return `<button class="pchip ${pid === meP ? "me" : ""}" data-pid="${pid}" aria-label="Voir la maison ${esc(HOUSES[p.house].name)}">
       ${st.leader === pid && !hide ? '<svg class="crown" width="22" height="14" viewBox="-12 -8 24 15" aria-hidden="true"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.2"/></svg>' : ""}
       ${shield(p.house, 26)}
-      <span><span class="pc-name">${esc(p.name)} · ${esc(HOUSES[p.house].name)}</span>
-      <span class="pc-sub">${hide ? "? prestige" : `${p.prestige} prestige`} · ${nprov} prov.${!online ? ' · <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders"].includes(st.phase) ? ' · <span class="ready">prêt ✓</span>' : ""}</span></span>
+      <span><span class="pc-name">${pid === meP ? "Toi · " : ""}${esc(HOUSES[p.house].name)}${p.isBot ? " · ordi" : ""}${rel}</span>
+      <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "interlude"].includes(st.phase) ? ' <span class="ready">prêt ✓</span>' : ""}</span></span>
     </button>`;
   }).join("");
   $("#playersbar").querySelectorAll(".pchip").forEach((b) => (b.onclick = () => { L.ui.viewHouse = b.dataset.pid; openModal("house"); }));
 }
-
 // ---------------------------------------------------------------------
 // PANNEAU PAR PHASE
 // ---------------------------------------------------------------------
@@ -604,11 +648,12 @@ function newsHtml() {
   return `<div class="news"><b>NOUVELLES DU ROYAUME</b>${n.map((x) => `<p>${esc(x.text)}</p>`).join("")}</div>`;
 }
 function panelDilemma() {
-  const st = S(), pid = me();
+  const st = S();
   const d = L.priv && L.priv.dilemma && L.priv.dilemma.round === st.round ? L.priv.dilemma : null;
   const done = L.myInput.dilemma && L.myInput.dilemma.round === st.round;
-  return { html: `${newsHtml()}<p class="ph">Le dilemme</p><p class="ptext">${d ? (done ? "Ton choix est scellé. Les autres seigneurs décident encore." : "Un dilemme t'attend. Tout le monde décide en même temps, en secret.") : "Pas de dilemme pour toi cette manche."}</p>${d ? `<button class="btn btn-block ${done ? "" : "btn-red"}" id="btn-dil">${done ? "Revoir mon dilemme" : "Ouvrir le dilemme"}</button>` : ""}${diplomacyHtml()}${dicePreview()}`,
-    bind: () => { if ($("#btn-dil")) $("#btn-dil").onclick = () => { L.dilemmaClosed = false; render(); }; bindDiplomacy(); } };
+  return { html: `${newsHtml()}<p class="ph">1. Le ${term("dilemme")}</p><p class="ptext">${d ? (done ? "Ton choix est scellé. Il sera révélé à tous à la fin de la manche." : "Un dilemme t'attend. Chaque option a un prix : regarde les effets sous chaque choix.") : "Pas de dilemme pour toi cette manche."}</p>${d ? `<button class="btn btn-block ${done ? "" : "btn-red"}" id="btn-dil">${done ? "Revoir mon dilemme" : "Ouvrir le dilemme"}</button>` : ""}
+    <div class="pbox" style="margin-top:12px"><p class="ph">Ensuite : 2. les ordres</p><p class="ptext" style="font-size:15px;margin:0">Quand tout le monde a choisi, tu donneras un ordre à chacun de tes dés : ${ICON.frapper}${term("frapper")}, ${ICON.marcher}${term("marcher")}, ${ICON.lever}${term("lever")}${E.unlocked(st, "intrigue") ? `, ${ICON.intrigue}${term("intriguer")}` : ""}.</p></div>`,
+    bind: () => { if ($("#btn-dil")) $("#btn-dil").onclick = () => { L.dilemmaClosed = false; render(); }; } };
 }
 function dicePreview() {
   const st = S();
@@ -646,92 +691,110 @@ function panelOrders() {
   const pl = st.players[pid];
   const sealed = L.myInput.orders && L.myInput.orders.round === st.round && L.myInput.orders.sealed;
   const b = L.ui.build;
-  const usedDice = new Set(L.ui.orders.map((o) => o.die));
+  const dv = myDice();
   const arrows = L.ui.orders.filter((o) => o.type === "strike" || o.type === "march").map((o) => ({ from: o.from, to: o.to, color: o.type === "strike" ? "#8E1B1B" : "#2B1D12", dashed: o.type === "march" }));
   const tag = { strike: "FRAPPER", march: "MARCHER", levy: "LEVER", intrigue: "INTRIGUE" };
-  const dv = myDice();
-  const diceHtml = `<div class="dice-row">${dv.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); const hid = i === pl.hiddenIdx; return `<button class="die ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === dv.length - 1 ? "extra" : ""} ${hid ? "hidden-die" : ""} ${rollDiceAnim ? "rolling" : ""}" data-die="${i}" ${sealed || !v ? "disabled" : ""} aria-label="Dé ${v}${hid ? ", caché aux autres" : ""}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${hid ? '<span class="die-eye">CACHÉ</span>' : ""}${o ? `<span class="die-tag">${tag[o.type]}</span>` : ""}</button>`; }).join("")}</div><p class="hint" style="margin-top:-4px">Le dé marqué CACHÉ, les autres ne le voient pas : à toi de bluffer.</p>`;
+  const freeDice = dv.map((v, i) => i).filter((i) => dv[i] && !L.ui.orders.some((o) => o.die === i));
+  const diceHtml = `<div class="dice-row">${dv.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); const hid = i === pl.hiddenIdx; return `<button class="die ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === dv.length - 1 ? "extra" : ""} ${hid ? "hidden-die" : ""} ${rollDiceAnim ? "rolling" : ""}" data-die="${i}" ${sealed || !v ? "disabled" : ""} aria-label="Dé ${v}${hid ? ", caché aux autres" : ""}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${hid ? '<span class="die-eye">CACHÉ</span>' : ""}${o ? `<span class="die-tag">${tag[o.type]}</span>` : ""}</button>`; }).join("")}</div>`;
   if (rollDiceAnim) { rollDiceAnim = false; A.play("dice"); }
+  const steps = (cur) => `<div class="steps">${["Dé", "Action", "Cible", "Valider"].map((s, i) => `<span class="${i < cur ? "done" : i === cur ? "cur" : ""}">${i + 1}. ${s}</span>`).join("")}</div>`;
   let builder = "";
   if (sealed) {
-    builder = `<div class="pbox"><p class="ph">Ordres scellés</p><p class="ptext">Tes ordres sont cachetés. Tu peux encore les modifier jusqu'à la fin du chrono.</p><button class="btn btn-block" id="btn-unseal">Modifier mes ordres</button></div>`;
+    builder = `<div class="recap"><p class="ph">Ordres scellés ✓</p><p class="ptext" style="margin:0">On attend les autres. Tu peux encore changer d'avis.</p></div><button class="btn btn-block" id="btn-unseal">Modifier mes ordres</button>`;
   } else if (!b) {
-    builder = `<p class="ptext">${usedDice.size < pl.dice.length ? "Clique un dé pour lui donner un ordre." : "Tous tes dés ont un ordre."}</p>`;
+    builder = freeDice.length ? `${steps(0)}<p class="ptext"><b>Clique un dé</b> pour lui donner un ordre. Plus le dé est haut, plus l'ordre est fort.${pl.hiddenIdx >= 0 ? ` Le dé ${ICON.hidden}CACHÉ est invisible pour les autres (${term("de_cache", "bluff")}).` : ""}${pl.extraDie ? ` Tu as fait un ${term("double")} : dé bonus !` : ""}</p>` : `<p class="ptext">Tous tes dés ont un ordre. Vérifie le récapitulatif et scelle.</p>`;
   } else if (!b.type) {
     const v = dv[b.die];
     const noStrike = st.tutorial && st.round === 1;
-    builder = `<p class="ph">Dé de ${v} : que fais-tu ?</p><div class="actgrid">
-      <button class="actbtn" data-act="strike" ${noStrike ? "disabled" : ""}><b>Frapper</b><span>${noStrike ? "Pas d'attaque à la manche 1 du tuto" : `Attaque une province voisine, +${v} en force`}</span></button>
-      <button class="actbtn" data-act="march"><b>Marcher</b><span>Déplace jusqu'à ${v} armées entre tes provinces</span></button>
-      <button class="actbtn" data-act="levy"><b>Lever</b><span>Recrute ${E.levyAmount(v)} armées</span></button>
-      <button class="actbtn" data-act="intrigue"><b>Intriguer</b><span>Poison, séduction ou corruption</span></button>
-    </div><button class="btn btn-small" id="b-cancel">Annuler</button>`;
-  } else builder = builderStep(b);
-  return { html: `<p class="ph">Tes dés d'ordres</p>${diceHtml}${builder}
-    ${L.ui.orders.length ? `<p class="ph">Tes ordres</p><ul class="orderlist">${L.ui.orders.map((o, i) => `<li><span>${orderText(o)}</span>${sealed ? "" : `<button class="x" data-del="${i}" aria-label="Supprimer cet ordre">×</button>`}</li>`).join("")}</ul>` : ""}
-    ${sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">Sceller mes ordres</button>${S().solo ? "" : '<p class="hint">Les ordres non scellés comptent quand même à la fin du chrono.</p>'}`}
-    ${diplomacyHtml()}
-    <div class="kv" style="margin-top:12px"><span><b>Or</b> ${pl.gold}${goldPlanned() ? ` (−${goldPlanned()} prévus)` : ""}</span></div>
-    ${dicePreview()}`,
+    const noIntr = !E.unlocked(st, "intrigue");
+    builder = `${steps(1)}<p class="ph">Dé de ${v} : que fais-tu ?</p><div class="actgrid">
+      <button class="actbtn" data-act="strike" ${noStrike ? "disabled" : ""}><span class="ab-top">${ICON.frapper}<b>Frapper</b></span><span>${noStrike ? "Pas d'attaque à la toute première manche" : `Attaquer une province voisine. +${v} à ta force`}</span></button>
+      <button class="actbtn" data-act="march"><span class="ab-top">${ICON.marcher}<b>Marcher</b></span><span>Déplacer jusqu'à ${v} armées entre tes provinces</span></button>
+      <button class="actbtn" data-act="levy"><span class="ab-top">${ICON.lever}<b>Lever</b></span><span>Recruter ${E.levyAmount(v)} armées dans une de tes provinces</span></button>
+      <button class="actbtn ${noIntr ? "locked" : ""}" data-act="intrigue" ${noIntr ? "disabled" : ""}><span class="ab-top">${ICON.intrigue}<b>Intriguer</b></span><span>${noIntr ? `Débloqué à la manche ${E.UNLOCK.intrigue}` : "Poison, séduction ou corruption (coûte de l'or)"}</span></button>
+    </div><button class="btn btn-small" id="b-cancel">← Choisir un autre dé</button>`;
+  } else builder = builderStep(b, steps);
+  // récapitulatif
+  const recap = L.ui.orders.length ? `<div class="recap"><p class="ph">Tes ordres pour cette manche</p><ul class="orderlist">${L.ui.orders.map((o, i) => `<li><span>${orderText(o)}</span>${sealed ? "" : `<button class="x" data-del="${i}" aria-label="Annuler cet ordre">×</button>`}</li>`).join("")}</ul>${!sealed && freeDice.length ? `<p class="warn">${ICON.risk}Il te reste ${freeDice.length} dé${freeDice.length > 1 ? "s" : ""} sans ordre : ${freeDice.length > 1 ? "ils ne serviront" : "il ne servira"} à rien si tu scelles maintenant.</p>` : ""}</div>` : "";
+  const seal = sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">${ICON.scroll}Sceller mes ordres</button>`;
+  return { html: `<p class="ph">2. Tes dés d'ordres</p>${diceHtml}${builder}${recap}${seal}
+    <div class="kv" style="margin-top:12px"><span>${ICON.gold}<b>${term("or", "Or")}</b> ${pl.gold}${goldPlanned() ? ` (−${goldPlanned()} prévus)` : ""}</span></div>`,
     arrows, bind: () => bindOrders(b, sealed) };
 }
-function builderStep(b) {
+function builderStep(b, steps) {
   const st = S(), pid = me(), pl = st.players[pid];
   const v = myDice()[b.die];
   const mine = E.provincesOf(st, pid);
-  const cancel = `<button class="btn btn-small" id="b-cancel">Annuler</button>`;
+  const back = `<button class="btn btn-small" id="b-back">← Retour</button>`;
+  const cancel = `<button class="btn btn-small" id="b-cancel">Annuler cet ordre</button>`;
+  const nav = `<div class="row" style="margin-top:8px">${back}${cancel}</div>`;
   if (b.type === "strike") {
-    if (!b.from) { mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner !== pid)).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); }; return `<div class="prompt">Clique la province d'où part l'attaque.</div>${cancel}`; }
-    if (!b.to) { PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner !== pid).forEach((id) => MAP.sel.add(id)); MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); }; return `<div class="prompt">Clique la province à attaquer.</div>${cancel}`; }
+    if (!b.from) {
+      mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner !== pid)).forEach((id) => MAP.sel.add(id));
+      MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); };
+      return `${steps(2)}<div class="prompt">${ICON.frapper}Sur la carte, clique <b>ta province d'où part l'attaque</b> (contour doré). Il faut au moins 2 armées : une reste toujours sur place.</div>${MAP.sel.size ? "" : `<p class="warn">Aucune de tes provinces n'a assez d'armées pour attaquer. Choisis plutôt Lever.</p>`}${nav}`;
+    }
+    if (!b.to) {
+      const n = avail(b.from);
+      PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner !== pid).forEach((id) => {
+        MAP.sel.add(id);
+        const pr = Math.round(E.winProb(n + v + E.attackMod(st, pid), E.defenseOf(st, id)) * 100);
+        MAP.badges.push({ prov: id, text: `${pr} %`, color: pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#8E1B1B" });
+      });
+      MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); };
+      return `${steps(2)}<div class="prompt">${ICON.target}Clique <b>la province à attaquer</b>. Le pourcentage affiché sur chacune = tes chances si tu envoies toutes tes armées disponibles (${n}).</div>${nav}`;
+    }
     const max = avail(b.from); b.n = Math.min(Math.max(1, b.n || max), max);
     MAP.hl = new Set([b.from]); MAP.hlRed = new Set([b.to]);
     const def = st.provinces[b.to];
     const prob = Math.round(E.winProb(b.n + v + E.attackMod(st, pid), E.defenseOf(st, b.to)) * 100);
-    const ally = def.owner && E.allied(st, pid, def.owner);
-    return `<div class="pbox"><p class="ph">Attaque ${esc(PROVINCES[b.to].art)}</p><p class="ptext">Défense : ${def.armies} armées${def.owner ? ` (${esc(houseName(def.owner))})` : " (milice neutre)"}${E.peurBonus(st.players[def.owner]) ? ` +${E.peurBonus(st.players[def.owner])} de Peur` : ""}.</p>
-      <label class="ptext">Armées engagées : <b id="b-nv">${b.n}</b> sur ${max}<input type="range" class="slider" id="b-n" min="1" max="${max}" value="${b.n}"></label>
-      <p class="ptext">Chances de victoire : <span class="pct" id="b-pct">${prob} %</span></p>${ally ? `<p class="ptext" style="color:var(--red)"><b>Attention : c'est ta belle-famille.</b> L'attaquer est une trahison (−5 Prestige, l'alliance est rompue).</p>` : ""}
-      <p class="hint">Les autres joueurs donnent leurs ordres en même temps : les défenses peuvent changer.</p>
-      <div class="row"><button class="btn grow" id="b-cancel">Annuler</button><button class="btn btn-red grow" id="b-ok">Valider l'attaque</button></div></div>`;
+    const ally = def.owner && E.bound(st, pid, def.owner);
+    return `${steps(3)}<div class="pbox"><p class="ph">${ICON.frapper}Attaque sur ${esc(PROVINCES[b.to].art)}</p>
+      <p class="ptext" style="font-size:15px">${term("defense", "Défense")} : ${def.armies} armée${def.armies > 1 ? "s" : ""}${def.owner ? ` (${esc(houseName(def.owner))})` : " (milice neutre)"}${E.peurBonus(st.players[def.owner]) ? ` +${E.peurBonus(st.players[def.owner])} grâce à sa ${term("peur", "Peur")}` : ""}. Ta force : armées envoyées + ${v} (ton dé).</p>
+      <label class="ptext">Armées envoyées : <b id="b-nv">${b.n}</b> sur ${max}<input type="range" class="slider" id="b-n" min="1" max="${max}" value="${b.n}"></label>
+      <p class="ptext">Chances de victoire : <span class="pct" id="b-pct">${prob} %</span></p>
+      <p class="hint">Si tu gagnes, la province est à toi. Si tu perds, les armées envoyées meurent. Les autres jouent en même temps : la défense peut changer.</p>
+      ${ally ? `<p class="warn"><b>Attention :</b> cette maison est ton alliée ou en trêve avec toi. L'attaquer est une ${term("trahison")} (−5 Prestige).</p>` : ""}
+      <button class="btn btn-red btn-block" id="b-ok">Valider l'attaque</button>${nav}</div>`;
   }
   if (b.type === "march") {
-    if (!b.from) { mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner === pid)).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); }; return `<div class="prompt">Clique la province de départ.</div>${cancel}`; }
-    if (!b.to) { PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner === pid).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.to = id; b.n = Math.min(v, avail(b.from)); render(); }; return `<div class="prompt">Clique la province d'arrivée (voisine, à toi).</div>${cancel}`; }
+    if (!b.from) { mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner === pid)).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); }; return `${steps(2)}<div class="prompt">${ICON.marcher}Clique <b>la province de départ</b> (une des tiennes, contour doré).</div>${MAP.sel.size ? "" : `<p class="warn">Aucune province ne peut envoyer d'armées vers une voisine à toi.</p>`}${nav}`; }
+    if (!b.to) { PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner === pid).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.to = id; b.n = Math.min(v, avail(b.from)); render(); }; return `${steps(2)}<div class="prompt">${ICON.marcher}Clique <b>la province d'arrivée</b> (voisine, à toi).</div>${nav}`; }
     const max = Math.min(v, avail(b.from)); b.n = Math.min(Math.max(1, b.n || max), max);
     MAP.hl = new Set([b.from, b.to]);
-    return `<div class="pbox"><p class="ph">Déplacement</p><label class="ptext">Armées déplacées : <b id="b-nv">${b.n}</b> sur ${max}<input type="range" class="slider" id="b-n" min="1" max="${max}" value="${b.n}"></label><div class="row"><button class="btn grow" id="b-cancel">Annuler</button><button class="btn btn-red grow" id="b-ok">Valider</button></div></div>`;
+    return `${steps(3)}<div class="pbox"><p class="ph">${ICON.marcher}${esc(PROVINCES[b.from].name)} → ${esc(PROVINCES[b.to].name)}</p><label class="ptext">Armées déplacées : <b id="b-nv">${b.n}</b> sur ${max}<input type="range" class="slider" id="b-n" min="1" max="${max}" value="${b.n}"></label><button class="btn btn-red btn-block" id="b-ok">Valider le déplacement</button>${nav}</div>`;
   }
   if (b.type === "levy") {
     mine.forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel);
-    MAP.onPick = (id) => { L.ui.orders.push({ die: b.die, type: "levy", to: id }); L.ui.build = null; saveOrders(); render(); };
-    return `<div class="prompt">Clique la province où recruter ${E.levyAmount(v)} armées.</div>${cancel}`;
+    MAP.onPick = (id) => { L.ui.orders.push({ die: b.die, type: "levy", to: id }); L.ui.build = null; saveOrders(); A.play("click"); render(); };
+    return `${steps(2)}<div class="prompt">${ICON.lever}Clique <b>la province où recruter ${E.levyAmount(v)} armées</b>. Conseil : une province qui touche un voisin dangereux.</div>${nav}`;
   }
   if (b.type === "intrigue") {
     const k = E.king(st, pid);
     const goldLeft = pl.gold - goldPlanned();
     if (!b.kind) {
-      const opt = (kind, name, desc) => { const bonus = (k && k.trait === "Rusé" ? 1 : 0) + (pl.intrigueBonus || 0) + (kind === "seduction" && k && k.trait === "Séduisant" ? 1 : 0); const pr = Math.round(E.intrigueProb(v, bonus, E.NEED[kind]) * 100); return `<button class="actbtn" data-kind="${kind}" ${goldLeft < E.COSTS[kind] ? "disabled" : ""}><b>${name} · ${E.COSTS[kind]} or</b><span>${desc} Réussite : <span class="pct">${pr} %</span></span></button>`; };
-      return `<p class="ph">Quelle intrigue ?</p><div class="actgrid">${opt("poison", "Poison", "Tue un membre d'une famille rivale. Anonyme si ça marche.")}${opt("seduction", "Séduction", "Un bâtard à tes couleurs naît chez l'ennemi : à la mort de son roi, tu revendiques une province.")}${opt("bribe", "Corruption", "Une garnison ennemie de 3 armées ou moins passe dans ton camp.")}</div><p class="hint">En cas d'échec, tout le monde saura que c'était toi.</p>${cancel}`;
+      const opt = (kind, name, desc) => { const bonus = (k && k.trait === "Rusé" ? 1 : 0) + (pl.intrigueBonus || 0) + (kind === "seduction" && k && k.trait === "Séduisant" ? 1 : 0); const pr = Math.round(E.intrigueProb(v, bonus, E.NEED[kind]) * 100); return `<button class="actbtn" data-kind="${kind}" ${goldLeft < E.COSTS[kind] ? "disabled" : ""}><span class="ab-top">${ICON.intrigue}<b>${name}</b> · ${ICON.gold}${E.COSTS[kind]}</span><span>${desc}<br>Réussite : <span class="pct">${pr} %</span>${goldLeft < E.COSTS[kind] ? " · pas assez d'or" : ""}</span></button>`; };
+      return `${steps(2)}<p class="ph">Quelle intrigue ?</p><div class="actgrid">${opt("poison", "Poison", "Tuer un membre d'une famille rivale. Anonyme si ça marche.")}${opt("seduction", "Séduction", "Un bâtard à tes couleurs naît chez l'ennemi.")}${opt("bribe", "Corruption", "Acheter une garnison ennemie (3 armées max).")}</div><p class="hint">En cas d'échec, tout le monde saura que c'était toi.</p>${nav}`;
     }
     if (!b.target) {
       const others = st.order.filter((p) => p !== pid);
-      return `<p class="ph">Contre quelle maison ?</p><div class="target-row">${others.map((p) => `<button class="btn btn-small" data-tgt="${p}">${shield(st.players[p].house, 18)} ${esc(houseName(p))}</button>`).join("")}</div><div style="margin-top:10px">${cancel}</div>`;
+      return `${steps(2)}<p class="ph">Contre quelle maison ?</p><div class="target-row">${others.map((p) => `<button class="btn btn-small" data-tgt="${p}">${shield(st.players[p].house, 18)} ${esc(houseName(p))}</button>`).join("")}</div>${nav}`;
     }
     if (b.kind === "poison" && !b.person) {
       const fam = st.families[b.target].members.filter((m) => m.alive && ["king", "queen", "child", "widow"].includes(m.role));
-      const role = (m) => (m.role === "king" ? (m.sex === "f" ? "Reine régnante" : "Roi") : m.role === "queen" ? "Reine" : m.role === "widow" ? "Reine douairière" : "Enfant");
-      return `<p class="ph">Qui empoisonner chez ${esc(houseName(b.target))} ?</p><div class="choices">${fam.map((m) => `<button class="choice" data-person="${m.id}"><b>${esc(E.personTitle(m))}</b><span>${role(m)}, ${m.age} ans · ${esc(m.trait)}${m.trait === "Paranoïaque" ? " (plus dur à empoisonner)" : ""}</span></button>`).join("")}</div><div style="margin-top:10px">${cancel}</div>`;
+      const role = (m) => (m.role === "king" ? (m.sex === "f" ? "Reine régnante" : "Roi") : m.role === "queen" ? "Reine" : m.role === "widow" ? "Reine douairière" : E.heirs(st, b.target)[0] === m ? "Héritier" : "Enfant");
+      return `${steps(2)}<p class="ph">Qui empoisonner chez ${esc(houseName(b.target))} ?</p><p class="hint">Tuer l'héritier ou le roi peut déclencher une crise de ${term("succession")}.</p><div class="choices">${fam.map((m) => `<button class="choice" data-person="${m.id}"><b>${esc(E.personTitle(m))}</b><span>${role(m)}, ${m.age} ans · ${esc(m.trait)}${m.trait === "Paranoïaque" ? " (plus dur à empoisonner)" : ""}</span></button>`).join("")}</div>${nav}`;
     }
     if (b.kind === "bribe" && !b.prov) {
       const cands = E.provincesOf(st, b.target).filter((id) => id !== st.players[b.target].capital && st.provinces[id].armies <= 3);
       cands.forEach((id) => MAP.sel.add(id)); MAP.hlRed = new Set(cands);
-      MAP.onPick = (id) => { b.prov = id; L.ui.orders.push({ die: b.die, type: "intrigue", kind: "bribe", target: b.target, prov: id }); L.ui.build = null; saveOrders(); render(); };
-      return `<div class="prompt">${cands.length ? "Clique la garnison à corrompre (3 armées ou moins, pas la capitale)." : "Aucune garnison corruptible chez cette maison."}</div>${cancel}`;
+      MAP.onPick = (id) => { L.ui.orders.push({ die: b.die, type: "intrigue", kind: "bribe", target: b.target, prov: id }); L.ui.build = null; saveOrders(); render(); };
+      return `${steps(2)}<div class="prompt">${cands.length ? "Clique la garnison à corrompre (3 armées ou moins, pas la capitale)." : "Aucune garnison corruptible chez cette maison."}</div>${nav}`;
     }
-    if (b.kind === "seduction" && !E.mother(st, b.target)) return `<div class="prompt">Il n'y a pas de reine à séduire chez ${esc(houseName(b.target))}.</div>${cancel}`;
-    return "";
+    if (b.kind === "seduction" && !E.mother(st, b.target)) return `<div class="prompt">Il n'y a pas de reine à séduire chez ${esc(houseName(b.target))}.</div>${nav}`;
+    return nav;
   }
-  return cancel;
+  return nav;
 }
 function bindOrders(b, sealed) {
   document.querySelectorAll("[data-die]").forEach((el) => (el.onclick = () => {
@@ -750,6 +813,17 @@ function bindOrders(b, sealed) {
   document.querySelectorAll("[data-person]").forEach((el) => (el.onclick = () => { L.ui.orders.push({ die: b.die, type: "intrigue", kind: "poison", target: b.target, person: el.dataset.person }); L.ui.build = null; saveOrders(); render(); }));
   document.querySelectorAll("[data-del]").forEach((el) => (el.onclick = () => { L.ui.orders.splice(+el.dataset.del, 1); saveOrders(); render(); }));
   if ($("#b-cancel")) $("#b-cancel").onclick = () => { L.ui.build = null; render(); };
+  if ($("#b-back")) $("#b-back").onclick = () => {
+    const x = L.ui.build; if (!x) return;
+    if (x.person || x.prov) { delete x.person; delete x.prov; }
+    else if (x.target) delete x.target;
+    else if (x.kind) delete x.kind;
+    else if (x.to) delete x.to;
+    else if (x.from) delete x.from;
+    else if (x.type) delete x.type;
+    else L.ui.build = null;
+    render();
+  };
   const slider = $("#b-n");
   if (slider) slider.oninput = () => {
     b.n = +slider.value; $("#b-nv").textContent = b.n;
@@ -963,18 +1037,50 @@ function dilemmaCard() {
   const done = L.myInput.dilemma && L.myInput.dilemma.round === st.round;
   const cur = L.ui.dChoice ?? (done ? L.myInput.dilemma.choice : null);
   const curT = L.ui.dTarget ?? (done ? L.myInput.dilemma.target : null);
-  const kicker = card.type === "pact" ? `PACTE AVEC ${esc(houseName(d.partner).toUpperCase())}` : card.type === "target" ? "DILEMME · UNE MAISON RIVALE" : "DILEMME";
-  let opts;
-  if (card.type === "pact") opts = card.options.map((o) => `<button class="choice" data-ch="${o.id}" aria-pressed="${cur === o.id}"><b>${esc(o.label)}</b></button>`).join("") + `<p class="hint">${esc(houseName(d.partner))} reçoit la même carte et choisit en même temps que toi. Le résultat dépend de vos deux choix.</p>`;
-  else opts = card.options.map((o, i) => `<button class="choice" data-ch="${i}" aria-pressed="${cur === i}"><b>${esc(E.fill(o.label, ctx))}</b><span>${esc(E.fill(o.hint || "", ctx))}</span></button>${cur === i && o.needsTarget ? `<div class="target-row">${st.order.filter((p) => p !== pid).map((p) => `<button class="btn btn-small ${curT === p ? "btn-dark" : ""}" data-dt="${p}">${shield(st.players[p].house, 16)} ${esc(houseName(p))}</button>`).join("")}</div>` : ""}`).join("");
+  const kicker = card.type === "pact" ? `PACTE AVEC ${esc(houseName(d.partner).toUpperCase())}` : card.type === "target" ? "DILEMME · CONTRE UNE MAISON RIVALE" : "DILEMME";
+  let opts, extra = "";
+  if (card.type === "pact") {
+    const la = card.options[0].label, lb = card.options[1].label;
+    opts = card.options.map((o) => `<button class="choice" data-ch="${o.id}" aria-pressed="${cur === o.id}"><b>${esc(o.label)}</b></button>`).join("");
+    const cell = (k) => `<td><div class="fxline">${chipsHtml(card.outcomes[k].fx)}</div></td>`;
+    extra = `<p class="ptext" style="font-size:15px;margin:10px 0 4px"><b>Comment ça marche :</b> ${esc(houseName(d.partner))} reçoit la même carte et choisit en même temps, en secret. Ce que tu gagnes ou perds dépend de <b>vos deux choix</b> :</p>
+      <table class="pact-table"><tr><th>Toi \\ ${esc(houseName(d.partner))}</th><th>${esc(la)}</th><th>${esc(lb)}</th></tr><tr><th>${esc(la)}</th>${cell("aa")}${cell("ab")}</tr><tr><th>${esc(lb)}</th>${cell("ba")}${cell("bb")}</tr></table>
+      <p class="hint">Astuce : négociez par message secret avant de choisir… et décidez si vous vous faites confiance.</p>`;
+  } else {
+    opts = card.options.map((o, i) => `<button class="choice" data-ch="${i}" aria-pressed="${cur === i}"><b>${esc(E.fill(o.label, ctx))}</b><span>${esc(E.fill(o.hint || "", ctx))}</span><span class="fxline">${chipsHtml(o.fx)}</span></button>${cur === i && o.needsTarget ? `<div class="target-row"><span class="ptext" style="width:100%;margin:4px 0 0;font-size:14px"><b>Choisis la maison visée :</b></span>${st.order.filter((p) => p !== pid).map((p) => `<button class="btn btn-small ${curT === p ? "btn-dark" : ""}" data-dt="${p}">${shield(st.players[p].house, 16)} ${esc(houseName(p))}</button>`).join("")}</div>` : ""}`).join("");
+  }
   const opt = card.type !== "pact" && cur !== null ? card.options[cur] : null;
   const canSend = cur !== null && (!opt || !opt.needsTarget || curT);
-  return `<div class="card">${newsHtml()}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${woodcut(500, 220, (st.round + d.id.length) % 3)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>
-    <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${canSend ? "" : "disabled"}>${done ? "Choix scellé ✓ (modifier)" : "Sceller ce choix"}</button></div><p class="hint">Ton choix sera révélé à tous dans la chronique, à la fin de la manche.</p></div>`;
+  return `<div class="card">${newsHtml()}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${woodcut(500, 220, (st.round + d.id.length) % 3)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>${extra}
+    <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${canSend ? "" : "disabled"}>${done ? "Choix scellé ✓ (changer)" : cur === null ? "Choisis une option" : opt && opt.needsTarget && !curT ? "Choisis une maison" : "Sceller ce choix"}</button></div><p class="hint">Les effets en vert sont des gains, en rouge des pertes, en jaune des risques. Ton choix sera révélé à tous à la fin de la manche.</p></div>`;
+}
+function summaryHtml() {
+  const st = S(), pid = me();
+  const a = st.roundStart && st.roundStart[pid];
+  if (!pid || !a) return "";
+  const now = E.snapshotPlayers(st)[pid];
+  const chips = [];
+  const d = (k, label, icon, invert) => { const v = now[k] - a[k]; if (v) chips.push([(v > 0) !== !!invert ? "good" : "bad", `${icon}${v > 0 ? "+" : ""}${v} ${label}`]); };
+  d("prestige", "prestige", ICON.prestige); d("gold", "or", ICON.gold); d("armies", "armées", ICON.army); d("colere", "colère", ICON.colere, true);
+  const gained = now.provs.filter((x) => !a.provs.includes(x)), lost = a.provs.filter((x) => !now.provs.includes(x));
+  const fam = st.families[pid].members;
+  const dead = a.family.filter((id) => !now.family.includes(id)).map((id) => fam.find((m) => m.id === id)).filter(Boolean);
+  const born = now.family.filter((id) => !a.family.includes(id)).map((id) => fam.find((m) => m.id === id)).filter(Boolean);
+  const lines = [];
+  if (gained.length) lines.push(`<span class="fxchip good">${ICON.province}Gagné : ${gained.map((x) => esc(PROVINCES[x].name)).join(", ")}</span>`);
+  if (lost.length) lines.push(`<span class="fxchip bad">${ICON.province}Perdu : ${lost.map((x) => esc(PROVINCES[x].name)).join(", ")}</span>`);
+  dead.forEach((m) => lines.push(`<span class="fxchip bad">${ICON.death}${esc(E.personTitle(m))} est mort${m.sex === "f" ? "e" : ""}</span>`));
+  born.forEach((m) => lines.push(`<span class="fxchip good">${ICON.family}Naissance : ${esc(m.name)}</span>`));
+  const est = E.estimateScore(st, { [pid]: L.priv || {} }, pid);
+  const rank = E.rankOf ? "" : "";
+  return `<div class="summary"><h3>Ta manche en bref</h3><div class="srow">${chips.map(([k, t]) => `<span class="fxchip ${k}">${t}</span>`).join("") || '<span class="fxchip neutral">Rien n\'a changé pour toi</span>'}</div><div class="srow">${lines.join("")}</div><p class="ptext" style="margin:6px 0 0;font-size:15px">Ton score estimé : <b>${est.total} points</b>.</p></div>`;
 }
 function interludeHtml() {
-  const st = S();
-  return `<div class="interlude"><span class="kick">FIN DE LA MANCHE ${st.round} SUR ${st.maxRounds}</span>${woodcut(560, 365, st.round)}<h1>Anno Domini ${E.yearOf(st.round)}</h1>${interludeLines().map((l, i) => `<p style="animation-delay:${0.4 + i * 1.1}s">${esc(l)}</p>`).join("")}</div>`;
+  const st = S(), pid = me();
+  const waitAll = st.solo || st.timer === "none";
+  const ready = L.myInput.next && L.myInput.next.round === st.round;
+  return `<div class="interlude"><span class="kick">FIN DE LA MANCHE ${st.round} SUR ${st.maxRounds}</span>${woodcut(380, 210, st.round)}<h1>Anno Domini ${E.yearOf(st.round)}</h1>${summaryHtml()}${interludeLines().map((l, i) => `<p style="animation-delay:${0.3 + i * 0.9}s">${esc(l)}</p>`).join("")}
+    ${pid && waitAll ? `<button class="btn btn-red" id="btn-next" ${ready ? "disabled" : ""}>${ready ? "On attend les autres…" : st.round >= st.maxRounds ? "Voir le résultat" : `Passer à la manche ${st.round + 1}`}</button>` : ""}</div>`;
 }
 function endHtml() {
   const st = S();
@@ -1009,12 +1115,16 @@ function bindOverlay() {
     A.play("seal"); L.dilemmaClosed = true; render();
   };
   if ($("#btn-replay")) $("#btn-replay").onclick = () => hostReplay();
+  if ($("#btn-next")) $("#btn-next").onclick = () => { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); };
 }
-function openModal(kind) {
+function openModal(kind, data) {
   const m = $("#modal");
   let html = "";
+  if (kind === "intro") html = introHtml(data || 0);
+  if (kind === "unlock") { const u = UNLOCK_INFO[data]; html = `<div class="card"><span class="card-kicker">PREMIÈRE PARTIE · MANCHE ${S().round}</span><div class="intro-icon">${u.icon.replace('width="16" height="16"', 'width="56" height="56"')}</div><h2 style="text-align:center">${u.title}</h2><p>${u.text}</p><button class="btn btn-red btn-block" id="md-close">Compris</button></div>`; }
+  if (kind === "score") { const st = S(), pid = me(); const e = pid ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null; html = `<div class="card"><span class="card-kicker">COMMENT GAGNER</span><h2>Le score</h2><p>${GLOSSARY.score[1]}</p>${e ? `<div class="score-box"><b>${e.total}</b> points aujourd'hui :<br>${ICON.prestige}Prestige ${e.prestige} · ${ICON.province}provinces ${e.provinces} · régions ${e.regions} · objectifs ${e.objectives} · ${ICON.family}famille ${e.family}</div>` : ""}<p class="hint">Les objectifs secrets ne comptent que s'ils sont réussis à la fin. Détail dans l'onglet « Ma maison ».</p><button class="btn btn-block" id="md-close">Fermer</button></div>`; }
   if (kind === "house") html = `<div class="card">${houseHtml(L.ui.viewHouse, false)}<button class="btn btn-block" id="md-close" style="margin-top:12px">Fermer</button></div>`;
-  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2>
+  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><button class="btn btn-small" data-intro="0">Revoir l'introduction en 5 cartes</button>
     <p><b>But :</b> avoir le plus de points après 10 manches (Prestige + 1 par province + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille). Quinze provinces = victoire immédiate.</p>
     <h3>Une manche</h3><ul><li><b>Revenus</b> : 1 or par province, 2 armées dans ta capitale, bonus de régions.</li><li><b>Dilemme</b> secret (parfois avec un autre joueur).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (recrute 2 à 4 armées), Intriguer (poison, séduction, corruption).</li><li><b>Révélation</b> : dilemmes, intrigues, mouvements, puis batailles.</li></ul>
     <h3>Batailles</h3><p>Force = armées + bonus + un petit dé (0 à 2). Le défenseur gagne les égalités. Le vainqueur perd la moitié des armées adverses. Les survivants du défenseur rentrent à sa capitale. Perdre sa capitale : −5 Prestige, +20 Colère, un tiers de l'or pillé.</p>
@@ -1024,22 +1134,103 @@ function openModal(kind) {
     <h3>Le favori</h3><p>Le joueur en tête porte la couronne : battre ses armées rapporte +2 Prestige. Dernière manche : le Couronnement, conquêtes à 3 Prestige et scores cachés.</p>
     <button class="btn btn-block" id="md-close">Fermer</button></div>`;
   m.innerHTML = html; m.classList.remove("hidden");
-  $("#md-close").onclick = () => m.classList.add("hidden");
-  m.onclick = (e) => { if (e.target === m) m.classList.add("hidden"); };
+  const close = () => { m.classList.add("hidden"); setTimeout(nextModal, 50); };
+  m.querySelectorAll("#md-close").forEach((b) => (b.onclick = close));
+  m.querySelectorAll("[data-intro]").forEach((b) => (b.onclick = () => openModal("intro", +b.dataset.intro)));
+  m.onclick = (e) => { if (e.target === m && kind !== "intro" && kind !== "unlock") close(); };
 }
 function phaseTutos() {
   const st = S();
   if (!st.tutorial || !me()) return;
   const T = {
-    objectives: ["Objectifs secrets", "Tu tires 3 objectifs, garde-en 2. Ils rapportent des points à la fin et personne d'autre ne les voit."],
-    draft: ["Le choix des provinces", "Chacun choisit une province à tour de rôle. <b>Ta première province devient ta capitale.</b> Regroupe tes terres et vise une région entière : elle rapporte des armées et du Prestige à chaque manche."],
-    placement: ["Le placement", "Répartis 12 armées sur tes provinces. Clique une province pour y ajouter une armée. Renforce celles qui touchent tes voisins."],
-    dilemma: ["Le dilemme", "Chaque manche commence par un dilemme secret. Il n'y a jamais de bon choix. Certains dilemmes impliquent un autre joueur, qui choisit en même temps que toi. Pendant cette phase, tu peux aussi négocier : mariages, trêves, or, et messages secrets (onglet Messages)."],
-    orders: ["Les dés d'ordres", "Clique un dé, puis choisis un ordre : <b>Frapper</b> (attaque, le dé s'ajoute à ta force), <b>Marcher</b>, <b>Lever</b> (recruter) ou <b>Intriguer</b>. Tout le monde voit tes dés, sauf ton <b>dé caché</b> : profites-en pour bluffer. Quand tu as fini, scelle tes ordres. En mode tuto, pas d'attaque à la manche 1."],
-    reveal: ["La révélation", "Tous les ordres sont révélés en même temps : décisions des dilemmes, intrigues, mouvements, puis batailles. Suis le récit en bas de la carte."],
-    interlude: ["La chronique", "Entre deux manches, 3 ans passent : les rois vieillissent, des enfants naissent, d'autres meurent. Ta famille est dans l'onglet « Ma maison »."],
+    draft: ["Ta capitale", `Ta première province devient ta ${term("capitale")}. Ensuite, prends des provinces voisines : une ${term("region")} complète rapporte des armées à chaque manche.`],
+    placement: ["Les armées", `Le chiffre sur chaque bannière = les ${term("armees", "armées")} de la province. Mets-en plus là où tu touches tes voisins.`],
+    reveal: ["La révélation", "Tout le monde découvre en même temps les choix des autres : dilemmes, intrigues, mouvements, puis batailles. Le récit défile en bas de la carte."],
+    end: ["Fin de la partie", "Bravo, tu connais maintenant tout le jeu ! Pour les prochaines parties, décoche « Première partie » : toutes les règles seront actives dès le début."],
   };
   if (T[st.phase]) tuto(st.phase, T[st.phase][0], T[st.phase][1]);
+}
+
+// ---------------------------------------------------------------------
+// AIDES : fenêtres d'introduction, « Nouveau ! », définitions, fiche province, zoom, coach
+// ---------------------------------------------------------------------
+L.modalQueue = [];
+function queueModal(kind, data) { L.modalQueue.push({ kind, data }); if ($("#modal").classList.contains("hidden")) nextModal(); }
+function nextModal() { const m = L.modalQueue.shift(); if (m) openModal(m.kind, m.data); }
+function introHtml(i) {
+  const c = INTRO[i];
+  return `<div class="card"><span class="card-kicker">COMMENT JOUER · ${i + 1} SUR ${INTRO.length}</span><div class="intro-icon">${c.icon.replace('width="16" height="16"', 'width="56" height="56"')}</div><h2 style="text-align:center">${c.title}</h2><p>${c.text}</p>
+    <div class="intro-dots">${INTRO.map((_, j) => `<span class="${j === i ? "on" : ""}"></span>`).join("")}</div>
+    <div class="row">${i > 0 ? `<button class="btn grow" data-intro="${i - 1}">← Précédent</button>` : `<button class="btn grow" id="md-close">Passer</button>`}${i < INTRO.length - 1 ? `<button class="btn btn-red grow" data-intro="${i + 1}">Suivant →</button>` : `<button class="btn btn-red grow" id="md-close">C'est parti !</button>`}</div></div>`;
+}
+// popover (définitions et fiches de province)
+function showPopover(html, x, y) {
+  const p = $("#popover");
+  p.innerHTML = html; p.classList.remove("hidden");
+  const w = p.offsetWidth, h = p.offsetHeight;
+  p.style.left = Math.max(10, Math.min(window.innerWidth - w - 10, x - w / 2)) + "px";
+  p.style.top = (y + h + 20 > window.innerHeight ? Math.max(10, y - h - 14) : y + 14) + "px";
+}
+function hidePopover() { $("#popover").classList.add("hidden"); }
+document.addEventListener("click", (e) => {
+  const t = e.target.closest(".term");
+  if (t) { e.preventDefault(); e.stopPropagation(); const g = GLOSSARY[t.dataset.term]; if (g) { const r = t.getBoundingClientRect(); showPopover(`<h5>${g[0]}</h5>${g[1]}`, r.left + r.width / 2, r.bottom); } return; }
+  if (!e.target.closest("#popover") && !e.target.closest("#map")) hidePopover();
+}, true);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { hidePopover(); $("#legend").classList.add("hidden"); } });
+function provinceCard(id) {
+  const st = S(), P = PROVINCES[id], p = (st.phase === "reveal" ? revealProvinces() : st.provinces)[id];
+  const owner = p.owner ? `${shield(st.players[p.owner].house, 14)} ${esc(houseName(p.owner))}${p.owner === me() ? " (toi)" : ""}` : "Neutre (milice)";
+  const isCap = st.order.find((o) => st.players[o].capital === id && p.owner === o);
+  const reg = REGIONS[P.region];
+  const regOwner = reg.provs.every((x) => st.provinces[x].owner && st.provinces[x].owner === st.provinces[reg.provs[0]].owner) ? st.provinces[reg.provs[0]].owner : null;
+  const neigh = P.adj.map((a) => PROVINCES[a].name).join(", ");
+  return `<h5>${ICON.province}${esc(P.name)} · ${esc(P.city)}</h5>
+    <div class="pv-row"><span>Propriétaire</span><span>${owner}</span></div>
+    <div class="pv-row"><span>${ICON.army}Armées</span><b>${p.armies}</b></div>
+    <div class="pv-row"><span>${term("defense", "Défense")}</span><span>${E.defenseOf(st, id)} + petit hasard</span></div>
+    ${isCap ? `<div class="pv-row"><span>${term("capitale", "Capitale")}</span><span>de ${esc(houseName(isCap))}</span></div>` : ""}
+    ${p.plague ? `<div class="pv-row"><span>${ICON.plague}${term("peste", "Peste")}</span><span>−1 armée par manche</span></div>` : ""}
+    <div class="pv-row"><span>${term("region", "Région")}</span><span>${reg.name} (${reg.provs.length} prov.)${regOwner ? ` · tenue par ${esc(houseName(regOwner))}` : ""}</span></div>
+    <div class="pv-row"><span>Voisines</span><span style="text-align:right">${esc(neigh)}</span></div>`;
+}
+// zoom et déplacement de la carte
+const VIEW = { x: 0, y: 0, w: 840, h: 780 };
+function applyView() { $("#map").setAttribute("viewBox", `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`); }
+function zoomBy(f) { const cx = VIEW.x + VIEW.w / 2, cy = VIEW.y + VIEW.h / 2; VIEW.w = Math.max(260, Math.min(840, VIEW.w * f)); VIEW.h = VIEW.w * 780 / 840; VIEW.x = Math.max(-100, Math.min(840 - VIEW.w + 100, cx - VIEW.w / 2)); VIEW.y = Math.max(-100, Math.min(780 - VIEW.h + 100, cy - VIEW.h / 2)); applyView(); }
+$("#zoom-in").onclick = () => zoomBy(0.75);
+$("#zoom-out").onclick = () => zoomBy(1 / 0.75);
+$("#zoom-reset").onclick = () => { Object.assign(VIEW, { x: 0, y: 0, w: 840, h: 780 }); applyView(); };
+$("#btn-legend").onclick = () => { const l = $("#legend"); l.innerHTML = `<p class="ph" style="margin-bottom:4px">Légende de la carte</p>${LEGEND}<p class="hint">Astuce : touche n'importe quelle province pour voir sa fiche.</p>`; l.classList.toggle("hidden"); };
+(function enablePan() {
+  const svg = $("#map"); let drag = null;
+  svg.addEventListener("pointerdown", (e) => { if (VIEW.w >= 840) return; drag = { x: e.clientX, y: e.clientY, vx: VIEW.x, vy: VIEW.y, moved: false }; });
+  window.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const r = svg.getBoundingClientRect(); const k = VIEW.w / r.width;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 6) drag.moved = true;
+    if (drag.moved) { VIEW.x = drag.vx - dx * k; VIEW.y = drag.vy - dy * k; applyView(); }
+  });
+  window.addEventListener("pointerup", () => { if (drag && drag.moved) L.justPanned = Date.now(); drag = null; });
+})();
+// coach : fait clignoter l'élément à utiliser (première partie)
+function applyCoach() {
+  document.querySelectorAll(".coach").forEach((e) => e.classList.remove("coach"));
+  const st = S(), pid = me();
+  if (!st || !st.tutorial || !pid) return;
+  let sel = null;
+  const sealed = L.myInput.orders && L.myInput.orders.round === st.round && L.myInput.orders.sealed;
+  if (st.phase === "placement" && !(L.myInput.placement && L.myInput.placement.ok)) sel = '[data-guide="plok"]';
+  if (st.phase === "dilemma" && L.priv && L.priv.dilemma && !(L.myInput.dilemma && L.myInput.dilemma.round === st.round)) sel = !$("#overlay").classList.contains("hidden") ? (L.ui.dChoice === null || L.ui.dChoice === undefined ? ".choice" : "#dil-ok:not([disabled])") : '[data-guide="dil"]';
+  if (st.phase === "orders" && !sealed) {
+    const b = L.ui.build;
+    if (!b) sel = $('[data-die]:not(.used):not([disabled])') ? '[data-die]:not(.used):not([disabled])' : "#btn-seal";
+    else if (!b.type) sel = '[data-act="levy"]';
+    else if ($("#b-ok")) sel = "#b-ok";
+  }
+  if (st.phase === "interlude") sel = "#btn-next:not([disabled])";
+  if (sel) { const el = document.querySelector(sel); if (el) el.classList.add("coach"); }
 }
 
 // ---------------------------------------------------------------------
@@ -1048,7 +1239,7 @@ function phaseTutos() {
 let lastTickSec = -1;
 setInterval(() => {
   const st = S();
-  if (st && st.phase !== "lobby" && st.deadline && !st.solo && !["end", "reveal", "interlude"].includes(st.phase)) {
+  if (st && st.phase !== "lobby" && st.deadline && !st.solo && st.timer && st.timer !== "none" && !["end", "reveal", "interlude"].includes(st.phase)) {
     const ms = st.deadline - net.now();
     const t = fmtTime(ms);
     $("#tb-timer").textContent = t;
@@ -1119,9 +1310,11 @@ function hostStart(opts = {}) {
   const tutorial = !!opts.tutorial, randomDraft = !!opts.randomDraft;
   const { state, priv } = E.createGame({ players, tutorial, randomDraft, code: L.code }, Math.random);
   state.solo = SOLO; // en solo : pas de chrono, on attend que tu valides
+  state.timer = SOLO ? "none" : opts.timer || "none";
+  state.gameId = Math.random().toString(36).slice(2, 10);
   state.seats = {};
   players.filter((p) => !p.isBot).forEach((p) => (state.seats[p.pid] = p.pid));
-  state.deadline = net.now() + E.TIMES.objectives * 1000 * (tutorial ? 1.5 : 1) * SPEED;
+  state.deadline = net.now() + E.TIMES.objectives * 1000 * ({ relaxed: 2, normal: 1, fast: 0.7 }[state.timer] || 1) * SPEED;
   state.ready = {};
   H.state = state; H.priv = priv;
   hostWrite(true);
@@ -1135,7 +1328,8 @@ function hostReplay() {
 function hostTick() {
   if (!H.active || !H.state || !H.state.phase || H.state.phase === "lobby" || H.busy) return;
   const st = H.state, now = net.now(), I = pidInputs();
-  const m = (st.tutorial ? 1.5 : 1) * SPEED;
+  const m = ({ relaxed: 2, normal: 1, fast: 0.7 }[st.timer] || 1) * SPEED;
+  const noClock = st.solo || st.timer === "none" || !st.timer;
   const humans = st.order.filter((p) => !st.players[p].isBot);
   // reprise de siège (changement d'appareil)
   let changed = false, privChanged = false;
@@ -1153,6 +1347,7 @@ function hostTick() {
     if (st.phase === "placement") ready[p] = !!(i.placement && i.placement.ok);
     if (st.phase === "dilemma") ready[p] = !H.priv[p].dilemma || (i.dilemma && i.dilemma.round === st.round);
     if (st.phase === "orders") ready[p] = !!(i.orders && i.orders.round === st.round && i.orders.sealed);
+    if (st.phase === "interlude") ready[p] = !!(i.next && i.next.round === st.round);
   }
   const rk = JSON.stringify(ready);
   if (rk !== H.lastReady) { H.lastReady = rk; st.ready = ready; changed = true; }
@@ -1169,8 +1364,8 @@ function hostTick() {
       }
     }
   }
-  const late = () => !st.solo && now > st.deadline;
-  const go = (phaseDeadlineSec) => { st.deadline = now + phaseDeadlineSec * 1000 * m; st.ready = {}; H.lastReady = ""; };
+  const late = () => H.force || (!noClock && now > st.deadline);
+  const go = (phaseDeadlineSec) => { st.deadline = now + phaseDeadlineSec * 1000 * m; st.ready = {}; H.lastReady = ""; H.force = false; };
   try {
     switch (st.phase) {
       case "objectives":
@@ -1224,10 +1419,11 @@ function hostTick() {
         }
         break;
       case "reveal":
-        if (now > st.deadline) { st.phase = "interlude"; st.deadline = now + E.TIMES.interlude * 1000 * SPEED; hostWrite(); return; }
+        if (now > st.deadline) { st.phase = "interlude"; st.deadline = now + E.TIMES.interlude * 1000 * SPEED; st.ready = {}; H.lastReady = ""; hostWrite(); return; }
         break;
       case "interlude":
-        if (now > st.deadline) {
+        if ((noClock ? allReady || H.force : now > st.deadline)) {
+          H.force = false;
           if (st.gameOver) { E.finishGame(st, H.priv); st.deadline = 0; }
           else { E.startRound(st, H.priv, Math.random); go(E.TIMES.dilemma); }
           hostWrite(true); return;

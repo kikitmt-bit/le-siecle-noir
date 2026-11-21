@@ -12,6 +12,9 @@ export const COSTS = { poison: 4, seduction: 3, bribe: 6 };
 export const NEED = { poison: 5, seduction: 4, bribe: 6 };
 export const TIMES = { objectives: 30, draft: 15, placement: 45, dilemma: 35, orders: 75, interlude: 9 };
 export const START_ARMIES = 12;
+// Première partie : les règles se débloquent manche après manche
+export const UNLOCK = { intrigue: 3, diplomacy: 4, hidden: 5 };
+export const unlocked = (state, feature) => !state.tutorial || state.round >= UNLOCK[feature];
 export const WIN_PROVINCES = 15;
 
 // ---------- utilitaires ----------
@@ -485,7 +488,17 @@ export function marry(state, a, b, out) {
 }
 
 // ---------- début de manche ----------
+export function snapshotPlayers(state) {
+  const snap = {};
+  for (const pid of state.order) {
+    const pl = state.players[pid];
+    const mine = provincesOf(state, pid);
+    snap[pid] = { gold: pl.gold, prestige: pl.prestige, colere: pl.colere, peur: pl.peur, provs: mine, armies: mine.reduce((s, id) => s + state.provinces[id].armies, 0), family: state.families[pid].members.filter((m) => m.alive && m.role !== "gone" && m.role !== "monk").map((m) => m.id) };
+  }
+  return snap;
+}
 export function startRound(state, priv, rng) {
+  state.roundStart = snapshotPlayers(state);
   state.round++;
   state.news = [];
   state.proposals = {};
@@ -640,7 +653,7 @@ export function rollDice(state, rng, priv) {
     pl.extraDie = new Set(dice).size < dice.length;
     if (pl.extraDie) dice.push(2);
     // un dé reste caché aux autres joueurs : c'est le bluff
-    const hid = n >= 2 ? Math.floor(rng() * n) : -1;
+    const hid = n >= 2 && unlocked(state, "hidden") ? Math.floor(rng() * n) : -1;
     pl.hiddenIdx = hid;
     if (priv && priv[pid]) priv[pid].hidden = hid >= 0 ? { round: state.round, idx: hid, v: dice[hid] } : null;
     pl.dice = dice.map((v, i) => (i === hid ? 0 : v));
@@ -716,9 +729,10 @@ function dealDilemmas(state, priv, rng) {
     }
     free.push(pid);
   }
-  // pactes entre deux joueurs
+  // pactes entre deux joueurs (en première partie, à partir de la manche 3)
   const pairs = [];
-  if (free.length >= 2 && rng() < 0.8) pairs.push([free[0], free[1]]);
+  const learning = state.tutorial && state.round < 3;
+  if (!learning && free.length >= 2 && rng() < 0.8) pairs.push([free[0], free[1]]);
   if (free.length >= 4 && rng() < 0.4) pairs.push([free[2], free[3]]);
   for (const pair of pairs) {
     const used = [...priv[pair[0]].used, ...priv[pair[1]].used];
@@ -734,7 +748,7 @@ function dealDilemmas(state, priv, rng) {
     free = free.filter((p) => !pair.includes(p));
   }
   for (const pid of free) {
-    let cards = DILEMMAS.filter((d) => d.type !== "pact" && !d.chainOnly && !priv[pid].used.includes(d.id) && reqOk(state, pid, d.req, [pid]));
+    let cards = DILEMMAS.filter((d) => d.type !== "pact" && !d.chainOnly && !(learning && (d.type === "target" || d.options.some((o) => o.anon))) && !priv[pid].used.includes(d.id) && reqOk(state, pid, d.req, [pid]));
     if (!cards.length) { priv[pid].used = []; cards = DILEMMAS.filter((d) => d.type !== "pact" && !d.chainOnly && reqOk(state, pid, d.req, [pid])); }
     // les cartes liées à la situation et les cartes à cible sortent plus souvent
     const weighted = [];
@@ -843,7 +857,7 @@ export function resolveRound(state, priv, inputs, rng) {
   // 1. intrigues
   for (const pid of shuffle(rng, state.order)) {
     const pl = state.players[pid];
-    for (const o of orders[pid].filter((x) => x.type === "intrigue")) {
+    for (const o of orders[pid].filter((x) => x.type === "intrigue" && unlocked(state, "intrigue"))) {
       const kind = o.kind;
       if (!COSTS[kind]) continue;
       const tgt = o.target && state.players[o.target] && o.target !== pid ? o.target : null;
@@ -1005,6 +1019,7 @@ export function resolveRound(state, priv, inputs, rng) {
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
   }
   // 4. diplomatie : mariages, trêves, dons, accusations
+  if (!unlocked(state, "diplomacy")) state.proposals = {};
   for (const key of Object.keys(state.proposals || {})) {
     const pr = state.proposals[key];
     const kind = pr.kind || "marriage";
@@ -1023,7 +1038,7 @@ export function resolveRound(state, priv, inputs, rng) {
   }
   state.proposals = {};
   for (const pid of state.order) {
-    const gifts = inputs[pid] && inputs[pid].gifts && inputs[pid].gifts.round === state.round ? inputs[pid].gifts.items || [] : [];
+    const gifts = unlocked(state, "diplomacy") && inputs[pid] && inputs[pid].gifts && inputs[pid].gifts.round === state.round ? inputs[pid].gifts.items || [] : [];
     for (const g of gifts.slice(0, 3)) {
       const to = state.players[g.to];
       const n = Math.min(Math.max(0, g.amount | 0), state.players[pid].gold);
@@ -1032,7 +1047,7 @@ export function resolveRound(state, priv, inputs, rng) {
       const t = `${capitalize(maisonName(state, pid))} fait porter ${n} pièce${n > 1 ? "s" : ""} d'or à ${maisonName(state, g.to)}. Cadeau, pot-de-vin ou promesse ?`;
       steps.push({ kind: "gift", text: t, pid, sound: "coins" }); chron(state, t, "gift");
     }
-    const acc = inputs[pid] && inputs[pid].accuse && inputs[pid].accuse.round === state.round ? inputs[pid].accuse : null;
+    const acc = unlocked(state, "hidden") && inputs[pid] && inputs[pid].accuse && inputs[pid].accuse.round === state.round ? inputs[pid].accuse : null;
     if (acc && state.players[acc.target] && acc.target !== pid) {
       const crime = (priv.__crimes || []).find((c) => c.id === acc.crime);
       const uns = (state.unsolved || []).find((u) => u.id === acc.crime);
@@ -1228,6 +1243,7 @@ export function aiAnswer(state, priv, pid, pr, rng) {
 export function aiOffers(state, priv, rng) {
   // les IA proposent parfois mariages et trêves (surtout aux humains)
   state.proposals = state.proposals || {};
+  if (!unlocked(state, "diplomacy")) return;
   for (const pid of state.order) {
     const pl = state.players[pid];
     if (!pl.isBot || !pl.ai || rng() > 0.35) continue;
@@ -1252,7 +1268,7 @@ export function aiOrders(state, pid, rng, priv) {
   const maxStrikes = pl.house === "anglais" ? (state.round > 6 ? 2 : 1) : Pers.maxStrikes;
   // 1. intrigues
   let gold = pl.gold;
-  if (Pers.intrigue > 0) for (const d of dice) {
+  if (Pers.intrigue > 0 && unlocked(state, "intrigue")) for (const d of dice) {
     if (used.has(d.i) || d.v < 4 || rng() > Pers.intrigue) continue;
     const others = state.order.filter((o) => o !== pid);
     const tgt = state.leader && state.leader !== pid ? state.leader : pick(rng, others);
