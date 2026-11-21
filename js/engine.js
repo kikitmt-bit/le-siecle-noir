@@ -2,18 +2,18 @@
 //  LE SIÈCLE NOIR — moteur de règles (pur JS, sans DOM ni réseau)
 //  L'hôte (arbitre) est le seul à appeler ces fonctions.
 // =====================================================================
-import { PROVINCES, REGIONS } from "./map.js?v=1795287042";
-import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795287042";
+import { PROVINCES, REGIONS } from "./map.js?v=1795289401";
+import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795289401";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 export const MAX_ROUNDS = 10;
 export const START_YEAR = 1347;
 export const COSTS = { poison: 4, seduction: 3, bribe: 6 };
 export const NEED = { poison: 5, seduction: 4, bribe: 6 };
-export const TIMES = { objectives: 30, draft: 15, placement: 45, dilemma: 35, orders: 75, interlude: 9 };
+export const TIMES = { objectives: 30, draft: 15, placement: 45, dilemma: 35, orders: 75, interlude: 15 };
 export const START_ARMIES = 12;
 // Première partie : les règles se débloquent manche après manche
-export const UNLOCK = { intrigue: 3, diplomacy: 4, hidden: 5 };
+export const UNLOCK = { diplomacy: 1, intrigue: 2, hidden: 3 };
 export const unlocked = (state, feature) => !state.tutorial || state.round >= UNLOCK[feature];
 export const WIN_PROVINCES = 15;
 
@@ -24,6 +24,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 const shuffle = (rng, arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const uid = (rng) => Math.floor(rng() * 36 ** 6).toString(36);
+export const MERC_COST = 4, MERC_ARMIES = 2;
 export const levyAmount = (d) => (d <= 2 ? 2 : d <= 4 ? 3 : 4);
 export const peurBonus = (pl) => (pl ? Math.floor((pl.peur || 0) / 25) : 0);
 
@@ -31,7 +32,7 @@ export function maisonName(state, pid, article = "la maison") {
   const pl = state.players[pid];
   if (!pl) return "les rebelles";
   if (pl.house === "anglais") return "la couronne d'Angleterre";
-  const n = HOUSES[pl.house].name;
+  const n = pl.hname || HOUSES[pl.house].name;
   return `${article} ${/^[AEIOUÂÉ]/i.test(n) ? "d'" : "de "}${n}`;
 }
 export function capitalize(s) {
@@ -55,7 +56,7 @@ export function queen(state, pid) { const k = king(state, pid); const c = consor
 // la mère des futurs enfants du souverain
 export function mother(state, pid) { const k = king(state, pid); if (!k) return null; if (k.sex === "f") return consort(state, pid) ? k : null; return queen(state, pid); }
 export function ownerOf(state, person) { for (const p of Object.keys(state.families)) if (state.families[p].members.includes(person)) return p; return null; }
-export function deName(state, pid) { const pl = state.players[pid]; if (!pl) return "des rebelles"; if (pl.house === "anglais") return "d'Angleterre"; const n = HOUSES[pl.house].name; return /^[AEIOUÂÉ]/i.test(n) ? "d'" + n : "de " + n; }
+export function deName(state, pid) { const pl = state.players[pid]; if (!pl) return "des rebelles"; if (pl.house === "anglais") return "d'Angleterre"; const n = pl.hname || HOUSES[pl.house].name; return /^[AEIOUÂÉ]/i.test(n) ? "d'" + n : "de " + n; }
 const FEM = { "le Boucher": "la Bouchère", "l'Empoisonneur": "l'Empoisonneuse", "le Traître": "la Traîtresse", "le Cruel": "la Cruelle", "le Maudit": "la Maudite", "le Parricide": "la Parricide", "l'Étrangleur": "l'Étrangleuse", "le Pestilentiel": "la Pestilentielle", "le Tricheur": "la Tricheuse", "le Couard": "la Couarde" };
 export function personTitle(p) {
   if (!p) return "personne";
@@ -92,6 +93,10 @@ function makeFamily(rng, house) {
 }
 
 // ---------- création de partie ----------
+export function cleanHouseName(n) {
+  n = String(n || "").replace(/^\s*(la\s+)?maison\s+(de\s+|d['’]\s*)?/i, "").replace(/[<>"]/g, "").trim().slice(0, 18);
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : null;
+}
 export function createGame({ players, tutorial = false, randomDraft = false, code = "" }, rng) {
   // players: [{pid, name, house, isBot}]
   const state = {
@@ -102,7 +107,7 @@ export function createGame({ players, tutorial = false, randomDraft = false, cod
   const priv = {};
   for (const p of players) {
     state.players[p.pid] = {
-      pid: p.pid, name: p.name, house: p.house, isBot: !!p.isBot, gold: 10, colere: 10, peur: 10, prestige: 10,
+      pid: p.pid, name: p.name, house: p.house, hname: cleanHouseName(p.hname), isBot: !!p.isBot, gold: 10, colere: 10, peur: 10, prestige: 10,
       capital: null, dice: [], extraDie: false, intrigueBonus: 0, exiled: false,
       ai: p.ai || (p.house === "anglais" ? null : null), flags: {}, diceMod: 0, hiddenIdx: -1,
       stats: { armiesKilled: 0, betrayals: 0, murders: 0, familyDeaths: 0, bastardsReceived: 0, conquests: 0, capitalLost: false, married: 0, treaties: 0, accusationsOk: 0, bastardsSown: 0, goldGiven: 0, attacks: 0, attackLost: 0, kings: 1, firstKing: null },
@@ -111,7 +116,7 @@ export function createGame({ players, tutorial = false, randomDraft = false, cod
     state.families[p.pid] = fam;
     fam.queenRef = { pid: p.pid, id: fam.members[1].id };
     state.players[p.pid].stats.firstKing = fam.kingId;
-    priv[p.pid] = { used: [], objOffer: [], objectives: [], dilemma: null, chains: [], grudges: [] };
+    priv[p.pid] = { used: [], objOffer: [], objectives: [], dilemma: null, dilemma2: null, chains: [], grudges: [] };
     if (!p.isBot || p.ai) priv[p.pid].objOffer = shuffle(rng, OBJECTIVES.map((o) => o.id)).slice(0, 3);
   }
   state.order = shuffle(rng, players.map((p) => p.pid));
@@ -131,7 +136,30 @@ export function finishObjectives(state, priv, inputs) {
 }
 
 // ---------- draft ----------
-export function provincesPerPlayer(n) { return n >= 4 ? 4 : n === 3 ? 5 : 6; }
+export function provincesPerPlayer(n) { return n >= 3 ? 3 : 4; }
+// après le choix des provinces, toutes les provinces restantes sont réparties : pas de terres vides
+export function finishDraft(state, rng) {
+  const P = state.provinces;
+  const count = (pid) => PROV_IDS.filter((id) => P[id].owner === pid).length;
+  let guard = 0;
+  while (PROV_IDS.some((id) => !P[id].owner) && guard++ < 100) {
+    // le moins pourvu reçoit d'abord (à égalité, le dernier à avoir choisi)
+    const order = state.order.slice().reverse().sort((a, b) => count(a) - count(b));
+    // le moins pourvu reçoit toujours : une voisine si possible, sinon la province libre la plus proche
+    const pid = order[0];
+    let free = PROV_IDS.filter((id) => !P[id].owner && PROVINCES[id].adj.some((a) => P[a].owner === pid));
+    if (!free.length) {
+      const dist = {}; const q = PROV_IDS.filter((id) => P[id].owner === pid); q.forEach((id) => (dist[id] = 0));
+      for (let h = 0; h < q.length; h++) for (const a of PROVINCES[q[h]].adj) if (dist[a] === undefined) { dist[a] = dist[q[h]] + 1; q.push(a); }
+      const cands = PROV_IDS.filter((id) => !P[id].owner);
+      const md = Math.min(...cands.map((id) => dist[id] ?? 99));
+      free = cands.filter((id) => (dist[id] ?? 99) === md);
+    }
+    const best = free.map((id) => ({ id, s: REGIONS[PROVINCES[id].region].provs.filter((r) => P[r].owner === pid).length * 3 + PROVINCES[id].adj.filter((a) => P[a].owner === pid).length + rng() })).sort((a, b) => b.s - a.s)[0].id;
+    P[best].owner = pid; P[best].armies = 1;
+  }
+  state.phase = "placement";
+}
 export function startDraft(state, rng) {
   const n = state.order.length, per = provincesPerPlayer(n);
   const seq = [];
@@ -413,6 +441,11 @@ export function applyFx(state, pid, fxList, ctx, rng, out) {
       const mine = provincesOf(state, pid);
       const cands = PROV_IDS.filter((id) => !state.provinces[id].owner && PROVINCES[id].adj.some((a) => mine.includes(a)));
       const any = cands.length ? cands : PROV_IDS.filter((id) => !state.provinces[id].owner);
+      if (!any.length) {
+        // plus aucune terre libre : les colons rejoignent l'armée
+        const b = provForWhere(state, pid, "border", rng);
+        if (b) { state.provinces[b].armies += 3; out.push({ kind: "text", text: `Plus aucune terre libre en France : les colons de ${maisonName(state, pid)} prennent les armes (+3 armées ${PROVINCES[b].en}).`, set: { [b]: { ...state.provinces[b] } } }); }
+      }
       if (any.length) { const id = pick(rng, any); state.provinces[id].owner = pid; state.provinces[id].armies = Math.max(2, state.provinces[id].armies); out.push({ kind: "text", text: `${capitalize(maisonName(state, pid))} prend possession ${PROVINCES[id].de.replace(/^de /, "de la province de ").replace(/^du /, "du ").replace(/^d'/, "de la province d'")}.`, set: { [id]: { ...state.provinces[id] } } }); }
     }
     if (fx.others) for (const o of state.order) if (o !== pid) applyFx(state, o, fx.others, { ...ctx, actor: pid, others: null }, rng, out);
@@ -723,67 +756,73 @@ function reqOk(state, pid, req, pair) {
   }
 }
 function dealDilemmas(state, priv, rng) {
+  // deux cartes par manche : une affaire personnelle (slot « dilemma ») et une affaire qui implique un rival (slot « dilemma2 »)
   const players = state.order.filter((p) => !state.players[p].isBot || state.players[p].ai);
-  for (const pid of players) priv[pid].dilemma = null;
-  let free = [];
+  for (const pid of players) { priv[pid].dilemma = null; priv[pid].dilemma2 = null; }
+  const usedOk = (pid, d) => !priv[pid].used.includes(d.id);
   // suites en chaîne dues cette manche
   for (const pid of shuffle(rng, players)) {
     const ch = (priv[pid].chains || []).find((c) => c.at <= state.round);
-    if (ch) {
-      priv[pid].chains = priv[pid].chains.filter((c) => c !== ch);
-      const card = DILEMMAS.find((d) => d.id === ch.id);
-      if (card) { giveCard(state, priv, pid, card, rng); continue; }
-    }
-    free.push(pid);
+    if (!ch) continue;
+    const card = DILEMMAS.find((d) => d.id === ch.id);
+    if (!card) continue;
+    priv[pid].chains = priv[pid].chains.filter((c) => c !== ch);
+    if (card.type === "pact") continue;
+    giveCard(state, priv, pid, card, rng, card.type === "target" ? "dilemma2" : "dilemma");
   }
-  // pactes entre deux joueurs (en première partie, à partir de la manche 3)
+  // 1. affaire personnelle
+  for (const pid of players) {
+    if (priv[pid].dilemma) continue;
+    let cards = DILEMMAS.filter((d) => d.type === "solo" && !d.chainOnly && usedOk(pid, d) && reqOk(state, pid, d.req, [pid]));
+    if (!cards.length) { priv[pid].used = priv[pid].used.filter((id) => (DILEMMAS.find((d) => d.id === id) || {}).type !== "solo"); cards = DILEMMAS.filter((d) => d.type === "solo" && !d.chainOnly && reqOk(state, pid, d.req, [pid])); }
+    const weighted = [];
+    for (const c of cards) { weighted.push(c); if (c.req) { weighted.push(c); weighted.push(c); } }
+    giveCard(state, priv, pid, pick(rng, weighted), rng, "dilemma");
+  }
+  // 2. affaire avec un rival : pactes à deux, sinon carte à cible
+  let free = shuffle(rng, players.filter((pid) => !priv[pid].dilemma2));
   const pairs = [];
-  const learning = state.tutorial && state.round < 3;
-  if (!learning && free.length >= 2 && rng() < 0.8) pairs.push([free[0], free[1]]);
-  if (free.length >= 4 && rng() < 0.4) pairs.push([free[2], free[3]]);
+  while (free.length >= 2 && rng() < 0.6) { pairs.push([free[0], free[1]]); free = free.slice(2); }
   for (const pair of pairs) {
     const used = [...priv[pair[0]].used, ...priv[pair[1]].used];
     let cards = DILEMMAS.filter((d) => d.type === "pact" && !used.includes(d.id) && reqOk(state, pair[0], d.req, pair));
     if (!cards.length) cards = DILEMMAS.filter((d) => d.type === "pact" && reqOk(state, pair[0], d.req, pair));
-    if (!cards.length) continue;
+    if (!cards.length) { free.push(...pair); continue; }
     const card = pick(rng, cards);
     pair.forEach((pid, i) => {
       const partner = pair[1 - i];
       priv[pid].used.push(card.id);
-      priv[pid].dilemma = { id: card.id, round: state.round, type: "pact", partner, ctx: ctxFor(state, pid, { partenaire: maisonName(state, partner) }) };
+      priv[pid].dilemma2 = { id: card.id, round: state.round, type: "pact", partner, ctx: ctxFor(state, pid, { partenaire: maisonName(state, partner) }) };
     });
-    free = free.filter((p) => !pair.includes(p));
   }
   for (const pid of free) {
-    let cards = DILEMMAS.filter((d) => d.type !== "pact" && !d.chainOnly && !(learning && (d.type === "target" || d.options.some((o) => o.anon))) && !priv[pid].used.includes(d.id) && reqOk(state, pid, d.req, [pid]));
-    if (!cards.length) { priv[pid].used = []; cards = DILEMMAS.filter((d) => d.type !== "pact" && !d.chainOnly && reqOk(state, pid, d.req, [pid])); }
-    // les cartes liées à la situation et les cartes à cible sortent plus souvent
-    const weighted = [];
-    for (const c of cards) { weighted.push(c); if (c.type === "target") weighted.push(c); if (c.req) { weighted.push(c); weighted.push(c); } }
-    giveCard(state, priv, pid, pick(rng, weighted), rng);
+    let cards = DILEMMAS.filter((d) => d.type === "target" && !d.chainOnly && usedOk(pid, d) && reqOk(state, pid, d.req, [pid]));
+    if (!cards.length) { priv[pid].used = priv[pid].used.filter((id) => (DILEMMAS.find((d) => d.id === id) || {}).type !== "target"); cards = DILEMMAS.filter((d) => d.type === "target" && !d.chainOnly && reqOk(state, pid, d.req, [pid])); }
+    if (cards.length) giveCard(state, priv, pid, pick(rng, cards), rng, "dilemma2");
   }
 }
-function giveCard(state, priv, pid, card, rng) {
+function giveCard(state, priv, pid, card, rng, slot = "dilemma") {
   priv[pid].used.push(card.id);
   const mine = provincesOf(state, pid);
   const nonCap = mine.filter((id) => id !== state.players[pid].capital);
   const provId = (nonCap.length ? pick(rng, nonCap) : mine[0]) || null;
-  priv[pid].dilemma = { id: card.id, round: state.round, type: card.type, provId, ctx: ctxFor(state, pid, { prov: provId ? PROVINCES[provId].art : "la province", prov_en: provId ? PROVINCES[provId].en : "dans la province", prov_de: provId ? PROVINCES[provId].de : "de la province" }) };
+  priv[pid][slot] = { id: card.id, round: state.round, type: card.type, provId, ctx: ctxFor(state, pid, { prov: provId ? PROVINCES[provId].art : "la province", prov_en: provId ? PROVINCES[provId].en : "dans la province", prov_de: provId ? PROVINCES[provId].de : "de la province" }) };
 }
 // ---------- fin de la phase dilemme ----------
 export function finishDilemmas(state, priv, inputs, rng) {
   const lines = [];
   const out = [];
-  const done = new Set();
   priv.__crimes = priv.__crimes || [];
   state.unsolved = state.unsolved || [];
+  for (const slot of ["dilemma", "dilemma2"]) {
+  const done = new Set();
   const inp = (p) => {
     const pl = state.players[p];
-    if (pl.isBot && pl.ai) return aiDilemma(state, priv, p, rng);
-    return inputs[p] && inputs[p].dilemma && inputs[p].dilemma.round === state.round ? inputs[p].dilemma : null;
+    if (pl.isBot && pl.ai) return aiDilemma(state, priv, p, rng, slot);
+    return inputs[p] && inputs[p][slot] && inputs[p][slot].round === state.round ? inputs[p][slot] : null;
   };
   for (const pid of state.order) {
-    const d = priv[pid] && priv[pid].dilemma;
+    const d = priv[pid] && priv[pid][slot];
     if (!d || done.has(pid) || d.round !== state.round) continue;
     const card = DILEMMAS.find((c) => c.id === d.id);
     if (!card) continue;
@@ -822,10 +861,11 @@ export function finishDilemmas(state, priv, inputs, rng) {
         priv.__crimes.push({ id, round: state.round, culprit: pid, victim: target });
         state.unsolved.push({ id, round: state.round, victim: target, text: t0 });
       }
-      lines.push(opt.anon ? { text: t, pid: null } : { text: t, pid, title: fill(card.title, ctx), situation: fill(situationOf(card.text), ctx), choice: `${capitalize(maisonName(state, pid))} : « ${fill(opt.label, ctx)} »${target && opt.needsTarget ? ` (contre ${maisonName(state, target)})` : ""}` });
+      lines.push(opt.anon ? { text: t, pid: null } : { text: t, pid, secret: card.type === "solo" && !opt.needsTarget, title: fill(card.title, ctx), situation: fill(situationOf(card.text), ctx), choice: `${capitalize(maisonName(state, pid))} : « ${fill(opt.label, ctx)} »${target && opt.needsTarget ? ` (contre ${maisonName(state, target)})` : ""}` });
       priv[pid].lastResult = { title: fill(card.title, ctx), text: t };
       done.add(pid);
     }
+  }
   }
   state.pendingDilemma = { lines, out };
   state.phase = "orders";
@@ -850,10 +890,13 @@ export function resolveRound(state, priv, inputs, rng) {
   state.revealFrom = JSON.parse(JSON.stringify(P));
   const snap = (...ids) => { const s = {}; for (const id of ids) if (id) s[id] = { owner: P[id].owner, armies: P[id].armies, plague: P[id].plague }; return s; };
   const lastRound = state.round === state.maxRounds;
+  const marks = [];
+  const mark = (c) => marks.push({ c, at: steps.length });
+  mark("dil");
   // 0. décisions des dilemmes, révélées maintenant
   if (state.pendingDilemma) {
     for (const l of state.pendingDilemma.lines) {
-      const extra = l.title ? { title: l.title, situation: l.situation, choice: l.choice } : null;
+      const extra = l.title ? { title: l.title, situation: l.situation, choice: l.choice, secret: !!l.secret } : null;
       steps.push({ kind: "dilemma", text: l.text, pid: l.pid, ...(extra || {}) });
       chron(state, l.text, "dilemma", extra);
     }
@@ -866,6 +909,7 @@ export function resolveRound(state, priv, inputs, rng) {
     const pl = state.players[pid];
     orders[pid] = pl.isBot ? validateOrders(state, pid, aiOrders(state, pid, rng, priv), priv) : validateOrders(state, pid, inputs[pid] && inputs[pid].orders && inputs[pid].orders.round === state.round ? inputs[pid].orders : null, priv);
   }
+  mark("intr");
   // 1. intrigues
   for (const pid of shuffle(rng, state.order)) {
     const pl = state.players[pid];
@@ -929,32 +973,36 @@ export function resolveRound(state, priv, inputs, rng) {
       pl.intrigueBonus = 0;
     }
   }
+  mark("move");
   // 2. déplacements et levées (regroupés par maison)
   for (const pid of state.order) {
     const parts = [];
     const touched = [];
+    const mv = [], lv = [];
     for (const o of orders[pid].filter((x) => x.type === "march")) {
       if (!P[o.from] || !P[o.to] || P[o.from].owner !== pid || P[o.to].owner !== pid || !PROVINCES[o.from].adj.includes(o.to)) continue;
       const n = Math.min(Math.max(1, o.n | 0), o.value, P[o.from].armies - 1);
       if (n < 1) continue;
       P[o.from].armies -= n; P[o.to].armies += n;
-      parts.push(`${n} armée${n > 1 ? "s" : ""} vers ${PROVINCES[o.to].art}`); touched.push(o.from, o.to);
+      parts.push(`${n} armée${n > 1 ? "s" : ""} ${PROVINCES[o.from].de.replace(/^de /, "de ").replace(/^du /, "du ")} vers ${PROVINCES[o.to].art}`); touched.push(o.from, o.to); mv.push({ from: o.from, to: o.to, n });
     }
     for (const o of orders[pid].filter((x) => x.type === "levy")) {
       let to = P[o.to] && P[o.to].owner === pid ? o.to : state.players[pid].capital;
       if (!to || P[to].owner !== pid) to = provincesOf(state, pid)[0];
       if (!to) continue;
-      const n = levyAmount(o.value);
+      let n = levyAmount(o.value), merc = false;
+      // mercenaires : 4 pièces d'or pour 2 armées de plus
+      if (o.merc && state.players[pid].gold >= MERC_COST) { state.players[pid].gold -= MERC_COST; n += MERC_ARMIES; merc = true; }
       P[to].armies += n;
-      parts.push(`lève ${n} armées ${PROVINCES[to].en}`); touched.push(to);
+      parts.push(`lève ${n} armées ${PROVINCES[to].en}${merc ? " (dont des mercenaires payés " + MERC_COST + " or)" : ""}`); touched.push(to); lv.push({ to, n });
     }
-    if (parts.length) steps.push({ kind: "move", text: `${capitalize(maisonName(state, pid))} : ${parts.join(", ")}.`, pid, set: snap(...touched), provs: touched });
+    if (parts.length) steps.push({ kind: "move", text: `${capitalize(maisonName(state, pid))} : ${parts.join(", ")}.`, pid, set: snap(...touched), provs: touched, mv, lv });
   }
+  mark("battle");
   // 3. batailles
   const strikes = [];
   for (const pid of state.order) {
     for (const o of orders[pid].filter((x) => x.type === "strike")) {
-      if (state.tutorial && state.round === 1) continue;
       if (!P[o.from] || !P[o.to] || P[o.from].owner !== pid || P[o.to].owner === pid || !PROVINCES[o.from].adj.includes(o.to)) continue;
       const n = Math.min(Math.max(1, o.n | 0), P[o.from].armies - 1);
       if (n < 1) continue;
@@ -1031,6 +1079,7 @@ export function resolveRound(state, priv, inputs, rng) {
       atk: totals.map((a) => ({ pid: a.pid, n: a.n, bonus: a.bonus, total: a.total })), def, defArmies, defTotal, defBonus: peurBonus(state.players[def]) });
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
   }
+  mark("diplo");
   // 4. diplomatie : mariages, trêves, dons, accusations
   if (!unlocked(state, "diplomacy")) state.proposals = {};
   for (const key of Object.keys(state.proposals || {})) {
@@ -1082,6 +1131,7 @@ export function resolveRound(state, priv, inputs, rng) {
   }
   // les crimes trop anciens sont oubliés
   state.unsolved = (state.unsolved || []).filter((u) => u.round >= state.round - 2);
+  mark("end");
   // 5. exil
   for (const pid of state.order) {
     const pl = state.players[pid];
@@ -1100,6 +1150,7 @@ export function resolveRound(state, priv, inputs, rng) {
   computeLeader(state);
   // 6. fin de partie ?
   const winner = state.order.find((pid) => provincesOf(state, pid).length >= WIN_PROVINCES);
+  marks.forEach((m, i) => { const end = i + 1 < marks.length ? marks[i + 1].at : steps.length; for (let k = m.at; k < end; k++) steps[k].ch = m.c; });
   state.reveal = { round: state.round, steps };
   state.phase = "reveal";
   state.gameOver = !!winner || state.round >= state.maxRounds;
@@ -1228,8 +1279,8 @@ function fxValue(list, w) {
   }
   return v;
 }
-export function aiDilemma(state, priv, pid, rng) {
-  const d = priv[pid] && priv[pid].dilemma;
+export function aiDilemma(state, priv, pid, rng, slot = "dilemma") {
+  const d = priv[pid] && priv[pid][slot];
   if (!d) return null;
   const card = DILEMMAS.find((c) => c.id === d.id);
   const P = persOf(state, pid);
@@ -1326,7 +1377,8 @@ export function aiOrders(state, pid, rng, priv) {
       if (to) { actions.push({ die: d.i, type: "march", from, to, n: Math.min(d.v, P[from].armies - 1 - (outgoing[from] || 0)) }); used.add(d.i); continue; }
     }
     const to = (borders.length ? borders : mine).slice().sort((a, b) => threat(b) - threat(a))[0];
-    actions.push({ die: d.i, type: "levy", to });
+    const merc = pl.gold >= MERC_COST + 6 && !actions.some((x) => x.merc);
+    actions.push({ die: d.i, type: "levy", to, merc });
     used.add(d.i);
   }
   return { actions, round: state.round };

@@ -2,10 +2,11 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795287042";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795287042";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795287042";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795287042";
+import { DIL_COUR } from "./dil_cour.js?v=1795289401";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795289401";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795289401";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795289401";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795289401";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E1B1B", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
@@ -387,7 +388,7 @@ export const OBJECTIVES = [
   { id: "genereux", pts: 5, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
   { id: "pacifique", pts: 10, text: "N'attaquer personne de toute la partie" },
 ];
-DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES);
+DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES, ...DIL_FAMILLES);
 // vérification des identifiants uniques
 { const seen = new Set(); for (const d of DILEMMAS) { if (seen.has(d.id)) console.warn("Dilemme en double :", d.id); seen.add(d.id); } }
 

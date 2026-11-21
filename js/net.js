@@ -6,7 +6,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue, push, onDisconnect, serverTimestamp, off } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-import { firebaseConfig } from "./firebase-config.js?v=1795287042";
+import { firebaseConfig } from "./firebase-config.js?v=1795289401";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

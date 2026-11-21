@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795287042">
+<link rel="stylesheet" href="css/style.css?v=1795289401">
 </head>
 <body>
 <div id="app">
@@ -20,6 +20,7 @@
       <h1 class="gothic">Le Siècle Noir</h1>
       <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches pour régner sur les cendres.</p>
       <label class="field"><span>Ton nom de seigneur</span><input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Ex. : Étienne"></label>
+      <label class="field"><span>Nom de ta maison <i>(facultatif)</i></span><input id="in-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon (sinon un nom est donné)"></label>
       <button id="btn-create" class="btn btn-red">Créer une partie</button>
       <div class="or">ou</div>
       <div class="join-row">
@@ -30,8 +31,8 @@
       <button id="btn-solo" class="btn btn-dark btn-block">Jouer seul contre l'ordinateur</button>
       <div id="solo-opts" class="solo-opts hidden">
         <p class="ph" style="margin-top:12px">Combien d'adversaires ?</p>
-        <div class="row" style="justify-content:center"><button class="btn btn-small" data-solo="2" aria-pressed="true">2 ordinateurs</button><button class="btn btn-small" data-solo="3" aria-pressed="false">3 ordinateurs</button></div>
-        <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Première partie</b> : les règles arrivent petit à petit, avec des explications</span></label>
+        <div class="row" style="justify-content:center"><button class="btn btn-small" data-solo="2" aria-pressed="false">2 ordinateurs</button><button class="btn btn-small" data-solo="3" aria-pressed="true">3 ordinateurs (conseillé)</button></div>
+        <label class="check" style="margin-top:10px;text-align:left"><input type="checkbox" id="solo-tuto" checked> <span><b>Première partie</b> : des explications à chaque étape</span></label>
         <button id="btn-solo-go" class="btn btn-red btn-block" style="margin-top:10px">Commencer la partie</button>
       </div>
       <p id="home-msg" class="msg" role="status"></p>
@@ -47,16 +48,18 @@
       <button id="btn-share" class="btn btn-small">Copier le lien d'invitation</button>
       <h3>Choisis ta maison</h3>
       <div id="house-pick" class="house-pick"></div>
+      <label class="field" style="margin-top:8px"><span>Nom de ta maison <i>(facultatif)</i></span><input id="lobby-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon"></label>
       <h3>Seigneurs présents</h3>
       <ul id="lobby-members" class="lobby-members"></ul>
       <div id="lobby-ai" class="hidden"><button id="btn-add-ai" class="btn btn-small" style="margin-top:10px">Ajouter un seigneur joué par l'ordinateur</button></div>
       <div id="lobby-host" class="lobby-host hidden">
-        <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Première partie</b> : les règles arrivent petit à petit (intrigues manche 3, diplomatie manche 4, bluff manche 5), avec des explications à chaque étape</span></label>
+        <label class="check"><input type="checkbox" id="opt-tuto" checked> <span><b>Première partie</b> : des explications à chaque étape, et deux règles arrivent un peu plus tard (intrigues manche 2, dé caché et accusations manche 3)</span></label>
+        <label class="check"><input type="checkbox" id="opt-fill" checked> <span><b>Toujours 4 seigneurs</b> : l'ordinateur prend les places libres (conseillé : plus d'alliances et de trahisons)</span></label>
         <label class="field" style="margin:4px 0 0"><span>Temps pour jouer</span>
           <select id="opt-timer"><option value="none" selected>Pas de chrono : on attend tout le monde</option><option value="relaxed">Détendu (temps doublé)</option><option value="normal">Normal</option><option value="fast">Rapide</option></select></label>
         <label class="check"><input type="checkbox" id="opt-random"> <span><b>Provinces au hasard</b> : pas de choix des provinces, on commence tout de suite</span></label>
         <button id="btn-start" class="btn btn-red">Lancer la partie</button>
-        <p class="hint">À deux joueurs sans ordinateur ajouté, la couronne d'Angleterre entre dans la partie.</p>
+        <p class="hint">Si tu décoches « Toujours 4 seigneurs » et que vous n'êtes que deux, la couronne d'Angleterre entre dans la partie.</p>
       </div>
       <p id="lobby-wait" class="hint hidden">En attente du lancement par l'hôte…</p>
     </div>
@@ -107,6 +110,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795287042"></script>
+<script type="module" src="js/main.js?v=1795289401"></script>
 </body>
 </html>
