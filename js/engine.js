@@ -35,7 +35,7 @@ export function maisonName(state, pid, article = "la maison") {
   return `${article} ${/^[AEIOUÂÉ]/i.test(n) ? "d'" : "de "}${n}`;
 }
 export function capitalize(s) {
-  return s.replace(/(^|[.!?…]\s+|«\s)([a-zàâéèêîôûç])/g, (m, a, b) => a + b.toUpperCase());
+  return s.replace(/(^|[.!?]\s+|«\s)([a-zàâéèêîôûç])/g, (m, a, b) => a + b.toUpperCase());
 }
 export function fill(tpl, ctx) {
   return capitalize(String(tpl).replace(/\{(\w+)\}/g, (m, k) => (ctx[k] !== undefined ? ctx[k] : m)));
@@ -232,8 +232,15 @@ export function computeLeader(state) {
 }
 
 // ---------- chronique ----------
-function chron(state, text, kind = "text") {
-  state.chronicle.push({ round: state.round, year: yearOf(Math.max(1, state.round)), text, kind });
+function chron(state, text, kind = "text", extra = null) {
+  state.chronicle.push({ round: state.round, year: yearOf(Math.max(1, state.round)), text, kind, ...(extra || {}) });
+}
+// la situation d'un dilemme en une ou deux phrases, pour que les autres joueurs comprennent
+export function situationOf(text) {
+  const parts = String(text).split(/(?<=[.!?…])\s+/);
+  let out = parts[0] || "";
+  if (out.length < 70 && parts[1]) out += " " + parts[1];
+  return out;
 }
 function ctxFor(state, pid, extra = {}) {
   const pl = state.players[pid];
@@ -791,7 +798,8 @@ export function finishDilemmas(state, priv, inputs, rng) {
         const ctx = { ...ctxFor(state, me, { partenaire: maisonName(state, other) }), partnerPid: other, first: i === 0, extraChron: [], priv };
         applyFx(state, me, oc.fx, ctx, rng, out);
         const t = [fill(oc.chron, ctx), ...ctx.extraChron.map((x) => fill(x, ctx))].join(" ");
-        if (i === 0 || !["aa", "bb"].includes(key)) lines.push({ text: t, pid: me });
+        const optA = card.options.find((o) => o.id === key[0]).label, optB = card.options.find((o) => o.id === key[1]).label;
+        if (i === 0 || !["aa", "bb"].includes(key)) lines.push({ text: t, pid: me, title: fill(card.title, ctx), situation: fill(situationOf(card.text), ctx), choice: `${capitalize(maisonName(state, me))} : « ${optA} » · ${capitalize(maisonName(state, other))} : « ${optB} »`, pact: true });
         priv[me].lastResult = { title: card.title, text: t, partnerChoice: i === 0 ? cb : ca };
       });
       done.add(pid); done.add(partner);
@@ -814,7 +822,7 @@ export function finishDilemmas(state, priv, inputs, rng) {
         priv.__crimes.push({ id, round: state.round, culprit: pid, victim: target });
         state.unsolved.push({ id, round: state.round, victim: target, text: t0 });
       }
-      lines.push({ text: t, pid: opt.anon ? null : pid });
+      lines.push(opt.anon ? { text: t, pid: null } : { text: t, pid, title: fill(card.title, ctx), situation: fill(situationOf(card.text), ctx), choice: `${capitalize(maisonName(state, pid))} : « ${fill(opt.label, ctx)} »${target && opt.needsTarget ? ` (contre ${maisonName(state, target)})` : ""}` });
       priv[pid].lastResult = { title: fill(card.title, ctx), text: t };
       done.add(pid);
     }
@@ -844,7 +852,11 @@ export function resolveRound(state, priv, inputs, rng) {
   const lastRound = state.round === state.maxRounds;
   // 0. décisions des dilemmes, révélées maintenant
   if (state.pendingDilemma) {
-    for (const l of state.pendingDilemma.lines) { steps.push({ kind: "dilemma", text: l.text, pid: l.pid }); chron(state, l.text, "dilemma"); }
+    for (const l of state.pendingDilemma.lines) {
+      const extra = l.title ? { title: l.title, situation: l.situation, choice: l.choice } : null;
+      steps.push({ kind: "dilemma", text: l.text, pid: l.pid, ...(extra || {}) });
+      chron(state, l.text, "dilemma", extra);
+    }
     for (const o of state.pendingDilemma.out) if (o.kind !== "text" || true) steps.push({ ...o });
     state.pendingDilemma = null;
   }

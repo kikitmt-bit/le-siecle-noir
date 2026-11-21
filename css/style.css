@@ -359,3 +359,11 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
   .mapwrap { height: 62vh; }
   .side-tabs button { font-size: 12px; padding: 0 4px; }
 }
+
+.ch-entry .ch-title { display: block; font-family: var(--caps); font-size: 12px; font-weight: 700; color: var(--red); font-style: normal; margin-bottom: 2px; }
+.ch-entry .ch-sit { display: block; font-style: italic; color: var(--ink2); font-size: .93em; margin-bottom: 2px; }
+.ch-entry .ch-choice { display: block; font-weight: 700; font-style: normal; font-size: .93em; margin-bottom: 2px; }
+.ch-entry .ch-res { display: block; }
+.banner .ch-title { color: var(--gold); }
+.banner .ch-sit, .interlude .ch-sit { color: #C9B48A; }
+.interlude .ch-title { color: #D9A441; }

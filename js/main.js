@@ -464,7 +464,11 @@ function renderGuide() {
     case "draft": {
       const cur = E.currentDrafter(st);
       step = prep(2, "CHOIX DES PROVINCES");
-      if (cur === pid) { mine = true; text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Ce sera ta <b>capitale</b>."; }
+      if (cur === pid) {
+        mine = true;
+        if (L.ui.draftSel) { text = `<b>À toi :</b> tu as sélectionné <b>${esc(PROVINCES[L.ui.draftSel.prov].name)}</b>. Confirme, ou clique une autre province pour changer.`; btn = `<button class="btn btn-red" data-guide="draftok">Confirmer</button>`; }
+        else text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Ce sera ta <b>capitale</b>.";
+      }
       else text = `${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))}) choisit une province… Attends ton tour.`;
       break;
     }
@@ -534,6 +538,7 @@ function renderGuide() {
     if (g === "plok") { const mineP = E.provincesOf(st, pid); const alloc = { ok: true }; mineP.forEach((id) => (alloc[id] = (L.ui.placement || {})[id] || 1)); setInput("placement", alloc); A.play("seal"); render(); }
     if (g === "actions") { L.ui.tab = "panel"; render(); document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
     if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
+    if (g === "draftok") confirmDraft();
     if (g === "next") { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); }
     if (g === "force") { H.force = true; toast("La partie avance sans attendre les retardataires (leur intendant choisit pour eux).", "#D9A441"); }
     if (g === "score") openModal("score");
@@ -583,7 +588,7 @@ function renderPanel() {
     case "dilemma": return panelDilemma();
     case "orders": return panelOrders();
     case "reveal": return panelReveal();
-    case "interlude": return { html: `<p class="ph">Chronique de l'an ${E.yearOf(st.round)}</p>${interludeLines().map((l) => `<p class="ptext"><i>${esc(l)}</i></p>`).join("")}` };
+    case "interlude": return { html: `<p class="ph">Chronique de l'an ${E.yearOf(st.round)}</p>${interludeLines().map((l) => `<p class="ptext ch-entry">${entryHtml(l)}</p>`).join("")}` };
     case "end": return { html: `<p class="ph">La partie est terminée</p><p class="ptext">${esc(st.result ? `${houseName(st.result.winner)} l'emporte.` : "")}</p><button class="btn btn-red btn-block" id="btn-end-open">Voir les résultats</button>`, bind: () => ($("#btn-end-open").onclick = () => { L.endClosed = false; render(); }) };
   }
   return { html: "" };
@@ -600,21 +605,30 @@ function panelObjectives() {
   const done = L.myInput.objPick && L.myInput.objPick.length === 2;
   return { html: `<p class="ph">Objectifs secrets</p><p class="ptext">${done ? "Tes objectifs sont choisis. On attend les autres seigneurs." : "Choisis 2 objectifs secrets parmi les 3 proposés."}</p><button class="btn btn-block" id="btn-obj">${done ? "Revoir mes objectifs" : "Choisir mes objectifs"}</button>`, bind: () => ($("#btn-obj").onclick = () => { L.objClosed = false; render(); }) };
 }
+function confirmDraft() {
+  const st = S(); const d = L.ui.draftSel;
+  if (!d || d.idx !== st.draft.idx) return;
+  setInput("draftPick", d); A.play("seal"); toast(`Tu prends ${esc(PROVINCES[d.prov].art)}.`, "#6B5638", 2500); L.ui.draftSel = null; render();
+}
 function panelDraft() {
   const st = S(), pid = me();
   const cur = E.currentDrafter(st);
   const mine = cur === pid;
   if (mine) {
     for (const id of E.PROV_IDS) if (!st.provinces[id].owner) MAP.sel.add(id);
-    MAP.hl = new Set(MAP.sel);
-    MAP.onPick = (id) => { setInput("draftPick", { idx: st.draft.idx, prov: id }); toast(`Tu choisis ${esc(PROVINCES[id].art)}.`, "#6B5638", 2500); MAP.sel.clear(); };
-  }
+    if (L.ui.draftSel && (L.ui.draftSel.idx !== st.draft.idx || st.provinces[L.ui.draftSel.prov].owner)) L.ui.draftSel = null;
+    MAP.hl = L.ui.draftSel ? new Set([L.ui.draftSel.prov]) : new Set(MAP.sel);
+    if (L.ui.draftSel) MAP.hlRed = new Set([L.ui.draftSel.prov]);
+    MAP.onPick = (id) => { L.ui.draftSel = { idx: st.draft.idx, prov: id }; render(); };
+  } else L.ui.draftSel = null;
+  const sel = mine && L.ui.draftSel ? L.ui.draftSel.prov : null;
   const first = !st.players[pid].capital;
   const seq = st.draft.seq.map((p, i) => `<span style="background:${houseColor(p)}" class="${i === st.draft.idx ? "cur" : i < st.draft.idx ? "done" : ""}" title="${esc(houseName(p))}"></span>`).join("");
   return { html: `<p class="ph ${mine ? "red" : ""}">${mine ? "À toi de choisir !" : `Au tour de ${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))})`}</p>
     <p class="ptext">${mine ? (first ? "Clique sur une province libre : <b>ce sera ta capitale</b>. Protège-la, la perdre coûte très cher." : "Clique sur une province libre. Regroupe tes terres et vise une région entière : elle rapporte des armées et du Prestige à chaque manche.") : "Chacun choisit une province à tour de rôle. L'ordre s'inverse à chaque tour."}</p>
+    ${sel ? `<div class="recap"><p class="ph">Ton choix : ${esc(PROVINCES[sel].name)}</p><p class="ptext" style="font-size:15px">${first ? "Ce sera ta <b>capitale</b>. " : ""}Région ${esc(REGIONS[PROVINCES[sel].region].name)} · voisines : ${PROVINCES[sel].adj.map((a) => esc(PROVINCES[a].name)).join(", ")}.</p><button class="btn btn-red btn-block" id="draft-ok">Confirmer ${esc(PROVINCES[sel].art)}</button><p class="hint">Tu peux encore cliquer une autre province sur la carte pour changer.</p></div>` : ""}
     <div class="draft-order">${seq}</div>
-    ${regionsHelp()}` };
+    ${regionsHelp()}`, bind: () => { if ($("#draft-ok")) $("#draft-ok").onclick = confirmDraft; } };
 }
 function regionsHelp() {
   return `<div class="pbox"><p class="ph">Régions (bonus par manche)</p>${Object.values(REGIONS).map((r) => `<div style="font-size:14px;margin-bottom:4px"><b style="font-family:var(--caps);font-size:12px">${r.name}</b> : ${r.provs.map((p) => PROVINCES[p].name).join(", ")} <i>(+${r.provs.length - 1} armées, +1 prestige)</i></div>`).join("")}</div>`;
@@ -907,6 +921,13 @@ function bindDiplomacy() {
   document.querySelectorAll("[data-acc]").forEach((el) => (el.onclick = () => { setInput("accuse", { round: st.round, crime: el.dataset.acc, target: el.dataset.tgtAcc }); A.play("seal"); render(); }));
 }
 
+// ---- entrées de chronique (les dilemmes avec leur contexte) ----
+function entryHtml(e, plain = false) {
+  if (e && e.title) {
+    return `<span class="ch-title">${ICON.scroll}« ${esc(e.title)} »</span><span class="ch-sit">${esc(e.situation || "")}</span><span class="ch-choice">${esc(e.choice || "")}</span><span class="ch-res">${esc(e.text)}</span>`;
+  }
+  return esc(e ? e.text : "");
+}
 // ---- révélation ----
 function revealIdx() { const st = S(); if (!st.reveal) return -1; return Math.min(st.reveal.steps.length - 1, Math.floor((net.now() - (st.revealStart || 0)) / STEP_MS)); }
 function revealProvinces() {
@@ -921,7 +942,7 @@ function panelReveal() {
   const st = S();
   const idx = revealIdx();
   const steps = (st.reveal ? st.reveal.steps : []).slice(0, idx + 1);
-  return { html: `<p class="ph">Révélation de la manche ${st.round}</p>${steps.length ? steps.map((s) => `<p class="ptext" style="border-left:4px solid ${s.pid ? houseColor(s.pid) : "#6B5638"};padding-left:10px">${esc(s.text)}</p>`).join("") : `<p class="ptext wait">Les sceaux se brisent…</p>`}` };
+  return { html: `<p class="ph">Révélation de la manche ${st.round}</p>${steps.length ? steps.map((s) => `<p class="ptext ch-entry" style="border-left:4px solid ${s.pid ? houseColor(s.pid) : "#6B5638"};padding-left:10px">${entryHtml(s)}</p>`).join("") : `<p class="ptext wait">Les sceaux se brisent…</p>`}` };
 }
 function tickReveal() {
   const st = S();
@@ -932,7 +953,7 @@ function tickReveal() {
   if (idx < 0) { $("#banner").classList.add("hidden"); updateMap(st.revealFrom); return; }
   const s = st.reveal.steps[idx];
   const label = { dilemma: "DÉCISION", battle: "BATAILLE", death: "MORT", birth: "NAISSANCE", intrigue: "INTRIGUE", bribe: "CORRUPTION", move: "MOUVEMENTS", marriage: "NOCES", betrayal: "TRAHISON", claim: "REVENDICATION", exile: "EXIL", plague: "PESTE", event: "ÉVÉNEMENT", revolt: "JACQUERIE", text: "CHRONIQUE", treaty: "TRÊVE", gift: "OR" }[s.kind] || "CHRONIQUE";
-  $("#banner").innerHTML = `<b>${label}</b>${esc(s.text)}`;
+  $("#banner").innerHTML = `<b>${label}${s.title ? ` · ${esc(houseName(s.pid))}` : ""}</b>${s.title ? entryHtml(s) : esc(s.text)}`;
   $("#banner").classList.remove("hidden");
   $("#banner").style.animation = "none"; void $("#banner").offsetWidth; $("#banner").style.animation = "";
   updateMap(revealProvinces());
@@ -958,7 +979,7 @@ function tickReveal() {
 function interludeLines() {
   const st = S();
   const pri = { death: 0, betrayal: 1, claim: 2, marriage: 3, intrigue: 4, battle: 5, revolt: 5, dilemma: 6, exile: 3, plague: 7, event: 7, birth: 8, text: 9 };
-  return (st.chronicle || []).filter((c) => c.round === st.round).sort((a, b) => (pri[a.kind] ?? 9) - (pri[b.kind] ?? 9)).slice(0, 4).map((c) => c.text);
+  return (st.chronicle || []).filter((c) => c.round === st.round).sort((a, b) => (pri[a.kind] ?? 9) - (pri[b.kind] ?? 9)).slice(0, 4);
 }
 
 // ---------------------------------------------------------------------
@@ -998,7 +1019,7 @@ function renderHouseTab() { const pid = me(); $("#tab-house").innerHTML = pid ? 
 function renderLog() {
   const st = S();
   const c = (st.chronicle || []).slice().reverse();
-  $("#tab-log").innerHTML = c.length ? c.map((e) => `<div class="log-entry"><span class="yr">${e.year}</span>${esc(e.text)}</div>`).join("") : `<p class="ptext wait">La chronique est encore vierge.</p>`;
+  $("#tab-log").innerHTML = c.length ? c.map((e) => `<div class="log-entry ch-entry"><span class="yr">${e.year}</span>${entryHtml(e)}</div>`).join("") : `<p class="ptext wait">La chronique est encore vierge.</p>`;
 }
 
 // ---------------------------------------------------------------------
@@ -1079,7 +1100,7 @@ function interludeHtml() {
   const st = S(), pid = me();
   const waitAll = st.solo || st.timer === "none";
   const ready = L.myInput.next && L.myInput.next.round === st.round;
-  return `<div class="interlude"><span class="kick">FIN DE LA MANCHE ${st.round} SUR ${st.maxRounds}</span>${woodcut(380, 210, st.round)}<h1>Anno Domini ${E.yearOf(st.round)}</h1>${summaryHtml()}${interludeLines().map((l, i) => `<p style="animation-delay:${0.3 + i * 0.9}s">${esc(l)}</p>`).join("")}
+  return `<div class="interlude"><span class="kick">FIN DE LA MANCHE ${st.round} SUR ${st.maxRounds}</span>${woodcut(380, 210, st.round)}<h1>Anno Domini ${E.yearOf(st.round)}</h1>${summaryHtml()}${interludeLines().map((l, i) => `<p class="ch-entry" style="animation-delay:${0.3 + i * 0.9}s">${l.title ? `<b>${esc(houseName(l.pid))}</b> ` : ""}${entryHtml(l)}</p>`).join("")}
     ${pid && waitAll ? `<button class="btn btn-red" id="btn-next" ${ready ? "disabled" : ""}>${ready ? "On attend les autres…" : st.round >= st.maxRounds ? "Voir le résultat" : `Passer à la manche ${st.round + 1}`}</button>` : ""}</div>`;
 }
 function endHtml() {
@@ -1095,7 +1116,7 @@ function endHtml() {
     <div class="scorewrap"><table class="scoretable"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${objs ? `<p class="ph">Les objectifs secrets</p>${objs}` : ""}
     <p class="ph" style="margin-top:14px">Les titres</p><div class="titles">${titles}</div>
-    <p class="ph">La Grande Chronique</p><div class="chron-full">${(st.chronicle || []).map((e) => `<div class="log-entry"><span class="yr">${e.year}</span>${esc(e.text)}</div>`).join("")}</div>
+    <p class="ph">La Grande Chronique</p><div class="chron-full">${(st.chronicle || []).map((e) => `<div class="log-entry ch-entry"><span class="yr">${e.year}</span>${entryHtml(e)}</div>`).join("")}</div>
     <div class="row"><button class="btn grow" id="ov-close">Voir la carte</button>${isHost ? `<button class="btn btn-red grow" id="btn-replay">Nouvelle partie</button>` : ""}</div></div>`;
 }
 function bindOverlay() {
@@ -1230,6 +1251,7 @@ function applyCoach() {
     else if ($("#b-ok")) sel = "#b-ok";
   }
   if (st.phase === "interlude") sel = "#btn-next:not([disabled])";
+  if (st.phase === "draft" && L.ui.draftSel) sel = '[data-guide="draftok"]';
   if (sel) { const el = document.querySelector(sel); if (el) el.classList.add("coach"); }
 }
 
