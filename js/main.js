@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js?v=1795292025";
-import * as local from "./localnet.js?v=1795292025";
-import * as E from "./engine.js?v=1795292025";
-import { PROVINCES, REGIONS } from "./map.js?v=1795292025";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795292025";
-import * as A from "./audio.js?v=1795292025";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795292025";
+import * as remote from "./net.js?v=1795292594";
+import * as local from "./localnet.js?v=1795292594";
+import * as E from "./engine.js?v=1795292594";
+import { PROVINCES, REGIONS } from "./map.js?v=1795292594";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795292594";
+import * as A from "./audio.js?v=1795292594";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795292594";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
@@ -742,6 +742,60 @@ function panelPlacement() {
       $("#pl-ok").onclick = () => { if (sent) { setInput("placement", { ok: false }); } else { const alloc = { ok: true }; mine.forEach((id) => (alloc[id] = pl[id] || 1)); setInput("placement", alloc); A.play("seal"); } render(); };
     } };
 }
+// ---- ragots de taverne : les mêmes pour tout le monde, tirés de la situation réelle ----
+function seeded(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }
+function ragots() {
+  const st = S();
+  if (!st || st.round < 1) return [];
+  const rng = seeded(`${st.gameId}:${st.round}`);
+  const ps = st.order.filter((p) => st.players[p] && !st.players[p].exiled);
+  const hn = (p) => E.maisonName(st, p);
+  const by = (f) => ps.slice().sort((a, b) => f(b) - f(a));
+  const out = [];
+  const add = (cond, t) => { if (cond) out.push(t); };
+  const rich = by((p) => st.players[p].gold)[0], poor = by((p) => -st.players[p].gold)[0];
+  const angry = by((p) => st.players[p].colere)[0], scary = by((p) => st.players[p].peur)[0];
+  const sc = (p) => E.estimateScore(st, {}, p).total;
+  const first = by(sc)[0], last = by((p) => -sc(p))[0];
+  add(st.leader, `On dit que le roi de ${hn(st.leader)} s'est fait tailler une couronne neuve. Avec une tête pareille, il a fallu beaucoup d'or.`);
+  add(st.leader, `Les mercenaires de toute l'Europe affûtent leurs lames : ${hn(st.leader)} est en tête, et tout le monde veut sa part du gâteau.`);
+  add(st.players[rich].gold >= 12, `${E.capitalize(hn(rich))} a tant d'or qu'on dit que son roi se cure les dents avec des florins.`);
+  add(st.players[poor].gold <= 4, `Le trésorier de ${hn(poor)} a vendu les cloches de la cathédrale. Puis les dents en or de la reine mère.`);
+  add(st.players[angry].colere >= 35, `Les paysans de ${hn(angry)} ont pendu un percepteur. Puis son cheval, par principe.`);
+  add(st.players[scary].peur >= 25, `À la cour de ${hn(scary)}, on ne dit plus « bonjour ». On dit « pitié ».`);
+  add(ps.length > 2 && last !== first, `${E.capitalize(hn(last))} est à la traîne. Ses chevaliers exigent d'être payés d'avance, et en nature.`);
+  for (const p of ps) {
+    const k = E.king(st, p); if (!k) continue;
+    add(k.age >= 60, `Le roi ${E.personTitle(k)} (${hn(p)}) a ${k.age} ans. Il appelle sa femme « maman ». Elle a arrêté de le corriger.`);
+    add(k.health >= 3, `On a vu le médecin de ${hn(p)} acheter un cercueil. « Pour un ami », a-t-il dit.`);
+    add(!!k.infirm, `Un ménestrel chante à Paris « la ballade de ${E.personTitle(k)} ». Il a eu la langue coupée, mais tout le monde connaît le refrain.`);
+    const kids = st.families[p].members.filter((m) => m.alive && m.role === "child");
+    add(kids.some((m) => m.bastardOf && m.bastardOf !== p), `Un enfant roux est né chez ${hn(p)}. Le roi est brun. Le palefrenier, lui, est très roux.`);
+    add(kids.length === 0, `${E.capitalize(hn(p))} n'a plus d'héritier. Les cousins éloignés ont déjà pris les mesures du trône.`);
+    add(kids.length >= 4, `Le roi de ${hn(p)} a tellement d'enfants qu'il ne connaît plus tous leurs prénoms. Il les appelle « toi ».`);
+  }
+  for (const a of st.alliances || []) add(true, `On a vu les ambassadeurs de ${hn(a.a)} et de ${hn(a.b)} partager la même chambre. Pour des raisons diplomatiques, évidemment.`);
+  add(E.PROV_IDS.some((id) => st.provinces[id].plague > 0), "La peste rôde. Les médecins recommandent des sangsues, des prières, et surtout de partir très loin.");
+  add(true, `Un moine de Cluny jure avoir vu le diable trinquer avec ${hn(ps[Math.floor(rng() * ps.length)])}. Le diable a payé sa tournée.`);
+  add(true, `Une sorcière de Brocéliande prédit qu'un roi mourra avant l'hiver. Elle n'a pas dit lequel. Elle accepte les pots-de-vin.`);
+  // on en garde deux, au hasard mais identiques pour tous
+  const pickd = [];
+  while (out.length && pickd.length < 2) pickd.push(out.splice(Math.floor(rng() * out.length), 1)[0]);
+  return pickd;
+}
+function ragotsHtml() {
+  const r = ragots();
+  if (!r.length) return "";
+  return `<div class="ragots"><b>${ICON.scroll} RAGOTS DE TAVERNE</b>${r.map((t) => `<p>« ${esc(t)} »</p>`).join("")}</div>`;
+}
+// ---- un mot du chroniqueur après chaque bataille (le même pour tous) ----
+const QUIPS_WIN = ["Les défenseurs ont fui si vite qu'ils ont oublié leurs braies.", "Le seigneur du lieu s'est rendu contre la vie sauve. On a gardé la promesse cinq minutes.", "Les vainqueurs ont vidé la cave du château en une nuit. Puis le puits.", "Les cloches sonnent : pas pour fêter la victoire, mais parce qu'on les décroche pour les fondre.", "Les têtes des anciens maîtres décorent désormais les remparts. Ça manquait de couleur.", "Les nouveaux maîtres ont promis de respecter les coutumes locales. Ils ont commencé par les brûler.", "Le curé a béni les vainqueurs. Il avait béni les vaincus la veille. C'est un homme pragmatique."];
+const QUIPS_HOLD = ["Les assaillants ont reçu de l'huile bouillante, puis le contenu des latrines.", "L'attaquant a perdu son étendard, son cheval et sa dignité, dans cet ordre.", "Les défenseurs ont lancé des ruches sur l'ennemi. Les abeilles ont fini le travail.", "Les survivants rentrent à pied en parlant d'un « repli stratégique ».", "On a retrouvé le capitaine de l'assaut caché dans un tonneau de harengs.", "Les femmes de la ville ont défendu les murs avec des pots de chambre. Pleins.", "Le chef des assaillants a juré de revenir. Les défenseurs ont parié sur sa mort avant Pâques."];
+function battleQuip(st, s) {
+  const r = seeded(`${st.gameId}:${st.round}:${s.prov}:${s.attWins}`)();
+  const list = s.attWins ? QUIPS_WIN : QUIPS_HOLD;
+  return list[Math.floor(r * list.length)];
+}
 function newsHtml() {
   const n = S().news || [];
   if (!n.length) return "";
@@ -757,7 +811,7 @@ function panelDilemma() {
   const st = S();
   const sl = dilSlots(), left = dilLeft();
   const names = { dilemma: "Affaire de ta maison", dilemma2: "Affaire avec un rival" };
-  return { html: `${newsHtml()}<p class="ph">1. Les ${term("dilemme", "dilemmes")}</p><p class="ptext">${sl.length ? (left ? `Deux décisions secrètes t'attendent : une <b>affaire de ta maison</b> (les autres n'en sauront qu'une rumeur) et une <b>affaire avec un rival</b> (révélée à tous). Il en reste <b>${left}</b>.` : "Tes choix sont scellés. Tu peux encore les changer tant que tout le monde n'a pas fini.") : "Pas de dilemme pour toi cette manche."}</p>
+  return { html: `${newsHtml()}${ragotsHtml()}<p class="ph">1. Les ${term("dilemme", "dilemmes")}</p><p class="ptext">${sl.length ? (left ? `Deux décisions secrètes t'attendent : une <b>affaire de ta maison</b> (les autres n'en sauront qu'une rumeur) et une <b>affaire avec un rival</b> (révélée à tous). Il en reste <b>${left}</b>.` : "Tes choix sont scellés. Tu peux encore les changer tant que tout le monde n'a pas fini.") : "Pas de dilemme pour toi cette manche."}</p>
     ${sl.map((k) => `<button class="btn btn-block ${dilSealed(k) ? "" : "btn-red"}" data-opendil="${k}" style="margin-bottom:6px">${dilSealed(k) ? "✓ " : ""}${names[k]}${dilSealed(k) ? " (revoir)" : ""}</button>`).join("")}
     <div class="pbox" style="margin-top:12px"><p class="ph">Ensuite : 2. les ordres</p><p class="ptext" style="font-size:15px;margin:0">Quand tout le monde a choisi, tu donneras un ordre à chacun de tes dés : ${ICON.frapper}${term("frapper")}, ${ICON.marcher}${term("marcher")}, ${ICON.lever}${term("lever")}${E.unlocked(st, "intrigue") ? `, ${ICON.intrigue}${term("intriguer")}` : ""}.</p></div>`,
     bind: () => { document.querySelectorAll("[data-opendil]").forEach((b) => (b.onclick = () => { L.ui.dSlot = b.dataset.opendil; L.ui.dChoice = null; L.ui.dTarget = null; L.dilemmaClosed = false; L.ovKey = ""; render(); })); } };
@@ -1100,7 +1154,7 @@ function duelHtml(st, s, pre) {
   return `<div class="rv-battle-title">${esc(houseName(a.pid))} attaque ${esc(PROVINCES[s.prov].art)}${s.def ? ` de ${esc(houseName(s.def))}` : " (milice)"}</div>
     <div class="duel">${side(a.pid, houseName(a.pid) + (s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""), a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.def ? houseName(s.def) : "Milice", s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div>
     <div class="verdict">${pre ? "Le choc des armées…" : s.attWins ? `${esc(houseName(a.pid))} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? esc(houseName(s.def)) : "La milice"} tient ${esc(PROVINCES[s.prov].art)}.`}</div>
-    ${pre ? "" : `<p class="rv-sub">${esc(s.text)}</p>`}`;
+    ${pre ? "" : `<p class="rv-quip">${esc(battleQuip(st, s))}</p><p class="rv-sub">${esc(s.text)}</p>`}`;
 }
 function rvCardHtml(st) {
   const e = rvEntry(st);
@@ -1122,7 +1176,8 @@ function rvCardHtml(st) {
     const s = st.reveal.steps[e.ks[0]];
     body = `<p class="rv-label" style="color:${s.pid ? houseColor(s.pid) : "var(--red)"}">${esc(rvLabel(st, s))}</p>${s.kind === "battle" && s.atk ? duelHtml(st, s, RV.pre) : `<div class="rv-text">${s.title ? entryHtml(s) : esc(s.text)}</div>`}`;
   }
-  return `<div class="rv-dock">${head}${body}
+  const mourn = !e.virt && e.kind === "death";
+  return `<div class="rv-dock ${mourn ? "mourn" : ""}">${head}${mourn ? `<div class="rv-cross">✝</div>` : ""}${body}
     <div class="rv-btns"><button class="btn" data-rvc="prev" ${RV.i <= 0 ? "disabled" : ""}>◀</button><button class="btn btn-red grow rv-next" data-rvc="next" ${RV.pre ? "disabled" : ""}>Suivant ▶</button></div>
     <div class="rv-opts"><label class="check"><input type="checkbox" data-rvc="auto" ${RV.auto ? "checked" : ""}> <span>Lecture automatique</span></label><button class="rv-link" data-rvc="end">Tout passer</button><span class="rv-prog">${RV.i + 1} / ${list.length}</span></div></div>`;
 }
@@ -1408,7 +1463,7 @@ function dilemmaCard() {
   const opt = card.type !== "pact" && cur !== null ? card.options[cur] : null;
   const canSend = cur !== null && (!opt || !opt.needsTarget || curT);
   const secretNote = card.type === "solo" ? "Affaire privée : les autres n'apprendront qu'une rumeur de ce qui s'est passé." : "Ce choix sera révélé à tous à la fin de la manche.";
-  return `<div class="card">${tabs}${slot === "dilemma" ? newsHtml() : ""}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${woodcut(500, 220, (st.round + d.id.length) % 3)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>${extra}
+  return `<div class="card">${tabs}${slot === "dilemma" ? newsHtml() + ragotsHtml() : ""}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${woodcut(500, 220, (st.round + d.id.length) % 3)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>${extra}
     <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${canSend ? "" : "disabled"}>${done ? "Choix scellé ✓ (changer)" : cur === null ? "Choisis une option" : opt && opt.needsTarget && !curT ? "Choisis une maison" : (sl.length > 1 && sl.some((k) => k !== slot && !dilSealed(k)) ? "Sceller et passer à l'affaire suivante" : "Sceller ce choix")}</button></div><p class="hint">${secretNote}</p>${resLegend()}</div>`;
 }
 // à quoi servent les jauges, en une ligne

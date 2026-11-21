@@ -2,8 +2,8 @@
 //  LE SIÈCLE NOIR — moteur de règles (pur JS, sans DOM ni réseau)
 //  L'hôte (arbitre) est le seul à appeler ces fonctions.
 // =====================================================================
-import { PROVINCES, REGIONS } from "./map.js?v=1795292025";
-import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795292025";
+import { PROVINCES, REGIONS } from "./map.js?v=1795292594";
+import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795292594";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 export const MAX_ROUNDS = 10;
@@ -39,7 +39,10 @@ export function capitalize(s) {
   return s.replace(/(^|[.!?]\s+|«\s)([a-zàâéèêîôûç])/g, (m, a, b) => a + b.toUpperCase());
 }
 export function fill(tpl, ctx) {
-  return capitalize(String(tpl).replace(/\{(\w+)\}/g, (m, k) => (ctx[k] !== undefined ? ctx[k] : m)));
+  // contractions françaises après remplacement (« de le roi » → « du roi »)
+  const t = String(tpl).replace(/\{(\w+)\}/g, (m, k) => (ctx[k] !== undefined ? ctx[k] : m))
+    .replace(/\b([Dd])e le /g, "$1u ").replace(/\b([Dd])e les /g, "$1es ").replace(/(^|\s)([Àà]) le /g, (m, sp, a) => sp + (a === "À" ? "Au " : "au ")).replace(/(^|\s)([Àà]) les /g, (m, sp, a) => sp + (a === "À" ? "Aux " : "aux "));
+  return capitalize(t);
 }
 
 // ---------- famille ----------

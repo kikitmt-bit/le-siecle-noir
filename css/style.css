@@ -542,3 +542,11 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
 .fam-trait.good { background: #DDE8CF; border: 1px solid #2F5233; }
 .fam-trait.bad { background: #F1D2C6; border: 1px solid #8E1B1B; }
 @media (max-width: 600px) { .fam-hero .portrait { width: 90px; height: 105px; } .fam-flavor { font-size: 15.5px; } }
+/* ragots, mots du chroniqueur, avis de décès */
+.ragots { margin: 0 0 12px; padding: 10px 12px; background: #2B1D12; color: #EADBB9; border-radius: 4px; border-left: 5px solid var(--gold); }
+.ragots b { font-family: var(--caps); font-size: 11px; letter-spacing: 1.5px; color: var(--gold); display: flex; gap: 6px; align-items: center; }
+.ragots p { margin: 6px 0 0; font-style: italic; font-size: 15px; line-height: 1.4; }
+.rv-quip { text-align: center; font-style: italic; font-size: 15.5px; color: #F6ECD6; margin: 8px 0 0; padding: 6px 8px; border-top: 1px dashed rgba(217,164,65,.4); }
+.rv-dock.mourn { border-color: #6B6B6B; background: #0C0907; box-shadow: 0 0 0 4px #000 inset, 0 6px 18px rgba(0,0,0,.4); }
+.rv-cross { text-align: center; font-size: 34px; color: #CFC4AE; line-height: 1; margin: 2px 0 4px; animation: famin .6s ease-out; }
+@media (max-width: 900px) { body.rv-on .rv-dock .rv-quip { font-size: 13.5px; margin-top: 4px; } }
