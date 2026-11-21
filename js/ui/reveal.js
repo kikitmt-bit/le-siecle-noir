@@ -1,14 +1,14 @@
 // Révélation : une info à la fois, bouton Suivant
-import * as A from "../audio.js?v=1795297246";
-import { PROVINCES } from "../map.js?v=1795297246";
-import { $, L, MAP, RV, S, SPEED, esc, me, net, store } from "../state.js?v=1795297246";
-import { speak } from "./announce.js?v=1795297246";
-import { houseColor, houseName, setInput } from "./common.js?v=1795297246";
-import { shield } from "./draw.js?v=1795297246";
-import { entryHtml } from "./house.js?v=1795297246";
-import { drawArrows, fx, updateMap } from "./map.js?v=1795297246";
-import { battleQuip } from "./news.js?v=1795297246";
-import { summaryHtml } from "./overlays.js?v=1795297246";
+import * as A from "../audio.js?v=1795297295";
+import { PROVINCES } from "../map.js?v=1795297295";
+import { $, L, MAP, RV, S, SPEED, esc, me, net, store } from "../state.js?v=1795297295";
+import { speak } from "./announce.js?v=1795297295";
+import { houseColor, houseName, setInput } from "./common.js?v=1795297295";
+import { shield } from "./draw.js?v=1795297295";
+import { entryHtml } from "./house.js?v=1795297295";
+import { drawArrows, fx, updateMap } from "./map.js?v=1795297295";
+import { battleQuip } from "./news.js?v=1795297295";
+import { summaryHtml } from "./overlays.js?v=1795297295";
 
 // ---- révélation : une info à la fois, on clique « Suivant » quand on l'a vue ----
 export const CHAPTERS = {

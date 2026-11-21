@@ -1,6 +1,7 @@
 // Vérifie que tous les effets, conditions et textes des dilemmes sont bien gérés par le moteur.
 import { DILEMMAS } from "../js/content.js";
 import fs from "fs";
+import * as E from "../js/engine.js";
 const ENGINE_DIR = new URL("../js/engine/", import.meta.url);
 const eng = fs.readdirSync(ENGINE_DIR).map((f) => fs.readFileSync(new URL(f, ENGINE_DIR), "utf8")).join("\n");
 const ops = new Set(); const reqs = new Set(); const ph = new Set(); const chains = new Set();
@@ -25,3 +26,7 @@ const unknownPh = [...ph].filter((p) => !KNOWN_PH.includes(p));
 const missingChains = [...chains].filter((c) => !DILEMMAS.find((d) => d.id === c));
 const neverChained = chainOnly.filter((c) => !chains.has(c));
 if (handled.length || reqMissing.length || unknownPh.length || missingChains.length || neverChained.length) { console.log("PROBLÈME : une des listes ci-dessus n'est pas vide"); process.exit(1); }
+// format des parties : 1 et 2 se lisent, un format inconnu est refusé avec la bonne raison
+const fp = [E.formatProblem({ phase: "orders", v: 1 }), E.formatProblem({ phase: "orders", v: 2 }), E.formatProblem({ phase: "orders", v: 9 }), E.formatProblem({ phase: "orders", v: -1 }), E.formatProblem({ phase: "lobby" }), E.formatProblem(null)];
+console.log("format des parties (null, null, plus-recent, plus-ancien, null, null):", fp);
+if (JSON.stringify(fp) !== JSON.stringify([null, null, "plus-recent", "plus-ancien", null, null]) || E.FORMAT_VERSION !== 2) process.exit(1);

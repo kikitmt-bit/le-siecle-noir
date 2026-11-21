@@ -38,6 +38,7 @@ for(let g=0; g<300; g++){
   const inputs={};
   for(const p of players) inputs[p.pid]={objPick:priv[p.pid].objOffer.slice(0,2)};
   for(const p of players) if(!p.isBot) { inputs[p.pid].gifts={round:0,items:[]}; }
+  if(state.v!==E.FORMAT_VERSION) throw new Error("state.v absent ou faux");
   E.finishObjectives(state,priv,inputs);
   E.startDraft(state,rng);
   while(!E.draftDone(state)){ const pid=E.currentDrafter(state); E.draftPick(state,pid,E.autoPickProvince(state,pid,rng)); }
