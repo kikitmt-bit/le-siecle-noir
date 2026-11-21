@@ -426,3 +426,6 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
 }
 
 .resume-box { margin-top: 14px; }
+
+.caplabel { font-family: var(--caps); font-size: 10.5px; font-weight: 700; fill: #2B1D12; paint-order: stroke; stroke: #F3E8D0; stroke-width: 3px; letter-spacing: .5px; }
+.capmark { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.45)); }

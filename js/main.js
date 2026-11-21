@@ -1,13 +1,13 @@
 // =====================================================================
 //  LE SIÈCLE NOIR — application (interface + arbitre)
 // =====================================================================
-import * as remote from "./net.js?v=1795285024";
-import * as local from "./localnet.js?v=1795285024";
-import * as E from "./engine.js?v=1795285024";
-import { PROVINCES, REGIONS } from "./map.js?v=1795285024";
-import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795285024";
-import * as A from "./audio.js?v=1795285024";
-import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795285024";
+import * as remote from "./net.js?v=1795287042";
+import * as local from "./localnet.js?v=1795287042";
+import * as E from "./engine.js?v=1795287042";
+import { PROVINCES, REGIONS } from "./map.js?v=1795287042";
+import { HOUSES, HUMAN_HOUSES, DILEMMAS, OBJECTIVES, TAUNTS, TRAITS, HEALTH, WHISPERS, AI_REPLIES } from "./content.js?v=1795287042";
+import * as A from "./audio.js?v=1795287042";
+import { ICON, GLOSSARY, term, chipsHtml, INTRO, UNLOCK_INFO, LEGEND } from "./help.js?v=1795287042";
 const H_ICON = ICON;
 
 let net = remote; // en solo, on bascule sur le réseau local
@@ -447,11 +447,15 @@ function updateMap(provs) {
     const c = st.players[pid].capital;
     if (!c || !provs[c] || provs[c].owner !== pid) continue;
     const P = PROVINCES[c];
-    caps += `<g transform="translate(${P.cx + 17},${P.cy - 2})" pointer-events="none"><path d="M-6,8 V-2 h3 v-3 h3 v3 h3 v-3 h3 v3 h0 V8 Z" fill="${houseColor(pid)}" stroke="#2B1D12" stroke-width="1"/></g>`;
+    caps += capMark(P.cx - 36, P.cy + 5, houseColor(pid), 15) + `<text class="caplabel" x="${P.cx}" y="${P.cy + 31}" text-anchor="middle" pointer-events="none">${esc(P.city)}</text>`;
     if (st.leader === pid && st.round < st.maxRounds) caps += `<g transform="translate(${P.cx},${P.cy - 40})" pointer-events="none"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.2"/></g>`;
   }
   $("#m-caps").innerHTML = caps;
   $("#m-badges").innerHTML = MAP.badges.map((b) => { const P = PROVINCES[b.prov]; return `<g class="pct-badge" transform="translate(${P.cx},${P.cy + 34})" pointer-events="none"><rect x="-26" y="-12" width="52" height="22" rx="11" fill="${b.color}" stroke="#F6ECD6" stroke-width="2"/><text x="0" y="4" text-anchor="middle" fill="#F6ECD6">${b.text}</text></g>`; }).join("");
+}
+// médaillon de capitale : château blanc sur la couleur de la maison, cerclé d'or
+function capMark(x, y, color, r = 14) {
+  return `<g class="capmark" transform="translate(${x},${y})" pointer-events="none"><circle r="${r + 3}" fill="#2B1D12"/><circle r="${r + 1.5}" fill="#D9A441"/><circle r="${r - 1}" fill="${color}" stroke="#2B1D12" stroke-width="1"/><path transform="scale(${r / 14})" d="M-8,7 V-3 h2.6 v-3 h2.6 v3 h1.5 V-8 h2.6 v2.4 h2.6 V-3 h1.5 v-3 h2.6 v3 h0 V7 h-6 v-4 a2,2 0 0 0 -4,0 v4 Z" fill="#F6ECD6" stroke="#2B1D12" stroke-width="0.8"/></g>`;
 }
 function drawArrows(list) {
   // list: [{from, to, color, dashed}]

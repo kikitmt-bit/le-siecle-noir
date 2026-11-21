@@ -2,8 +2,8 @@
 //  LE SIÈCLE NOIR — moteur de règles (pur JS, sans DOM ni réseau)
 //  L'hôte (arbitre) est le seul à appeler ces fonctions.
 // =====================================================================
-import { PROVINCES, REGIONS } from "./map.js?v=1795285024";
-import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795285024";
+import { PROVINCES, REGIONS } from "./map.js?v=1795287042";
+import { HOUSES, NAMES, INFIRMITIES, TRAITS, TRAIT_POOL, HEALTH, DEATH_CHANCE, DILEMMAS, EVENTS, OBJECTIVES } from "./content.js?v=1795287042";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 export const MAX_ROUNDS = 10;

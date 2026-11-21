@@ -36,7 +36,7 @@ export const GLOSSARY = {
   intriguer: ["Intriguer", "Coups bas qui coûtent de l'or : Poison (tuer un membre d'une famille rivale), Séduction (semer un bâtard chez l'ennemi), Corruption (acheter une petite garnison). Plus le dé est haut, plus ça a de chances de réussir."],
   de_cache: ["Dé caché", "Un de tes dés, marqué CACHÉ, est invisible pour les autres. Ils ne savent pas exactement quelle force tu as : à toi de bluffer."],
   double: ["Double", "Si deux de tes dés font le même chiffre, tu reçois un dé de 2 en bonus : un ordre de plus."],
-  capitale: ["Capitale", "Ta première province (petite tour sur la carte). La perdre coûte 5 Prestige, 20 de Colère et un tiers de ton or. Ton revenu d'armées y apparaît."],
+  capitale: ["Capitale", "Ta première province (médaillon doré avec un château, et le nom de ta ville sous l'armée). La perdre coûte 5 Prestige, 20 de Colère et un tiers de ton or. Ton revenu d'armées y apparaît."],
   region: ["Région", "Un groupe de provinces (Nord, Ouest, Est, Centre, Sud-Ouest, Sud-Est). Les tenir toutes rapporte des armées et 1 Prestige à chaque manche, et 3 points à la fin."],
   treve: ["Trêve", "Accord de non-agression de 3 manches. L'attaquer quand même = trahison : −5 Prestige et un surnom infamant."],
   mariage: ["Mariage", "Alliance permanente entre deux maisons (+1 or par manche chacune). Attaquer sa belle-famille = trahison."],
@@ -121,7 +121,7 @@ export const UNLOCK_INFO = {
 
 // ---------- légende de la carte ----------
 export const LEGEND = `<div class="legend-row"><svg width="26" height="26" viewBox="-13 -2 26 26"><path d="M-12,0 L12,0 L12,22 L0,16 L-12,22 Z" fill="#8E1B1B" stroke="#2B1D12"/><text x="0" y="14" text-anchor="middle" font-size="12" fill="#fff" font-family="Cinzel" font-weight="700">5</text></svg><span>Bannière : le nombre d'armées, à la couleur du propriétaire</span></div>
-<div class="legend-row"><svg width="26" height="26" viewBox="-8 -8 16 16"><path d="M-6,6 V-3 h3 v-3 h3 v3 h3 v-3 h3 v3 V6 Z" fill="#8E1B1B" stroke="#2B1D12"/></svg><span>Petite tour : la capitale d'une maison</span></div>
+<div class="legend-row"><svg width="30" height="30" viewBox="-17 -17 34 34"><circle r="17" fill="#2B1D12"/><circle r="15.5" fill="#D9A441"/><circle r="13" fill="#8E1B1B" stroke="#2B1D12"/><path d="M-8,7 V-3 h2.6 v-3 h2.6 v3 h1.5 V-8 h2.6 v2.4 h2.6 V-3 h1.5 v-3 h2.6 v3 h0 V7 h-6 v-4 a2,2 0 0 0 -4,0 v4 Z" fill="#F6ECD6" stroke="#2B1D12" stroke-width="0.8"/></svg><span>Médaillon doré au château : la capitale d'une maison (son nom de ville est écrit dessous)</span></div>
 <div class="legend-row"><svg width="26" height="26" viewBox="-12 -8 24 15"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12"/></svg><span>Couronne : le favori, le joueur en tête</span></div>
 <div class="legend-row">${ICON.plague}<span>Points noirs : la peste</span></div>
 <div class="legend-row"><span class="lg-sw" style="background:#D9C9A3"></span><span>Province beige : neutre, défendue par une milice</span></div>
