@@ -1,11 +1,11 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795297295";
-import * as E from "../engine.js?v=1795297295";
-import { ICON } from "../help.js?v=1795297295";
-import { $, L, S, esc, me } from "../state.js?v=1795297295";
-import { houseName } from "./common.js?v=1795297295";
-import { shield } from "./draw.js?v=1795297295";
-import { openModal } from "./overlays.js?v=1795297295";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795298173";
+import * as E from "../engine.js?v=1795298173";
+import { ICON } from "../help.js?v=1795298173";
+import { $, L, S, esc, me } from "../state.js?v=1795298173";
+import { houseName } from "./common.js?v=1795298173";
+import { shield } from "./draw.js?v=1795298173";
+import { openModal } from "./overlays.js?v=1795298173";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
