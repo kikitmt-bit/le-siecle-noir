@@ -767,7 +767,10 @@ export function resolveRound(state, priv, inputs, rng) {
       const n = Math.min(Math.max(1, o.n | 0), P[o.from].armies - 1);
       if (n < 1) continue;
       P[o.from].armies -= n;
-      strikes.push({ pid, from: o.from, to: o.to, n, bonus: o.value + attackMod(state, pid) });
+      // deux attaques du même seigneur sur la même province : une seule armée, le meilleur dé
+      const same = strikes.find((s) => s.pid === pid && s.to === o.to);
+      if (same) { same.n += n; same.bonus = Math.max(same.bonus, o.value + attackMod(state, pid)); same.froms.push(o.from); }
+      else strikes.push({ pid, from: o.from, froms: [o.from], to: o.to, n, bonus: o.value + attackMod(state, pid) });
     }
   }
   const betrayed = new Set();
@@ -820,15 +823,15 @@ export function resolveRound(state, priv, inputs, rng) {
         dpl.capital = rest[0] || null;
         text += ` La capitale de ${maisonName(state, def)} est mise à sac (${loot} or pillés).`;
       }
-      set = snap(to, ...totals.map((a) => a.from), def ? state.players[def].capital : null);
+      set = snap(to, ...totals.flatMap((a) => a.froms), def ? state.players[def].capital : null);
     } else {
       P[to].armies = Math.max(1, defArmies - Math.ceil(totals.reduce((s, a) => s + a.n, 0) / 2));
       if (def) { state.players[def].stats.armiesKilled += totals.reduce((s, a) => s + a.n, 0); }
       text = `Bataille de ${PROVINCES[to].city} : ${lostNames.join(" et ")} (${best.n} armées, force ${best.total}) contre ${defName} (${defArmies} armées, force ${defTotal}). ${capitalize(defName)} tient bon, l'assaillant est massacré.`;
       if (def && totals.some((a) => leaderLost(a.pid)) && def !== state.leader) { state.players[def].prestige += 2; text += ` Le favori plie : +2 Prestige.`; }
-      set = snap(to, ...totals.map((a) => a.from));
+      set = snap(to, ...totals.flatMap((a) => a.froms));
     }
-    steps.push({ kind: "battle", text, prov: to, from: totals.map((a) => a.from), winner: attWins ? best.pid : def, attWins, set, sound: "battle" });
+    steps.push({ kind: "battle", text, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle" });
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
   }
   // 4. mariages proposés librement

@@ -875,7 +875,12 @@ async function becomeHost() {
     if (H.state.phase !== "end") toast("Tu es maintenant l'arbitre de la partie (ton navigateur calcule les manches).", "#D9A441");
   } else H.state = null;
   syncInputListeners();
+  keepAwake();
 }
+// l'arbitre garde son écran allumé (sur téléphone, un écran éteint mettrait la partie en pause)
+let wakeLock = null;
+async function keepAwake() { try { if (H.active && !wakeLock && navigator.wakeLock && document.visibilityState === "visible") { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => (wakeLock = null)); } } catch {} }
+document.addEventListener("visibilitychange", keepAwake);
 function stopHost() { H.active = false; Object.values(H.inUnsub).forEach((u) => u()); H.inUnsub = {}; H.state = null; H.priv = null; }
 function syncInputListeners() {
   for (const u of Object.keys(L.members)) if (!H.inUnsub[u]) H.inUnsub[u] = net.listenInput(L.code, u, (o) => { H.inputs[u] = o || {}; });
