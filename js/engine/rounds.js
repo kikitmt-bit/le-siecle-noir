@@ -1,14 +1,14 @@
 // Début de manche : revenus, événements du monde, dés
-import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795358374";
-import { PROVINCES, REGIONS } from "../map.js?v=1795358374";
-import { aiOffers } from "./ai.js?v=1795358374";
-import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795358374";
-import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795358374";
-import { dealDilemmas } from "./dilemmas.js?v=1795358374";
-import { seedPlague } from "./effects.js?v=1795358374";
-import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795358374";
-import { estimateScore } from "./scoring.js?v=1795358374";
-import { killPerson } from "./succession.js?v=1795358374";
+import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795363044";
+import { PROVINCES, REGIONS } from "../map.js?v=1795363044";
+import { aiOffers } from "./ai.js?v=1795363044";
+import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795363044";
+import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795363044";
+import { dealDilemmas } from "./dilemmas.js?v=1795363044";
+import { seedPlague } from "./effects.js?v=1795363044";
+import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795363044";
+import { estimateScore } from "./scoring.js?v=1795363044";
+import { killPerson } from "./succession.js?v=1795363044";
 
 // ---------- début de manche ----------
 export function snapshotPlayers(state) {

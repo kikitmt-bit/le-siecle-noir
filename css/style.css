@@ -857,3 +857,29 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
 
 /* gravures des dilemmes */
 .card .woodcut.gravure { aspect-ratio: 16 / 10; object-fit: cover; object-position: center 40%; background: #ECDEBD; border: 1.5px solid var(--ink); box-shadow: 0 0 0 4px var(--parch), 0 0 0 5px var(--ink2); margin: 4px auto 16px; }
+
+/* carte gravée de 1347 (décor généré par tools/carte/make_map.py) */
+#m-decor .mt { fill: var(--parch); fill-opacity: .55; stroke: var(--ink); stroke-width: .85; stroke-linejoin: round; }
+#m-decor .mth, #m-decor .th { fill: none; stroke: var(--ink); stroke-width: .55; stroke-linecap: round; }
+#m-decor .tc { fill: var(--parch); fill-opacity: .6; stroke: var(--ink); stroke-width: .7; }
+#m-decor .tr { stroke: var(--ink); stroke-width: .8; }
+#m-decor .tw { fill: var(--cream); stroke: var(--ink); stroke-width: .7; stroke-linejoin: round; }
+#m-decor .twl { fill: none; stroke: var(--ink); stroke-width: .6; }
+#m-decor .rv1, #m-decor .rv2 { fill: none; stroke: #3E3022; stroke-linecap: round; stroke-linejoin: round; }
+#m-decor .rv1 { stroke-width: 1.5; }
+#m-decor .rv2 { stroke-width: .85; opacity: .85; }
+#m-decor .lim { fill: none; stroke: var(--red); stroke-width: 1.5; stroke-dasharray: .5 4.5; stroke-linecap: round; opacity: .75; }
+#m-decor .searoute { fill: none; stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 3 4; }
+#m-decor text { font-family: var(--serif); fill: var(--ink); paint-order: stroke; stroke-linejoin: round; }
+#m-decor .mc1, #m-decor .mc2 { font-style: italic; stroke: var(--parch); stroke-width: 2.6px; }
+#m-decor .mc1 { font-size: 11.5px; font-weight: 600; }
+#m-decor .mc2 { font-size: 9.5px; fill: var(--ink2); }
+#m-decor .msea { font-style: italic; font-size: 15px; letter-spacing: .32em; fill: #6E5C42; }
+#m-decor .mland1, #m-decor .mland2 { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .22em; fill: #6E5C42; stroke: #E2D1A9; stroke-width: 2.4px; }
+#m-decor .mland1 { font-size: 15px; }
+#m-decor .mland2 { font-size: 12px; }
+#m-decor .mlim { font-style: italic; font-size: 9.5px; fill: var(--red); letter-spacing: .06em; stroke: var(--parch); stroke-width: 2.4px; opacity: .9; }
+#m-decor .mrose { font-style: italic; font-size: 10px; fill: var(--ink2); }
+#m-decor .mtitle { font-family: var(--gothic); font-weight: 700; font-size: 23px; }
+#m-decor .msub { font-style: italic; font-size: 12.5px; fill: var(--ink2); }
+#m-decor .mscale { font-size: 9.5px; fill: var(--ink2); font-variant-numeric: lining-nums; }

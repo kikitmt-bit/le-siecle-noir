@@ -16,7 +16,7 @@ Hébergé sur GitHub Pages, synchronisé en temps réel avec Firebase (Realtime 
 - `index.html`, `css/style.css` : la page et son style
 - `js/engine.js` : point d'entrée des règles ; le code est dans `js/engine/` (création de partie, famille, effets des dilemmes, manches, batailles, intelligence artificielle, score). Le navigateur de l'hôte sert d'arbitre.
 - `js/content.js`, `js/dil_*.js` : dilemmes, objectifs, noms, traits
-- `js/map.js` : les 23 provinces et les 6 régions
+- `js/map.js` : les 23 provinces et les 6 régions ; `js/map-art.js` : le décor gravé de la carte. Les deux sont générés par `python -I tools/carte/make_map.py` (vraies formes de la France de 1347, d'après les côtes et fleuves de Natural Earth gardés dans `tools/carte/ne-france.json`) : on modifie le script, jamais les fichiers générés
 - `js/state.js` : l'état partagé de l'application (partie, carte, arbitre…)
 - `js/main.js` : démarrage et boutons globaux ; `js/ui/*.js` : l'interface, un fichier par sujet (accueil, carte, ordres, diplomatie, révélation…) ; `js/host.js` : l'arbitre
 - `js/net.js`, `js/firebase-config.js` : la synchronisation Firebase ; `js/localnet.js` : le même réseau en mémoire pour le mode solo

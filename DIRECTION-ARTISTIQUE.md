@@ -84,6 +84,16 @@ Règles du contenu :
 
 Gravures des dilemmes : 40 scènes dans `img/gravures/` (WebP 960×640), une par thème ; `js/gravures.js` associe chaque dilemme à sa gravure. Originaux et conversations ChatGPT dans le dossier du projet (`images-gravures/`). Les dessins SVG de `js/ui/draw.js` ne servent plus qu'aux interludes de fin de manche.
 
+## Carte
+
+Faite au chantier 3.9 : la France de 1347 aux vraies formes, gravée comme une carte ancienne. Tout est vectoriel et généré par `tools/carte/make_map.py`, rien n'est dessiné par une IA.
+
+- Côtes et fleuves réels (Natural Earth, domaine public). Frontières des provinces tracées à la main d'après les grandes provinces historiques, avec un léger tremblé de plume. Quelques arrangements pour garder les voisinages du jeu : le Dauphiné partagé entre Lyonnais, Savoie et Provence, le Vivarais à l'Auvergne, les Mauges à l'Anjou (qui touche ainsi la mer), l'Artois et le Cambrésis à la Flandre.
+- Mer : vélin et lignes d'eau parallèles à la côte. Terres étrangères hachurées, nommées en petites capitales (Royaume d'Angleterre, Saint-Empire…).
+- Relief : monts de profil ombrés à l'est, bouquets d'arbres pour les forêts, fleuves à l'encre. Villes en petites silhouettes (remparts, tours, clocher) à leur vraie place ; le médaillon de capitale se pose sur la ville.
+- Un pointillé rubrique marque la limite du royaume en 1347 (Escaut, Meuse, Saône, Rhône). La Corse est dans un encadré.
+- Cartouche « Royaume de France, en l'an de grâce MCCCXLVII » avec échelle en lieues de Paris, en haut à gauche ; rose des vents surmontée d'une croix rubrique (pas de fleur de lys).
+
 ## Mouvement et son
 
 Animations sous 1,5 seconde, toujours passables d'un clic, coupées si le système demande moins de mouvement. Pas de musique ; ambiance discrète qu'on peut couper.
