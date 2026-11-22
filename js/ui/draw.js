@@ -1,5 +1,5 @@
 // Dessins : blasons, dés, gravures
-import { HOUSES } from "../content.js?v=1795388227";
+import { HOUSES } from "../content.js?v=1795389300";
 
 // ---------------------------------------------------------------------
 // dessins (blasons, dés, gravures)

@@ -1,24 +1,24 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795388227";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795388227";
-import * as E from "../engine.js?v=1795388227";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795388227";
-import { hostReplay } from "../host.js?v=1795388227";
-import { PROVINCES } from "../map.js?v=1795388227";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795388227";
-import { introHtml, nextModal } from "./aides.js?v=1795388227";
-import { houseColor, houseName, sealBreakHtml, sealStamp, setInput, toast, tuto } from "./common.js?v=1795388227";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795388227";
-import { shield, woodcut } from "./draw.js?v=1795388227";
-import { GRAVURES } from "../gravures.js?v=1795388227";
-import { chronicleHtml, crownMark, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795388227";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795388227";
-import { colorize, peopleIn } from "./names.js?v=1795388227";
-import { bindLivre, livreHtml } from "./livre.js?v=1795388227";
-import { dropGame } from "./games.js?v=1795388227";
-import { render } from "./render.js?v=1795388227";
-import { interludeLines } from "./reveal.js?v=1795388227";
-import { openPadTest } from "./maporders.js?v=1795388227";
+import * as A from "../audio.js?v=1795389300";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795389300";
+import * as E from "../engine.js?v=1795389300";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795389300";
+import { hostReplay } from "../host.js?v=1795389300";
+import { PROVINCES } from "../map.js?v=1795389300";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795389300";
+import { introHtml, nextModal } from "./aides.js?v=1795389300";
+import { houseColor, houseName, sealBreakHtml, sealStamp, setInput, toast, tuto } from "./common.js?v=1795389300";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795389300";
+import { shield, woodcut } from "./draw.js?v=1795389300";
+import { GRAVURES } from "../gravures.js?v=1795389300";
+import { chronicleHtml, crownMark, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795389300";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795389300";
+import { colorize, peopleIn } from "./names.js?v=1795389300";
+import { bindLivre, livreHtml } from "./livre.js?v=1795389300";
+import { dropGame } from "./games.js?v=1795389300";
+import { render } from "./render.js?v=1795389300";
+import { interludeLines } from "./reveal.js?v=1795389300";
+import { openPadTest } from "./maporders.js?v=1795389300";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles

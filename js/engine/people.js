@@ -1,6 +1,6 @@
 // Famille : accesseurs et création des personnages
-import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795388227";
-import { pick, uid } from "./core.js?v=1795388227";
+import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795389300";
+import { pick, uid } from "./core.js?v=1795389300";
 
 // ---------- famille ----------
 export function family(state, pid) { return state.families[pid]; }
@@ -63,7 +63,8 @@ export function heirs(state, pid) {
 
 // tous les prénoms déjà portés dans la partie (pour ne jamais avoir deux « Guy » qu'on confond)
 // (contient aussi les visages déjà attribués, sous la forme « face:<clé> »)
-export function takenNames(state) { const s = new Set(); for (const f of Object.values(state.families || {})) for (const m of f.members) { s.add(m.name); if (m.face) s.add(`face:${m.face}`); } return s; }
+export const FACE_STAGES = ["baby", "small", "kid", "teen"];
+export function takenNames(state) { const s = new Set(); for (const f of Object.values(state.families || {})) for (const m of f.members) { s.add(m.name); for (const k of ["face", ...FACE_STAGES]) if (m[k]) s.add(`face:${m[k]}`); } return s; }
 
 // Visage gravé d'un personnage : choisi d'après son identifiant (aucun tirage aléatoire en plus),
 // parmi les visages encore libres dans la partie s'il en reste, en préférant :
@@ -79,9 +80,10 @@ export function faceTags(key) {
   return [];
 }
 export function faceHair(key) { return faceTags(key).find((t) => ["brun", "noir", "roux", "blond", "chatain"].includes(t)) || null; }
-// kid : true (6–15 ans), "small" (3–5 ans) ou "baby" (0–2 ans) ; faux pour un adulte
+// kid : "baby" (0–2 ans), "small" (3–5), "kid" ou true (6–11), "teen" (12–15) ; faux pour un adulte
 export function pickFace(id, sex, taken = null, { infirm = null, trait = null, hair = null, kid = false } = {}) {
-  const pool = PORTRAITS[(kid === true ? "kid_" : kid ? kid + "_" : "") + sex] || [];
+  if (kid === true) kid = "kid";
+  const pool = PORTRAITS[(kid ? kid + "_" : "") + sex] || [];
   if (!pool.length) return null;
   const want = (INFIRM_TAG.find(([re]) => re.test(infirm || "")) || [])[1] || null;
   const score = ([, t]) => {
@@ -97,7 +99,7 @@ export function pickFace(id, sex, taken = null, { infirm = null, trait = null, h
   const from = free.length ? free : pool;
   const best = Math.max(...from.map(score));
   const top = from.filter((e) => score(e) === best);
-  const face = top[hashStr(String(id) + (kid === true ? "k" : kid || "")) % top.length][0];
+  const face = top[hashStr(String(id) + (kid === "kid" ? "k" : kid || "")) % top.length][0];
   if (taken) taken.add(`face:${face}`);
   return face;
 }
@@ -121,10 +123,14 @@ export function newPerson(rng, { sex, age, house, role, bastard = false, bastard
   if (consanguin && rng() < 0.55) { trait = pick(rng, ["Simple d'esprit", "Fragile", "Cruel"]); if (!infirm) infirm = pick(rng, INFIRMITIES[sex]); }
   const health = trait === "Fragile" ? 2 : age < 40 ? 0 : age < 55 ? 1 : 2;
   const id = uid(rng);
-  // visage adulte, puis visage d'enfant aux mêmes cheveux pour qu'il reste reconnaissable en grandissant
+  // visage adulte, puis un visage pour chaque âge qu'il lui reste à traverser (nourrisson < 3, petit < 6,
+  // enfant < 12, adolescent < 16), tous aux mêmes cheveux pour qu'il reste reconnaissable en grandissant
   const face = pickFace(id, sex, taken, { infirm, trait, hair: parentHair(id, parents) });
-  const kid = age < 16 ? pickFace(id, sex, taken, { hair: faceHair(face), kid: true }) : null;
-  return { id, name, sex, age, trait, infirm, epithets: [], health, alive: true, role, bastard, legit: !bastard, bastardOf, spouse: null, cause: null, face, kid };
+  const p = { id, name, sex, age, trait, infirm, epithets: [], health, alive: true, role, bastard, legit: !bastard, bastardOf, spouse: null, cause: null, face, kid: null };
+  const hair = faceHair(face);
+  for (const [stage, upTo] of [["baby", 3], ["small", 6], ["kid", 12], ["teen", 16]])
+    if (age < upTo) p[stage] = pickFace(id, sex, taken, { hair, kid: stage, infirm: stage === "kid" || stage === "teen" ? infirm : null, trait });
+  return p;
 }
 
 export function makeFamily(rng, house, taken = new Set()) {

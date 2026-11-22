@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795388227";
-import * as E from "../engine.js?v=1795388227";
-import { ICON } from "../help.js?v=1795388227";
-import { $, L, S, esc, me } from "../state.js?v=1795388227";
-import { scoresHidden, houseName } from "./common.js?v=1795388227";
-import { shield } from "./draw.js?v=1795388227";
-import { colorize } from "./names.js?v=1795388227";
-import { openModal } from "./overlays.js?v=1795388227";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795388227";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795389300";
+import * as E from "../engine.js?v=1795389300";
+import { ICON } from "../help.js?v=1795389300";
+import { $, L, S, esc, me } from "../state.js?v=1795389300";
+import { scoresHidden, houseName } from "./common.js?v=1795389300";
+import { shield } from "./draw.js?v=1795389300";
+import { colorize } from "./names.js?v=1795389300";
+import { openModal } from "./overlays.js?v=1795389300";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795389300";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -143,14 +143,14 @@ function ageCode(m, face) {
   if (/Chauve/.test(m.infirm || "") && E.faceTags(face).includes("chauve")) return "v";
   return m.age < 30 ? "j" : m.age < 50 ? "m" : "v";
 }
-// nom du fichier gravé selon l'âge : nourrisson (0–2), petit (3–5), enfant (6–15), adulte (j/m/v).
-// Les tout-petits n'ont pas de visage attribué au moteur : on le tire de l'identifiant, avec les cheveux du visage adulte.
+// nom du fichier gravé selon l'âge : nourrisson (0–2), petit (3–5), enfant (6–11), adolescent (12–15), adulte (j/m/v).
+// Le moteur attribue à la naissance un visage par âge (baby, small, kid, teen) ; une partie plus ancienne
+// n'en a pas toujours : on le tire alors de l'identifiant, avec les cheveux du visage adulte.
 function faceFile(m) {
-  if (m.age < 6) {
-    const stage = m.age < 3 ? "baby" : "small";
-    return E.pickFace(m.id, m.sex, null, { kid: stage, hair: E.faceHair(m.kid || m.face) });
+  if (m.age < 16) {
+    const stage = m.age < 3 ? "baby" : m.age < 6 ? "small" : m.age < 12 ? "kid" : "teen";
+    return m[stage] || E.pickFace(m.id, m.sex, null, { kid: stage, hair: E.faceHair(m.face), infirm: m.infirm, trait: m.trait });
   }
-  if (m.age < 16) return m.kid || E.pickFace(m.id, m.sex, null, { kid: true });
   const face = m.face || E.pickFace(m.id, m.sex);
   return face && `${face}${ageCode(m, face)}`;
 }

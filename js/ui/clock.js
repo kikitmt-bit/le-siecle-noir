@@ -1,9 +1,9 @@
 // Boucle de temps : chronos et révélation
-import * as A from "../audio.js?v=1795388227";
-import { checkHostAlive, hostTick } from "../host.js?v=1795388227";
-import { $, S, lastTickSec, net, setLastTickSec } from "../state.js?v=1795388227";
-import { fmtTime } from "./common.js?v=1795388227";
-import { tickReveal } from "./reveal.js?v=1795388227";
+import * as A from "../audio.js?v=1795389300";
+import { checkHostAlive, hostTick } from "../host.js?v=1795389300";
+import { $, S, lastTickSec, net, setLastTickSec } from "../state.js?v=1795389300";
+import { fmtTime } from "./common.js?v=1795389300";
+import { tickReveal } from "./reveal.js?v=1795389300";
 
 setInterval(() => {
   const st = S();

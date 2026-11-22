@@ -1,18 +1,18 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795388227";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795388227";
-import * as E from "../engine.js?v=1795388227";
-import { ICON } from "../help.js?v=1795388227";
-import { PROVINCES } from "../map.js?v=1795388227";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795388227";
-import { speak } from "./announce.js?v=1795388227";
-import { houseColor, houseName, setInput } from "./common.js?v=1795388227";
-import { dieSvg, shield } from "./draw.js?v=1795388227";
-import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795388227";
-import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795388227";
-import { colorize, houseTag, peopleIn } from "./names.js?v=1795388227";
-import { battleQuip } from "./news.js?v=1795388227";
-import { openModal } from "./overlays.js?v=1795388227";
+import * as A from "../audio.js?v=1795389300";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795389300";
+import * as E from "../engine.js?v=1795389300";
+import { ICON } from "../help.js?v=1795389300";
+import { PROVINCES } from "../map.js?v=1795389300";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795389300";
+import { speak } from "./announce.js?v=1795389300";
+import { houseColor, houseName, setInput } from "./common.js?v=1795389300";
+import { dieSvg, shield } from "./draw.js?v=1795389300";
+import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795389300";
+import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795389300";
+import { colorize, houseTag, peopleIn } from "./names.js?v=1795389300";
+import { battleQuip } from "./news.js?v=1795389300";
+import { openModal } from "./overlays.js?v=1795389300";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],

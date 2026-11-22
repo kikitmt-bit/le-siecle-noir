@@ -2,12 +2,12 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795388227";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795388227";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795388227";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795388227";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795388227";
-import { DIL_SOMBRES } from "./dil_sombres.js?v=1795388227";
+import { DIL_COUR } from "./dil_cour.js?v=1795389300";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795389300";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795389300";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795389300";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795389300";
+import { DIL_SOMBRES } from "./dil_sombres.js?v=1795389300";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E2A22", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
@@ -44,20 +44,22 @@ export const NAMES = {
   en_f: ["Philippa", "Maud", "Eleanor", "Joan"],
 };
 
-// Visages gravés (img/portraits/). Adultes : <clé><âge>.webp, âge j = 16–29, m = 30–49, v = 50+ ; enfants (6–15 ans) : <clé>.webp.
+// Visages gravés (img/portraits/). Adultes : <clé><âge>.webp, âge j = 16–29, m = 30–49, v = 50+ ; enfants : <clé>.webp (baby 0–2, small 3–5, kid 6–11, teen 12–15 ans).
 // Chaque entrée : [clé, étiquettes]. Étiquettes : couleur de cheveux (brun, noir, roux, blond, chatain) et défauts visibles
 // (gros, chauve, grelee, bigleux, goitreux, moustachue), qui servent à donner aux personnages un visage conforme à leur infirmité,
 // et aux enfants les cheveux d'un parent. Un visage n'est porté que par un seul personnage par partie tant qu'il en reste.
 export const PORTRAITS = {
   m: [["H1-1", "brun"], ["H1-2", "roux gros"], ["H1-3", "noir grelee"], ["H2-1", "blond gros goitreux"], ["H2-2", "brun"], ["H2-3", "roux bigleux"], ["H3-1", "chatain goitreux chauve"], ["H3-2", "roux gros"], ["H3-3", "brun chauve"], ["H4-1", "chatain goitreux"], ["H4-2", "blond"], ["H4-3", "roux gros chauve"], ["H5-1", "brun bigleux"], ["H5-2", "roux"], ["H5-3", "noir gros"], ["H6-1", "blond bigleux"], ["H6-2", "roux"], ["H6-3", "noir gros grelee"], ["H7-1", "roux grelee chauve"], ["H7-2", "blond"], ["H7-3", "brun gros bigleux"], ["H8-1", "brun gros bigleux chauve"], ["H8-2", "noir goitreux"], ["H8-3", "chatain"], ["H9-1", "blond bigleux"], ["H9-2", "brun gros"], ["H9-3", "noir chauve"], ["H10-1", "blond"], ["H10-2", "roux"], ["H10-3", "chatain gros"], ["H11-1", "blond"], ["H11-2", "brun bigleux"], ["H11-3", "noir gros"], ["H12-1", "brun gros chauve"], ["H12-2", "blond"], ["H12-3", "noir"], ["H13-1", "blond"], ["H13-2", "brun"], ["H13-3", "roux gros"], ["H14-1", "noir"], ["H14-2", "blond gros chauve"], ["H14-3", "brun"]],
   f: [["F1-1", "blond"], ["F1-2", "chatain gros"], ["F1-3", "noir grelee"], ["F2-1", "chatain gros"], ["F2-2", "noir grelee"], ["F2-3", "roux moustachue"], ["F3-1", "roux grelee"], ["F3-2", "blond"], ["F3-3", "noir gros goitreux"], ["F4-1", "blond goitreux"], ["F4-2", "roux moustachue"], ["F4-3", "brun gros"], ["F5-1", "noir gros"], ["F5-2", "brun"], ["F5-3", "blond grelee"], ["F6-1", "blond grelee"], ["F6-2", "roux gros"], ["F6-3", "noir bigleux"], ["F7-1", "brun goitreux"], ["F7-2", "roux gros"], ["F7-3", "chatain"], ["F8-1", "chatain gros"], ["F8-2", "roux"], ["F8-3", "noir moustachue"], ["F9-1", "chatain"], ["F9-2", "brun gros"], ["F9-3", "roux bigleux"], ["F10-1", "chatain gros goitreux"], ["F10-2", "noir grelee"], ["F10-3", "brun goitreux"], ["F11-1", "chatain gros"], ["F11-2", "noir"], ["F11-3", "roux"], ["F12-1", "noir goitreux"], ["F12-2", "brun gros"], ["F12-3", "roux"], ["F13-1", "blond gros grelee"], ["F13-2", "roux"], ["F13-3", "noir bigleux"], ["F14-1", "roux"], ["F14-2", "noir"], ["F14-3", "blond gros grelee"]],
-  kid_m: [["E1-1", "noir"], ["E1-2", "blond"], ["E1-3", "blond"], ["E1-4", "chatain"], ["E1-5", "noir"], ["E1-6", "chatain"], ["E1-7", "brun"], ["E1-8", "roux"], ["E1-9", "brun"]],
-  kid_f: [["E2-1", "noir"], ["E2-2", "brun"], ["E2-3", "chatain"], ["E2-4", "brun"], ["E2-5", "blond"], ["E2-6", "noir"], ["E2-7", "roux"], ["E2-8", "blond"], ["E2-9", "chatain"]],
+  kid_m: [["E1-1", "noir"], ["E1-2", "blond"], ["E1-3", "blond"], ["E1-4", "chatain"], ["E1-5", "noir"], ["E1-6", "chatain"], ["E1-7", "brun"], ["E1-8", "roux"], ["E1-9", "brun"], ["E3-1", "roux"], ["E3-2", "brun"], ["E3-3", "blond"], ["E3-4", "roux bigleux"], ["E3-5", "noir"], ["E3-6", "brun gros"], ["E3-7", "blond"], ["E3-8", "roux"], ["E3-9", "chatain grelee"]],
+  kid_f: [["E2-1", "noir"], ["E2-2", "brun"], ["E2-3", "chatain"], ["E2-4", "brun"], ["E2-5", "blond"], ["E2-6", "noir"], ["E2-7", "roux"], ["E2-8", "blond"], ["E2-9", "chatain"], ["E4-1", "roux"], ["E4-2", "brun"], ["E4-3", "blond"], ["E4-4", "roux bigleux"], ["E4-5", "noir"], ["E4-6", "brun gros"], ["E4-7", "blond"], ["E4-8", "roux"], ["E4-9", "chatain grelee"]],
   // nourrissons emmaillotés (0–2 ans) et tout-petits (3–5 ans) : <clé>.webp, choisis d'après les cheveux du visage adulte
-  baby_m: [["B1-1", "noir"], ["B1-2", "blond"], ["B1-3", "blond"], ["B1-4", "chatain"], ["B1-5", "noir"], ["B1-6", "chatain"], ["B1-7", "brun"], ["B1-8", "roux"], ["B1-9", "brun"]],
-  baby_f: [["B2-1", "noir"], ["B2-2", "brun"], ["B2-3", "chatain"], ["B2-4", "brun"], ["B2-5", "blond"], ["B2-6", "noir"], ["B2-7", "roux"], ["B2-8", "blond"], ["B2-9", "chatain"]],
-  small_m: [["P1-1", "noir"], ["P1-2", "blond"], ["P1-3", "blond"], ["P1-4", "chatain"], ["P1-5", "noir"], ["P1-6", "chatain"], ["P1-7", "brun"], ["P1-8", "roux"], ["P1-9", "brun"]],
-  small_f: [["P2-1", "noir"], ["P2-2", "brun"], ["P2-3", "chatain"], ["P2-4", "brun"], ["P2-5", "blond"], ["P2-6", "noir"], ["P2-7", "roux"], ["P2-8", "blond"], ["P2-9", "chatain"]],
+  baby_m: [["B1-1", "noir"], ["B1-2", "blond"], ["B1-3", "blond"], ["B1-4", "chatain"], ["B1-5", "noir"], ["B1-6", "chatain"], ["B1-7", "brun"], ["B1-8", "roux"], ["B1-9", "brun"], ["B3-1", "roux"], ["B3-2", "brun"], ["B3-3", "blond"], ["B3-4", "roux"], ["B3-5", "noir"], ["B3-6", "brun"], ["B3-7", "blond"], ["B3-8", "roux"], ["B3-9", "chatain"]],
+  baby_f: [["B2-1", "noir"], ["B2-2", "brun"], ["B2-3", "chatain"], ["B2-4", "brun"], ["B2-5", "blond"], ["B2-6", "noir"], ["B2-7", "roux"], ["B2-8", "blond"], ["B2-9", "chatain"], ["B4-1", "roux"], ["B4-2", "brun"], ["B4-3", "blond"], ["B4-4", "roux"], ["B4-5", "noir"], ["B4-6", "brun"], ["B4-7", "blond"], ["B4-8", "roux"], ["B4-9", "chatain"]],
+  small_m: [["P1-1", "noir"], ["P1-2", "blond"], ["P1-3", "blond"], ["P1-4", "chatain"], ["P1-5", "noir"], ["P1-6", "chatain"], ["P1-7", "brun"], ["P1-8", "roux"], ["P1-9", "brun"], ["P3-1", "roux"], ["P3-2", "brun"], ["P3-3", "blond"], ["P3-4", "roux"], ["P3-5", "noir"], ["P3-6", "brun"], ["P3-7", "blond"], ["P3-8", "roux"], ["P3-9", "chatain"]],
+  small_f: [["P2-1", "noir"], ["P2-2", "brun"], ["P2-3", "chatain"], ["P2-4", "brun"], ["P2-5", "blond"], ["P2-6", "noir"], ["P2-7", "roux"], ["P2-8", "blond"], ["P2-9", "chatain"], ["P4-1", "roux"], ["P4-2", "brun"], ["P4-3", "blond"], ["P4-4", "roux"], ["P4-5", "noir"], ["P4-6", "brun"], ["P4-7", "blond"], ["P4-8", "roux"], ["P4-9", "chatain"]],
+  teen_m: [["A1-1", "brun"], ["A1-2", "roux"], ["A1-3", "blond gros"], ["A1-4", "noir"], ["A1-5", "chatain"], ["A1-6", "roux bigleux"], ["A1-7", "brun grelee"], ["A1-8", "blond"], ["A1-9", "noir"], ["A2-1", "blond"], ["A2-2", "brun"], ["A2-3", "roux"], ["A2-4", "chatain gros"], ["A2-5", "brun"], ["A2-6", "noir bigleux"], ["A2-7", "roux"], ["A2-8", "blond grelee"], ["A2-9", "chatain"]],
+  teen_f: [["A3-1", "brun"], ["A3-2", "roux"], ["A3-3", "blond gros"], ["A3-4", "noir"], ["A3-5", "chatain"], ["A3-6", "roux bigleux"], ["A3-7", "brun grelee"], ["A3-8", "blond"], ["A3-9", "noir"], ["A4-1", "blond"], ["A4-2", "brun"], ["A4-3", "roux"], ["A4-4", "chatain gros"], ["A4-5", "brun"], ["A4-6", "noir bigleux"], ["A4-7", "roux"], ["A4-8", "blond grelee"], ["A4-9", "chatain"]],
 };
 
 // Infirmités et surnoms de naissance (purement pour la moquerie d'époque)

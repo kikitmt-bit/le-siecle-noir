@@ -1,10 +1,10 @@
 // Diplomatie : mariages, trêves, dons d'or, accusations
-import * as A from "../audio.js?v=1795388227";
-import * as E from "../engine.js?v=1795388227";
-import { $, L, S, esc, me } from "../state.js?v=1795388227";
-import { houseName, setInput } from "./common.js?v=1795388227";
-import { shield } from "./draw.js?v=1795388227";
-import { render } from "./render.js?v=1795388227";
+import * as A from "../audio.js?v=1795389300";
+import * as E from "../engine.js?v=1795389300";
+import { $, L, S, esc, me } from "../state.js?v=1795389300";
+import { houseName, setInput } from "./common.js?v=1795389300";
+import { shield } from "./draw.js?v=1795389300";
+import { render } from "./render.js?v=1795389300";
 
 // ---- diplomatie : mariages, trêves, dons d'or, accusations ----
 export function myOffers() { const st = S(); const o = L.myInput.offers; return o && o.round === st.round ? o.items || [] : []; }
