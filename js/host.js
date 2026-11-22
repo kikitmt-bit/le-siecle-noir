@@ -1,9 +1,9 @@
 // Arbitre : seul le navigateur de l'hôte exécute ce code
-import { HUMAN_HOUSES } from "./content.js?v=1795371626";
-import * as E from "./engine.js?v=1795371626";
-import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795371626";
-import { toast } from "./ui/common.js?v=1795371626";
-import { aiName } from "./ui/lobby.js?v=1795371626";
+import { HUMAN_HOUSES } from "./content.js?v=1795374146";
+import * as E from "./engine.js?v=1795374146";
+import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795374146";
+import { toast } from "./ui/common.js?v=1795374146";
+import { aiName } from "./ui/lobby.js?v=1795374146";
 
 // Lit une donnée sur le serveur en réessayant si la connexion est mauvaise (ok = false : lecture impossible).
 async function readRetry(fn, tries = 4) {

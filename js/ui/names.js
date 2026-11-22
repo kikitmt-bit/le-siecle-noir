@@ -1,7 +1,7 @@
 // Les noms des maisons et des personnages, toujours à la couleur de leur maison, avec une bulle « qui est-ce ? »
-import { HOUSES } from "../content.js?v=1795371626";
-import * as E from "../engine.js?v=1795371626";
-import { S, esc } from "../state.js?v=1795371626";
+import { HOUSES } from "../content.js?v=1795374146";
+import * as E from "../engine.js?v=1795374146";
+import { S, esc } from "../state.js?v=1795374146";
 
 let cache = { key: "", re: null, map: null };
 

@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Grenze+Gotisch:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795371626">
+<link rel="stylesheet" href="css/style.css?v=1795374146">
 </head>
 <body>
 <div id="app">
@@ -46,7 +46,9 @@
       <div class="home-rule" aria-hidden="true">✠</div>
       <span class="home-ad">Anno Domini 1347</span>
       <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches (ou sept) pour régner sur les cendres.</p>
+      <img class="home-gravure" src="img/gravures/01-trone.webp" width="960" height="640" alt="Gravure : un vieux roi s'éteint sur son trône pendant que deux courtisans complotent" decoding="async">
       <p class="home-foot">De 2 à 4 joueurs · environ 30 minutes · à jouer sur la télé (Xbox), PC, tablette ou téléphone</p>
+      <p class="home-pad">À la manette Xbox : le stick gauche déplace le curseur, <b>A</b> clique, <b>B</b> revient en arrière. Le bouton plein écran est en haut à droite pendant la partie.</p>
       </div>
       <div class="home-r">
       <div id="games" class="games hidden"></div>
@@ -76,9 +78,15 @@
     <div class="lobby-card">
       <div class="lobby-l">
       <h2 class="gothic">Le Conseil des Seigneurs</h2>
-      <p class="lobby-code-label">Code de la partie</p>
-      <div class="lobby-code" id="lobby-code">----</div>
-      <button id="btn-share" class="btn btn-small">Copier le lien d'invitation</button>
+      <div class="lobby-invite">
+        <div id="lobby-qr" class="lobby-qr"></div>
+        <div class="lobby-codebox">
+          <p class="lobby-code-label">Code de la partie</p>
+          <div class="lobby-code" id="lobby-code">----</div>
+          <p class="hint lobby-qr-hint">Tes amis scannent le carré avec leur téléphone, ou tapent ce code sur l'accueil du jeu.</p>
+          <button id="btn-share" class="btn btn-small">Copier le lien d'invitation</button>
+        </div>
+      </div>
       <h3>Choisis ta maison</h3>
       <div id="house-pick" class="house-pick"></div>
       <label class="field" style="margin-top:8px"><span>Nom de ta maison <i>(facultatif)</i></span><input id="lobby-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon"></label>
@@ -150,6 +158,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795371626"></script>
+<script type="module" src="js/main.js?v=1795374146"></script>
 </body>
 </html>

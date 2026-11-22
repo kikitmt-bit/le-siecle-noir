@@ -1,23 +1,24 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795371626";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795371626";
-import * as E from "../engine.js?v=1795371626";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795371626";
-import { hostReplay } from "../host.js?v=1795371626";
-import { PROVINCES } from "../map.js?v=1795371626";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795371626";
-import { introHtml, nextModal } from "./aides.js?v=1795371626";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795371626";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795371626";
-import { shield, woodcut } from "./draw.js?v=1795371626";
-import { GRAVURES } from "../gravures.js?v=1795371626";
-import { chronicleHtml, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795371626";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795371626";
-import { colorize, peopleIn } from "./names.js?v=1795371626";
-import { dropGame } from "./games.js?v=1795371626";
-import { render } from "./render.js?v=1795371626";
-import { interludeLines } from "./reveal.js?v=1795371626";
-import { openPadTest } from "./maporders.js?v=1795371626";
+import * as A from "../audio.js?v=1795374146";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795374146";
+import * as E from "../engine.js?v=1795374146";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795374146";
+import { hostReplay } from "../host.js?v=1795374146";
+import { PROVINCES } from "../map.js?v=1795374146";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795374146";
+import { introHtml, nextModal } from "./aides.js?v=1795374146";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795374146";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795374146";
+import { shield, woodcut } from "./draw.js?v=1795374146";
+import { GRAVURES } from "../gravures.js?v=1795374146";
+import { chronicleHtml, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795374146";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795374146";
+import { colorize, peopleIn } from "./names.js?v=1795374146";
+import { bindLivre, livreHtml } from "./livre.js?v=1795374146";
+import { dropGame } from "./games.js?v=1795374146";
+import { render } from "./render.js?v=1795374146";
+import { interludeLines } from "./reveal.js?v=1795374146";
+import { openPadTest } from "./maporders.js?v=1795374146";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -228,15 +229,32 @@ export function endHtml() {
   const titles = r.titles.map((t) => `<div class="title-card"><b>${esc(t.name)}</b>${esc(houseName(t.pid))}</div>`).join("");
   const isHost = L.meta && L.meta.host === net.uid;
   const tab = L.ui.endTab || "res";
-  const T = [["res", "Le résultat"], ["course", "La course et les rivalités"], ["moments", "Moments forts et titres"]];
+  const T = [["res", "Le sacre"], ["course", "La course et les rivalités"], ["moments", "Moments forts et titres"], ["livre", "Le livre de la soirée"]];
   let body = "";
-  if (tab === "res") body = `<div class="end-cols"><div><div class="scorewrap"><table class="scoretable"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Or</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>${palmaresHtml()}</div><div>${objs ? `<p class="ph">Les objectifs secrets</p>${objs}` : ""}</div></div>`;
+  if (tab === "res") body = coronationHtml(st, r) + `<div class="end-cols end-low"><div>${objs ? `<p class="ph">Les objectifs secrets</p>${objs}` : ""}</div><div>${palmaresHtml()}</div></div>`;
+  if (tab === "livre") body = livreHtml();
   if (tab === "course") body = `<div class="end-cols"><div>${scoreChart(st)}</div><div>${relationsTable(st)}</div></div>`;
   if (tab === "moments") body = `<p class="ph">Les moments forts</p><div class="moments">${momentsForts().map((c) => `<div class="moment"><b>${c.year}</b>${c.title ? `« ${esc(c.title)} » — ${esc(c.choice || "")}. ` : ""}${esc(c.text)}</div>`).join("")}</div><p class="ph">Les titres</p><div class="titles">${titles}</div>`;
-  return `<div class="card end-card"><div class="hs-head"><div class="grow"><span class="card-kicker">FIN DE LA PARTIE</span><h2>${esc(houseName(w))} règne sur la France</h2></div></div><p>${esc((st.chronicle || []).filter((c) => c.kind === "end").slice(-1)[0]?.text || "")}</p>
+  return `<div class="card end-card"><div class="hs-head"><div class="grow"><span class="card-kicker">FIN DE LA PARTIE · AN ${E.yearOf(st.round)}</span><h2>${esc(houseName(w))} règne sur la France</h2></div></div>
     <div class="dil-tabs">${T.map(([k, t]) => `<button class="dil-tab ${tab === k ? "cur" : ""}" data-endtab="${k}">${t}</button>`).join("")}<button class="dil-tab" data-endchron="1">La Grande Chronique</button></div>
     <div class="end-body">${body}</div>
     <div class="row"><button class="btn grow" id="ov-close">Voir la carte</button>${isHost ? `<button class="btn btn-red grow" id="btn-replay">Rejouer avec les mêmes</button>` : ""}<button class="btn grow" id="btn-home">Retour à l'accueil</button></div></div>`;
+}
+
+// le sacre : le souverain vainqueur en grand, puis chaque maison avec le visage de son souverain
+function rulerFace(st, pid, cls = "") {
+  const k = E.king(st, pid);
+  return k ? `<button class="er-face ${cls}" data-who="${esc(pid)}|${esc(k.id)}">${portraitSvg(k, houseColor(pid))}</button>` : `<span class="er-face er-none ${cls}">${shield(st.players[pid].house, cls ? 120 : 48)}</span>`;
+}
+function coronationHtml(st, r) {
+  const w = r.winner, k = E.king(st, w);
+  const endTxt = (st.chronicle || []).filter((c) => c.kind === "end").slice(-1)[0]?.text || "";
+  const rows = r.rows.map((x, i) => {
+    const p = st.players[x.pid], pts = [["Prestige", x.prestige], ["provinces", x.provPts ?? x.provinces], ["régions", x.regPts ?? x.regions * 3], ["objectifs", x.objPts], ["famille", x.family], ["or", x.goldPts || 0]];
+    const kk = E.king(st, x.pid);
+    return `<div class="er-row ${i === 0 ? "win" : ""}" style="--hc:${houseColor(x.pid)}"><span class="er-rank">${["I", "II", "III", "IV", "V"][i] || i + 1}</span>${rulerFace(st, x.pid)}<span class="er-id"><b>${shield(p.house, 22)} ${esc(houseName(x.pid))}</b><i>${esc(p.name)}${kk ? ` · ${esc(E.personTitle(kk))}` : " · lignée éteinte"}</i><span class="er-pts">${pts.map(([n, v]) => `${n} ${v}`).join(" · ")}</span></span><span class="er-total">${x.total}<small>pts</small></span></div>`;
+  }).join("");
+  return `<div class="coronation"><div class="er-hero" style="--hc:${houseColor(w)}">${rulerFace(st, w, "big")}<div class="er-hero-t"><span class="card-kicker">${k ? (k.sex === "f" ? "REINE DE FRANCE" : "ROI DE FRANCE") : "LA COURONNE"}</span><h3>${k ? esc(E.personTitle(k)) : esc(houseName(w))}</h3><p class="er-house">${shield(st.players[w].house, 26)} Maison ${esc(houseName(w))} · ${esc(st.players[w].name)}</p><p class="er-end">${colorize(endTxt)}</p></div></div><div class="er-list">${rows}</div></div>`;
 }
 
 export function bindOverlay() {
@@ -262,6 +280,7 @@ export function bindOverlay() {
     else { L.ui.dSlot = null; L.dilemmaClosed = true; }
     render();
   };
+  bindLivre();
   document.querySelectorAll("[data-endtab]").forEach((b) => (b.onclick = () => { L.ui.endTab = b.dataset.endtab; A.play("click"); render(); }));
   document.querySelectorAll("[data-endchron]").forEach((b) => (b.onclick = () => { L.ui.chrPage = 0; openModal("chronicle"); }));
   if ($("#btn-replay")) $("#btn-replay").onclick = () => hostReplay();

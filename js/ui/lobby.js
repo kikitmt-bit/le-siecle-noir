@@ -1,16 +1,17 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795371626";
-import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795371626";
-import * as E from "../engine.js?v=1795371626";
-import { hostStart, stopHost } from "../host.js?v=1795371626";
-import * as local from "../localnet.js?v=1795371626";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795371626";
-import { show, toast } from "./common.js?v=1795371626";
-import { shield } from "./draw.js?v=1795371626";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795371626";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795371626";
-import { palmaresHtml } from "./overlays.js?v=1795371626";
-import { render } from "./render.js?v=1795371626";
+import * as A from "../audio.js?v=1795374146";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795374146";
+import * as E from "../engine.js?v=1795374146";
+import { hostStart, stopHost } from "../host.js?v=1795374146";
+import * as local from "../localnet.js?v=1795374146";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795374146";
+import { show, toast } from "./common.js?v=1795374146";
+import { shield } from "./draw.js?v=1795374146";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795374146";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795374146";
+import { palmaresHtml } from "./overlays.js?v=1795374146";
+import { render } from "./render.js?v=1795374146";
+import { qrSvg } from "./qr.js?v=1795374146";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
@@ -130,6 +131,9 @@ export function renderLobby() {
   if (L.state && L.state.phase && L.state.phase !== "lobby") return;
   show("lobby");
   $("#lobby-code").textContent = L.code;
+  // QR code de l'invitation : sur la télé, les amis rejoignent en scannant l'écran
+  const inv = inviteUrl();
+  if ($("#lobby-qr").dataset.url !== inv) { $("#lobby-qr").dataset.url = inv; $("#lobby-qr").innerHTML = qrSvg(inv, { size: 196 }); }
   const mine = L.members[net.uid] || {};
   const taken = [...Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false).map(([, m]) => m.house), ...Object.values((L.meta && L.meta.ais) || {}).map((a) => a.house)];
   $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${mine.house === h}" ${taken.includes(h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small><span class="hp-t">${esc(HOUSE_POWERS[h].title)}</span><span class="hp-g">+ ${esc(HOUSE_POWERS[h].power)}</span><span class="hp-b">− ${esc(HOUSE_POWERS[h].weak)}</span></button>`).join("");
@@ -160,8 +164,11 @@ export function renderLobby() {
   $("#opt-fill").onchange = () => renderLobby();
 }
 
+// l'adresse d'invitation (lien partagé et QR code du salon)
+export function inviteUrl() { return `${location.origin}${location.pathname}?r=${L.code}`; }
+
 $("#btn-share").onclick = async () => {
-  const url = `${location.origin}${location.pathname}?r=${L.code}`;
+  const url = inviteUrl();
   try { if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ title: "Le Siècle Noir", text: `Rejoins ma partie du Siècle Noir (code ${L.code})`, url }); else { await navigator.clipboard.writeText(url); toast("Lien copié. Envoie-le à tes amis."); } }
   catch { prompt("Copie ce lien :", url); }
 };

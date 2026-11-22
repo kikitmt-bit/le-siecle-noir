@@ -1193,3 +1193,69 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
   .ptiles { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
   .ptile .portrait { width: 146px; }
 }
+
+/* ===================== 3.11 : SALON, FIN DE PARTIE, ACCUEIL ===================== */
+.lobby-invite { display: flex; gap: 18px; align-items: center; justify-content: center; margin: 4px 0 6px; }
+.lobby-qr .qr { display: block; width: 196px; height: 196px; border: 1.5px solid var(--ink); box-shadow: 0 0 0 4px var(--parch), 0 0 0 5px var(--ink2); }
+.lobby-codebox { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 260px; }
+.lobby-codebox .lobby-code { margin: 0; }
+.lobby-qr-hint { margin: 0 0 6px; text-align: center; }
+@media (max-width: 900px) { .lobby-qr { display: none; } .lobby-invite { display: block; } .lobby-codebox { max-width: none; } }
+@media (min-width: 901px) and (max-height: 820px) { .lobby-qr .qr { width: 150px; height: 150px; } }
+@media (min-width: 901px) {
+  .house-opt { font-size: 17px; padding: 10px 6px; gap: 3px; }
+  .house-opt small { font-size: 13.5px; }
+  .house-opt .hp-t { font-size: 15.5px; }
+  .house-opt .hp-g, .house-opt .hp-b { font-family: var(--serif); font-variant-caps: normal; letter-spacing: 0; font-weight: 400; font-size: 14px; line-height: 1.25; }
+}
+@media (min-width: 901px) and (max-height: 820px) { .house-opt .hp-g, .house-opt .hp-b { font-size: 12.5px; } .house-opt small { display: none; } }
+/* fin de partie : le sacre */
+.coronation { display: grid; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); gap: 28px; align-items: center; margin-bottom: 12px; }
+.er-hero { display: flex; gap: 22px; align-items: center; }
+.er-face { padding: 0; border: 0; background: none; cursor: zoom-in; flex-shrink: 0; display: inline-flex; }
+.er-face .portrait { width: 64px; height: 75px; }
+.er-face.big .portrait { width: 230px; height: 268px; filter: drop-shadow(0 0 2px var(--gold)) drop-shadow(0 8px 14px rgba(0,0,0,.35)); }
+.er-none { cursor: default; }
+.er-hero-t h3 { font-family: var(--gothic); font-size: 44px; line-height: 1.05; margin: 2px 0 6px; }
+.er-house { display: flex; align-items: center; gap: 8px; margin: 0 0 8px !important; font-family: var(--caps); font-variant-caps: all-small-caps; font-weight: 600; font-size: 19px !important; letter-spacing: .04em; color: var(--hc); }
+.er-end { font-style: italic; color: var(--ink2); font-size: 17px !important; }
+.er-list { display: flex; flex-direction: column; gap: 6px; }
+.er-row { display: grid; grid-template-columns: 34px auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 4px 14px 4px 8px; border-left: 5px solid var(--hc); background: rgba(255,255,255,.22); }
+.er-row.win { background: rgba(169,132,58,.2); box-shadow: inset 0 0 0 1px var(--gold); }
+.er-rank { font-family: var(--gothic); font-size: 28px; color: var(--ink3); text-align: center; }
+.er-id { display: flex; flex-direction: column; min-width: 0; }
+.er-id b { display: flex; align-items: center; gap: 6px; font-family: var(--caps); font-variant-caps: all-small-caps; font-size: 21px; letter-spacing: .04em; }
+.er-id i { font-size: 15px; color: var(--ink2); }
+.er-pts { font-size: 13.5px; color: var(--ink3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.er-total { font-family: var(--caps); font-weight: 700; font-size: 34px; font-variant-numeric: lining-nums tabular-nums; }
+.er-row.win .er-total { color: var(--red); }
+.er-total small { font-size: 14px; color: var(--ink3); margin-left: 3px; font-weight: 400; }
+.end-low p { font-size: 15px; }
+/* le livre de la soirée */
+.livre { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+.livre-img img, .livre-img .wait { display: block; height: min(58vh, 620px); width: auto; aspect-ratio: 1080 / 1350; border: 1.5px solid var(--ink); box-shadow: 0 8px 20px rgba(0,0,0,.3); background: var(--parch2); }
+.livre-img .wait { display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+.livre-side { max-width: 460px; }
+@media (min-width: 901px) and (max-height: 820px) {
+  .er-face.big .portrait { width: 150px; height: 175px; }
+  .er-hero-t h3 { font-size: 32px; } .er-end { font-size: 14.5px !important; }
+  .er-face .portrait { width: 46px; height: 54px; } .er-row { padding: 2px 10px 2px 6px; } .er-total { font-size: 26px; } .er-id b { font-size: 17px; }
+  .livre-img img, .livre-img .wait { height: 50vh; }
+}
+@media (max-width: 900px) { .coronation, .livre { grid-template-columns: 1fr; } .er-hero { flex-direction: column; text-align: center; } .er-face.big .portrait { width: 160px; height: 187px; } .livre-img img { width: 100%; height: auto; } }
+.er-rank { font-family: var(--caps); font-weight: 600; font-size: 24px; }
+/* accueil : la gravure du roi mourant, et les commandes à la manette */
+.home-gravure { display: none; }
+.home-pad { display: none; }
+@media (min-width: 901px) {
+  .home-pad { display: block; font-size: 14.5px; color: var(--ink3); font-style: italic; margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--parch4); }
+  .home-pad b { font-style: normal; color: var(--ink); }
+}
+@media (min-width: 901px) and (min-height: 821px) {
+  .home-gravure { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; margin: 16px 0 6px; border: 1.5px solid var(--ink); box-shadow: 0 0 0 4px var(--parch), 0 0 0 5px var(--ink2); }
+  .home-card .home-emblem { width: 120px; height: 120px; }
+  .home-card h1 { font-size: 62px; }
+  .home-card { width: min(1240px, 100%); }
+}
+@media (min-width: 901px) { .home-pad { text-align: center; border-top: 0; padding-top: 0; margin-top: 8px; } }
+@media (max-width: 900px) { .end-card .dil-tabs { flex-wrap: wrap; } .end-card .dil-tab { flex: 1 1 40%; font-size: 14px; } }

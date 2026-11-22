@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795371626";
-import * as E from "../engine.js?v=1795371626";
-import { ICON } from "../help.js?v=1795371626";
-import { $, L, S, esc, me } from "../state.js?v=1795371626";
-import { scoresHidden, houseName } from "./common.js?v=1795371626";
-import { shield } from "./draw.js?v=1795371626";
-import { colorize } from "./names.js?v=1795371626";
-import { openModal } from "./overlays.js?v=1795371626";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795371626";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795374146";
+import * as E from "../engine.js?v=1795374146";
+import { ICON } from "../help.js?v=1795374146";
+import { $, L, S, esc, me } from "../state.js?v=1795374146";
+import { scoresHidden, houseName } from "./common.js?v=1795374146";
+import { shield } from "./draw.js?v=1795374146";
+import { colorize } from "./names.js?v=1795374146";
+import { openModal } from "./overlays.js?v=1795374146";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795374146";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -133,6 +133,16 @@ function drawnPortrait(m, color) {
 
 // Portrait gravé (img/portraits/, 240×288, yeux alignés en (88.8, 120) et (151.2, 120)) + calques d'état vectoriels.
 // Dans ce repère 120×140, l'image est réduite à 104 px de large : les yeux tombent en (46.5, 62) et (73.5, 62).
+// fichier du visage gravé d'un personnage et son recentrage (null pour un nourrisson dessiné)
+export function portraitSrc(m) {
+  if (m.age < 6) return null;
+  const child = m.age < 16;
+  const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
+  if (!face) return null;
+  const name = child ? face : `${face}${m.age < 30 ? "j" : m.age < 50 ? "m" : "v"}`;
+  return { src: `img/portraits/${name}.webp`, dx: PORTRAIT_DX[name] || 0 };
+}
+
 export function portraitSvg(m, color) {
   // moins de 6 ans : le nourrisson dessiné ; 6–15 ans : visage d'enfant ; 16 ans et plus : visage adulte selon l'âge
   if (m.age < 6) return drawnPortrait(m, color);

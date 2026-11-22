@@ -1,11 +1,11 @@
 // Intelligence artificielle
-import { DILEMMAS } from "../content.js?v=1795371626";
-import { PROVINCES } from "../map.js?v=1795371626";
-import { attackMod, canPropose, defenseOf, provincesOf, winProb } from "./calc.js?v=1795371626";
-import { COSTS, MERC_COST, pick, unlocked } from "./core.js?v=1795371626";
-import { heirs, mother } from "./people.js?v=1795371626";
-import { realDice } from "./rounds.js?v=1795371626";
-import { bound } from "./succession.js?v=1795371626";
+import { DILEMMAS } from "../content.js?v=1795374146";
+import { PROVINCES } from "../map.js?v=1795374146";
+import { attackMod, canPropose, defenseOf, provincesOf, winProb } from "./calc.js?v=1795374146";
+import { COSTS, MERC_COST, pick, unlocked } from "./core.js?v=1795374146";
+import { heirs, mother } from "./people.js?v=1795374146";
+import { realDice } from "./rounds.js?v=1795374146";
+import { bound } from "./succession.js?v=1795374146";
 
 // ---------- intelligence artificielle ----------
 export const PERSONAS = {
