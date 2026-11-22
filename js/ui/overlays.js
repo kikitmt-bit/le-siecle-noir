@@ -1,21 +1,21 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795350372";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795350372";
-import * as E from "../engine.js?v=1795350372";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795350372";
-import { hostReplay } from "../host.js?v=1795350372";
-import { PROVINCES } from "../map.js?v=1795350372";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795350372";
-import { introHtml, nextModal } from "./aides.js?v=1795350372";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795350372";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795350372";
-import { shield, woodcut } from "./draw.js?v=1795350372";
-import { GRAVURES } from "../gravures.js?v=1795350372";
-import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795350372";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795350372";
-import { dropGame } from "./games.js?v=1795350372";
-import { render } from "./render.js?v=1795350372";
-import { interludeLines } from "./reveal.js?v=1795350372";
+import * as A from "../audio.js?v=1795358374";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795358374";
+import * as E from "../engine.js?v=1795358374";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795358374";
+import { hostReplay } from "../host.js?v=1795358374";
+import { PROVINCES } from "../map.js?v=1795358374";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795358374";
+import { introHtml, nextModal } from "./aides.js?v=1795358374";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795358374";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795358374";
+import { shield, woodcut } from "./draw.js?v=1795358374";
+import { GRAVURES } from "../gravures.js?v=1795358374";
+import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795358374";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795358374";
+import { dropGame } from "./games.js?v=1795358374";
+import { render } from "./render.js?v=1795358374";
+import { interludeLines } from "./reveal.js?v=1795358374";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles

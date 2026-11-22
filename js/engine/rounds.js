@@ -1,14 +1,14 @@
 // Début de manche : revenus, événements du monde, dés
-import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795350372";
-import { PROVINCES, REGIONS } from "../map.js?v=1795350372";
-import { aiOffers } from "./ai.js?v=1795350372";
-import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795350372";
-import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795350372";
-import { dealDilemmas } from "./dilemmas.js?v=1795350372";
-import { seedPlague } from "./effects.js?v=1795350372";
-import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795350372";
-import { estimateScore } from "./scoring.js?v=1795350372";
-import { killPerson } from "./succession.js?v=1795350372";
+import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795358374";
+import { PROVINCES, REGIONS } from "../map.js?v=1795358374";
+import { aiOffers } from "./ai.js?v=1795358374";
+import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795358374";
+import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795358374";
+import { dealDilemmas } from "./dilemmas.js?v=1795358374";
+import { seedPlague } from "./effects.js?v=1795358374";
+import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795358374";
+import { estimateScore } from "./scoring.js?v=1795358374";
+import { killPerson } from "./succession.js?v=1795358374";
 
 // ---------- début de manche ----------
 export function snapshotPlayers(state) {
@@ -104,7 +104,7 @@ export function passTime(state, priv, rng, out) {
       const q = mother(state, pid);
       if (q && q.age < 40 && rng() < 0.25) {
         const volage = pl.flags && pl.flags.reine_volage && rng() < 0.35 ? pick(rng, state.order.filter((o) => o !== pid)) : null;
-        const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", consanguin: fam.consanguin, bastardOf: volage, taken: takenNames(state) });
+        const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", consanguin: fam.consanguin, bastardOf: volage, taken: takenNames(state), parents: [q, king(state, pid)] });
         fam.members.push(c);
         const t = `${capitalize(maisonName(state, pid))} célèbre une naissance : ${personTitle(c)}${c.infirm ? ", déjà surnommé" + (c.sex === "f" ? "e" : "") + " ainsi au berceau" : ""}.`;
         out.push({ kind: "birth", text: t, pid }); chron(state, t, "birth");

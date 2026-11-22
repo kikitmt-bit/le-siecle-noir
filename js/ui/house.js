@@ -1,12 +1,12 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795350372";
-import * as E from "../engine.js?v=1795350372";
-import { ICON } from "../help.js?v=1795350372";
-import { $, L, S, esc, me } from "../state.js?v=1795350372";
-import { scoresHidden, houseName } from "./common.js?v=1795350372";
-import { shield } from "./draw.js?v=1795350372";
-import { colorize } from "./names.js?v=1795350372";
-import { openModal } from "./overlays.js?v=1795350372";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795358374";
+import * as E from "../engine.js?v=1795358374";
+import { ICON } from "../help.js?v=1795358374";
+import { $, L, S, esc, me } from "../state.js?v=1795358374";
+import { scoresHidden, houseName } from "./common.js?v=1795358374";
+import { shield } from "./draw.js?v=1795358374";
+import { colorize } from "./names.js?v=1795358374";
+import { openModal } from "./overlays.js?v=1795358374";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -108,7 +108,7 @@ export const TRAIT_FLAVOR = {
   "Cruel": ["Il fait couper la langue des bavards. La cour est devenue très silencieuse.", "Elle collectionne les ongles de ses servantes. On ne lui pose pas de questions."],
 };
 
-export function portraitSvg(m, color) {
+function drawnPortrait(m, color) {
   const f = m.sex === "f", baby = m.age < 6, old = m.age >= 55;
   const ink = "#1B130D";
   const headR = baby ? 15 : 19;
@@ -126,6 +126,46 @@ export function portraitSvg(m, color) {
   if (m.role === "king" || m.role === "queen") { const cy = hy - headR + 2; h += `<path d="M${f ? 46 : 41},${cy} L${f ? 48 : 44},${cy - 14} L${f ? 54 : 52},${cy - 6} L60,${cy - 18} L${f ? 66 : 68},${cy - 6} L${f ? 72 : 76},${cy - 14} L${f ? 74 : 79},${cy} Z" fill="#A9843A" stroke="${ink}" stroke-width="1.5"/>`; }
   if (m.trait === "Sanguinaire" || m.trait === "Cruel") h += `<path d="M66,${hy + 2} l8,8" stroke="#A3221A" stroke-width="2.5"/>`;
   if (/Borgne/.test(m.infirm || "")) h += `<path d="M62,${hy - 5} h8 v6 h-8 Z" fill="${ink}"/><path d="M42,${hy - 8} L78,${hy - 2}" stroke="${ink}" stroke-width="1.2"/>`;
+  h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
+  return h;
+}
+
+// Portrait gravé (img/portraits/, 240×288, yeux alignés en (88.8, 120) et (151.2, 120)) + calques d'état vectoriels.
+// Dans ce repère 120×140, l'image est réduite à 104 px de large : les yeux tombent en (46.5, 62) et (73.5, 62).
+export function portraitSvg(m, color) {
+  // moins de 6 ans : le nourrisson dessiné ; 6–15 ans : visage d'enfant ; 16 ans et plus : visage adulte selon l'âge
+  if (m.age < 6) return drawnPortrait(m, color);
+  const child = m.age < 16;
+  const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
+  if (!face) return drawnPortrait(m, color);
+  const src = child ? `${face}.webp` : `${face}${m.age < 30 ? "j" : m.age < 50 ? "m" : "v"}.webp`;
+  const ink = "#1B130D", gold = "#A9843A";
+  const L = 46.5, R = 73.5, Y = 62;
+  const sick = m.alive && m.health >= 3, dying = m.alive && m.health >= 4;
+  const filt = !m.alive ? "grayscale(1) sepia(.3) contrast(1.05)" : dying ? "grayscale(.6) brightness(1.06)" : sick ? "grayscale(.3)" : "";
+  const cid = `pc-${String(m.id).replace(/[^\w-]/g, "")}`;
+  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="${cid}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
+    <ellipse cx="60" cy="70" rx="56" ry="66" fill="#ECDEBD"/><g clip-path="url(#${cid})">
+    <image href="img/portraits/${src}" x="8" y="10" width="104" height="124.8"${filt ? ` style="filter:${filt}"` : ""}/>
+    <ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${color}" stroke-width="10" opacity=".35"/>`;
+  if (sick) {
+    // teint cireux, cernes, et pour un mourant les joues creusées
+    h += `<rect width="120" height="140" fill="#ECDEBD" opacity="${dying ? 0.3 : 0.16}"/>
+      <path d="M${L - 6},${Y + 5} Q${L},${Y + (dying ? 10 : 8)} ${L + 6},${Y + 5} M${R - 6},${Y + 5} Q${R},${Y + (dying ? 10 : 8)} ${R + 6},${Y + 5}" stroke="${ink}" stroke-width="${dying ? 1.6 : 1.1}" fill="none" opacity=".55"/>`;
+    if (dying) h += `<path d="M${L - 9},${Y + 14} l3,8 M${L - 6},${Y + 13} l3,9 M${R + 9},${Y + 14} l-3,8 M${R + 6},${Y + 13} l-3,9" stroke="${ink}" stroke-width="1" opacity=".45"/>`;
+  }
+  if (/Borgne/.test(m.infirm || "")) {
+    // bandeau de cuir sur l'œil droit de l'image, lanière en travers du front
+    h += `<path d="M28,${Y - 13} Q50,${Y - 17} ${R - 5},${Y - 5} M${R + 6},${Y - 4} Q${R + 15},${Y - 2} ${R + 22},${Y + 4}" stroke="${ink}" stroke-width="2" fill="none"/>
+      <path d="M${R - 7},${Y - 4} Q${R},${Y - 8} ${R + 7},${Y - 3} Q${R + 8},${Y + 4} ${R},${Y + 6} Q${R - 7},${Y + 4} ${R - 7},${Y - 4} Z" fill="${ink}"/><path d="M${R - 4},${Y - 2} Q${R},${Y - 4} ${R + 5},${Y - 1}" stroke="#5A4430" stroke-width=".8" fill="none"/>`;
+  }
+  if (m.role === "king" || m.role === "queen") {
+    // couronne or terni posée sur la tête, sans fleur de lys
+    const f = m.sex === "f", w = f ? 16 : 19, base = f ? 30 : 28;
+    h += `<path d="M${60 - w},${base} L${60 - w - 2},${base - 11} L${60 - w / 2},${base - 5} L60,${base - 15} L${60 + w / 2},${base - 5} L${60 + w + 2},${base - 11} L${60 + w},${base} Z" fill="${gold}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M${60 - w},${base - 3} H${60 + w}" stroke="${ink}" stroke-width="1"/><circle cx="60" cy="${base - 15}" r="1.7" fill="${ink}"/><circle cx="${60 - w - 2}" cy="${base - 11}" r="1.3" fill="${ink}"/><circle cx="${60 + w + 2}" cy="${base - 11}" r="1.3" fill="${ink}"/>`;
+  }
+  if (!m.alive) h += `<path d="M80,4 L118,42" stroke="${ink}" stroke-width="11"/>`; // crêpe de deuil
   h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
   return h;
 }
