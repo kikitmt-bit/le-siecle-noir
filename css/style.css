@@ -883,3 +883,36 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
 #m-decor .mtitle { font-family: var(--gothic); font-weight: 700; font-size: 23px; }
 #m-decor .msub { font-style: italic; font-size: 12.5px; fill: var(--ink2); }
 #m-decor .mscale { font-size: 9.5px; fill: var(--ink2); font-variant-numeric: lining-nums; }
+
+/* ordres sur la carte (manette, souris) : menu de province, visée, confirmation */
+.mapmenu { position: absolute; z-index: 6; width: 290px; max-width: calc(100% - 16px); background: var(--cream); border: 2px solid var(--ink); box-shadow: 0 0 0 3px var(--cream), 0 0 0 4px var(--ink2), 0 12px 28px rgba(0,0,0,.35); border-radius: 2px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 7px; animation: rise .18s ease-out; }
+.mapmenu.mm-hint { width: 250px; }
+.mm-title { margin: 0; font-family: var(--caps); font-weight: 600; font-size: 19px; letter-spacing: .05em; font-variant-caps: all-small-caps; color: var(--red); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mm-title span { color: var(--ink2); font-size: 16px; font-family: var(--serif); font-variant-caps: normal; letter-spacing: 0; font-style: italic; }
+.mm-hint { margin: 0; font-size: 16px; line-height: 1.35; font-style: italic; color: var(--ink2); }
+.mm-dice { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mm-lab { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; font-weight: 600; font-size: 16px; margin-right: 2px; }
+.mm-die { width: 46px; height: 46px; padding: 4px; border: 2px solid var(--ink3); border-radius: 4px; background: var(--parch); cursor: pointer; }
+.mm-die svg { width: 100%; height: 100%; display: block; }
+.mm-die.on { border-color: var(--ink); background: var(--gold); box-shadow: 0 0 0 2px var(--cream), 0 0 0 4px var(--ink); }
+.mm-pad { font-family: var(--caps); font-size: 12px; letter-spacing: .06em; color: var(--ink3); margin-left: auto; font-variant-caps: all-small-caps; }
+.mm-act { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; min-height: 52px; padding: 7px 12px; text-align: left; background: var(--parch); border: 2px solid var(--ink); border-radius: 2px; cursor: pointer; font-family: var(--serif); color: var(--ink); }
+.mm-act b { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; font-size: 19px; font-weight: 600; }
+.mm-act span { font-size: 14.5px; font-style: italic; color: var(--ink2); line-height: 1.25; }
+.mm-act:hover:not([disabled]) { background: var(--parch2); }
+.mm-act[disabled] { opacity: .45; cursor: default; }
+.mm-act.mm-ok { background: var(--red); border-color: var(--red2); color: var(--onred); align-items: center; }
+.mm-act.mm-ok b { font-size: 20px; }
+.mm-row { display: flex; gap: 6px; }
+.mm-small { flex: 1; min-height: 44px; background: transparent; border: 1.5px solid var(--ink); border-radius: 2px; font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; font-weight: 600; font-size: 16px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.mm-small .mm-pad { margin-left: 0; }
+.mm-num { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 18px; }
+.mm-num b { font-size: 24px; }
+.mm-step { width: 52px; height: 48px; font-size: 28px; line-height: 1; border: 2px solid var(--ink); background: var(--parch); border-radius: 2px; cursor: pointer; color: var(--ink); }
+.mm-pct { margin: 0; text-align: center; font-family: var(--caps); font-weight: 700; font-size: 24px; letter-spacing: .04em; font-variant-numeric: lining-nums; }
+.mm-warn { margin: 0; font-size: 14.5px; color: var(--red); }
+.mapmenu button:focus-visible, .mapmenu button:focus { outline: 4px solid var(--gold); outline-offset: 2px; }
+.prov-focus { fill: none; stroke: var(--gold); stroke-width: 6; stroke-linejoin: round; filter: drop-shadow(0 0 2px var(--cream)); }
+.drag-arrow { fill: none; stroke-width: 4; stroke-linecap: round; }
+.drag-pct { font-family: var(--caps); font-weight: 700; font-size: 14px; fill: #F5EBD3; font-variant-numeric: lining-nums; }
+@media (max-width: 600px) { .mapmenu { width: 250px; } .mm-act { min-height: 46px; } }

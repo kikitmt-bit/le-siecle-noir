@@ -1,21 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795363044";
-import { HOUSES } from "../content.js?v=1795363044";
-import * as E from "../engine.js?v=1795363044";
-import { ICON } from "../help.js?v=1795363044";
-import { PROVINCES } from "../map.js?v=1795363044";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795363044";
-import { applyCoach } from "./aides.js?v=1795363044";
-import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795363044";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795363044";
-import { shield } from "./draw.js?v=1795363044";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795363044";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795363044";
-import { drawArrows, updateMap } from "./map.js?v=1795363044";
-import { myDice, saveOrders } from "./orders.js?v=1795363044";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795363044";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795363044";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795363044";
+import * as A from "../audio.js?v=1795365668";
+import { HOUSES } from "../content.js?v=1795365668";
+import * as E from "../engine.js?v=1795365668";
+import { ICON } from "../help.js?v=1795365668";
+import { PROVINCES } from "../map.js?v=1795365668";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795365668";
+import { applyCoach } from "./aides.js?v=1795365668";
+import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795365668";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795365668";
+import { shield } from "./draw.js?v=1795365668";
+import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795365668";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795365668";
+import { drawArrows, updateMap } from "./map.js?v=1795365668";
+import { myDice, saveOrders } from "./orders.js?v=1795365668";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795365668";
+import { afterRender } from "./maporders.js?v=1795365668";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795365668";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795365668";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -24,7 +25,7 @@ export function render() {
   const st = S();
   if (!st || st.phase === "lobby") return;
   renderTop(); renderPlayers(); renderGuide();
-  MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null; MAP.badges = [];
+  MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null; MAP.badges = []; MAP.mode = null; MAP.magnet = null; MAP.canDrag = null;
   let arrows = [];
   const panel = renderPanel();
   $("#tab-panel").innerHTML = panel.html;
@@ -37,6 +38,7 @@ export function render() {
   // carte : pendant la révélation, on montre l'état « avant » puis on applique les étapes
   if (st.phase === "reveal") { const f = rvFocus(st); MAP.hl = new Set(f.hl); MAP.hlRed = new Set(f.red); MAP.badges = f.badges; updateMap(revealProvinces()); drawArrows(f.arrows); }
   else { updateMap(st.provinces); drawArrows(arrows); }
+  afterRender();
   $("#crown-banner").classList.toggle("hidden", !(st.round === st.maxRounds && ["dilemma", "orders"].includes(st.phase)));
   renderOverlays();
   document.querySelectorAll("#side-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === L.ui.tab));
@@ -109,7 +111,7 @@ export function renderGuide() {
       if (sealed) text = "Ordres scellés. On attend les autres… (tu peux encore les modifier dans le panneau Actions)";
       else {
         const dv = myDice().filter((v) => v).length, n = L.ui.orders.length;
-        text = L.ui.build ? `<b>À toi :</b> suis les étapes dans le panneau Actions (dé ${myDice()[L.ui.build.die]}).` : n < dv ? `<b>À toi :</b> clique un dé dans le panneau Actions et choisis son ordre. Ordres donnés : <b>${n} sur ${dv}</b>.` : `<b>À toi :</b> tous tes dés ont un ordre. Vérifie, puis scelle tes ordres.`;
+        text = L.ui.build ? `<b>À toi :</b> vise ta cible sur la carte, ou suis les étapes dans le panneau Actions (dé ${myDice()[L.ui.build.die]}).` : n < dv ? `<b>À toi :</b> choisis une de tes provinces sur la carte pour lui donner un ordre (ou un dé dans le panneau Actions). Ordres donnés : <b>${n} sur ${dv}</b>.` : `<b>À toi :</b> tous tes dés ont un ordre. Vérifie, puis scelle tes ordres.`;
         btn = `<button class="btn" data-guide="actions">Voir mes dés</button><button class="btn btn-red" data-guide="seal">Sceller mes ordres</button>`; mine = true;
       }
       break;

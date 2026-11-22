@@ -1,12 +1,13 @@
 // Carte SVG, zoom et déplacement
-import * as A from "../audio.js?v=1795363044";
-import { HOUSES } from "../content.js?v=1795363044";
-import { LEGEND } from "../help.js?v=1795363044";
-import { PROVINCES } from "../map.js?v=1795363044";
-import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795363044";
-import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795363044";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795363044";
-import { houseColor } from "./common.js?v=1795363044";
+import * as A from "../audio.js?v=1795365668";
+import { HOUSES } from "../content.js?v=1795365668";
+import { LEGEND } from "../help.js?v=1795365668";
+import { PROVINCES } from "../map.js?v=1795365668";
+import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795365668";
+import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795365668";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795365668";
+import { houseColor } from "./common.js?v=1795365668";
+import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795365668";
 
 export function buildMap() {
   const svg = $("#map");
@@ -17,7 +18,7 @@ export function buildMap() {
   </defs>${ART_BACK}`;
   h += `<g id="m-provs">`;
   for (const [id, p] of Object.entries(PROVINCES)) h += `<path d="${p.d}" fill="#F0E4C7"/><path class="prov" id="p-${id}" data-id="${id}" d="${p.d}" fill="#D9C9A3"/>`;
-  h += `</g><g id="m-plague"></g><g id="m-decor" pointer-events="none">${ART_FRONT}</g><g id="m-hl"></g><g id="m-arrows"></g><g id="m-labels">`;
+  h += `</g><g id="m-plague"></g><g id="m-decor" pointer-events="none">${ART_FRONT}</g><g id="m-hl"></g><g id="m-focus" pointer-events="none"></g><g id="m-arrows"></g><g id="m-drag" pointer-events="none"></g><g id="m-labels">`;
   for (const [id, p] of Object.entries(PROVINCES)) h += `<text class="plabel" x="${p.cx}" y="${p.cy - 16}" text-anchor="middle">${esc(p.name.toUpperCase())}</text>`;
   h += `</g><g id="m-caps"></g><g id="m-banners">`;
   for (const [id, p] of Object.entries(PROVINCES)) h += `<g class="banner-g" id="b-${id}" transform="translate(${p.cx},${p.cy - 6})"><path d="M-13,0 L13,0 L13,23 L0,17 L-13,23 Z" stroke="#241811" stroke-width="1.2" fill="#5A4A36"/><text x="0" y="15" text-anchor="middle">0</text></g>`;
@@ -25,14 +26,17 @@ export function buildMap() {
   svg.innerHTML = h;
   svg.addEventListener("click", (e) => {
     const t = e.target.closest(".prov, .banner-g");
-    if (!t) { hidePopover(); return; }
-    const id = t.dataset.id || t.id.replace(/^b-/, "");
     if (L.justPanned && Date.now() - L.justPanned < 300) return;
+    const id = t ? t.dataset.id || t.id.replace(/^b-/, "") : null;
+    // pendant la visée d'un ordre, un clic près d'une cible la choisit (pratique au curseur de manette)
+    if (MAP.mode === "target" && (!id || !MAP.sel.has(id)) && magnetPick(e)) { hidePopover(); A.play("click"); return; }
+    if (!t) { hidePopover(); closeMenu(); return; }
     if (MAP.sel.has(id) && MAP.onPick) { hidePopover(); A.play("click"); MAP.onPick(id); }
     else if (S() && S().phase !== "lobby") showPopover(provinceCard(id), e.clientX, e.clientY);
   });
   // un clic sur la bannière compte comme un clic sur la province
   svg.querySelectorAll(".banner-g").forEach((g) => (g.style.pointerEvents = "auto"));
+  bindMapOrders();
   L.mapBuilt = true;
 }
 
@@ -97,7 +101,7 @@ export function fx(kind, prov, color) {
   setTimeout(() => wrap.remove(), 2200);
 }
 
-export function applyView() { $("#map").setAttribute("viewBox", `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`); }
+export function applyView() { $("#map").setAttribute("viewBox", `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`); if (MAP.onView) MAP.onView(); }
 
 export function zoomBy(f) { const cx = VIEW.x + VIEW.w / 2, cy = VIEW.y + VIEW.h / 2; VIEW.w = Math.max(260, Math.min(840, VIEW.w * f)); VIEW.h = VIEW.w * 780 / 840; VIEW.x = Math.max(-100, Math.min(840 - VIEW.w + 100, cx - VIEW.w / 2)); VIEW.y = Math.max(-100, Math.min(780 - VIEW.h + 100, cy - VIEW.h / 2)); applyView(); }
 
@@ -111,7 +115,12 @@ $("#btn-legend").onclick = () => { const l = $("#legend"); l.innerHTML = `<p cla
 
 (function enablePan() {
   const svg = $("#map"); let drag = null;
-  svg.addEventListener("pointerdown", (e) => { if (VIEW.w >= 840) return; drag = { x: e.clientX, y: e.clientY, vx: VIEW.x, vy: VIEW.y, moved: false }; });
+  svg.addEventListener("pointerdown", (e) => {
+    if (VIEW.w >= 840) return;
+    // sur une de mes provinces, pendant les ordres, le geste donne un ordre au lieu de déplacer la carte
+    const t = e.target.closest(".prov, .banner-g");
+    if (t && e.pointerType !== "touch" && (MAP.mode === "idle" || MAP.mode === "menu") && MAP.canDrag && MAP.canDrag(t.dataset.id || t.id.replace(/^b-/, ""))) return;
+    drag = { x: e.clientX, y: e.clientY, vx: VIEW.x, vy: VIEW.y, moved: false }; });
   window.addEventListener("pointermove", (e) => {
     if (!drag) return;
     const r = svg.getBoundingClientRect(); const k = VIEW.w / r.width;

@@ -1,13 +1,14 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795363044";
-import * as E from "../engine.js?v=1795363044";
-import { ICON, term } from "../help.js?v=1795363044";
-import { PROVINCES } from "../map.js?v=1795363044";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795363044";
-import { houseName, setInput } from "./common.js?v=1795363044";
-import { bindDiplomacy } from "./diplomacy.js?v=1795363044";
-import { dieSvg, shield } from "./draw.js?v=1795363044";
-import { render } from "./render.js?v=1795363044";
+import * as A from "../audio.js?v=1795365668";
+import * as E from "../engine.js?v=1795365668";
+import { ICON, term } from "../help.js?v=1795365668";
+import { PROVINCES } from "../map.js?v=1795365668";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795365668";
+import { houseName, setInput } from "./common.js?v=1795365668";
+import { bindDiplomacy } from "./diplomacy.js?v=1795365668";
+import { dieSvg, shield } from "./draw.js?v=1795365668";
+import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795365668";
+import { render } from "./render.js?v=1795365668";
 
 // ---- ordres ----
 export function myDice() {
@@ -66,7 +67,8 @@ export function panelOrders() {
   if (sealed) {
     builder = `<div class="recap"><p class="ph">Ordres scellés ✓</p><p class="ptext" style="margin:0">On attend les autres. Tu peux encore changer d'avis.</p></div><button class="btn btn-block" id="btn-unseal">Modifier mes ordres</button>`;
   } else if (!b) {
-    builder = freeDice.length ? `${steps(0)}<p class="ptext"><b>Clique un dé</b> pour lui donner un ordre. Plus le dé est haut, plus l'ordre est fort.${pl.hiddenIdx >= 0 ? ` Le dé ${ICON.hidden}CACHÉ est invisible pour les autres (${term("de_cache", "bluff")}).` : ""}${pl.extraDie ? ` Tu as fait un ${term("double")} : dé bonus !` : ""}</p>` : `<p class="ptext">Tous tes dés ont un ordre. Vérifie le récapitulatif et scelle.</p>`;
+    if (freeDice.length) idleHook();
+    builder = freeDice.length ? `${steps(0)}<p class="ptext"><b>Clique une de tes provinces sur la carte</b>, ou <b>un dé</b> ici, pour donner un ordre. Plus le dé est haut, plus l'ordre est fort.${pl.hiddenIdx >= 0 ? ` Le dé ${ICON.hidden}CACHÉ est invisible pour les autres (${term("de_cache", "bluff")}).` : ""}${pl.extraDie ? ` Tu as fait un ${term("double")} : dé bonus !` : ""}</p>` : `<p class="ptext">Tous tes dés ont un ordre. Vérifie le récapitulatif et scelle.</p>`;
   } else if (!b.type) {
     const v = dv[b.die];
     const noStrike = false;
@@ -112,11 +114,11 @@ export function builderStep(b, steps) {
         const pr = Math.round(E.winProb(n + v + E.attackMod(st, pid), E.defenseOf(st, id)) * 100);
         MAP.badges.push({ prov: id, text: `${pr} %`, color: pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#A3221A" });
       });
-      MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); };
+      MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); }; targetHook(b);
       return `${steps(2)}<div class="prompt">${ICON.target}Clique <b>la province à attaquer</b>. Le pourcentage affiché sur chacune = tes chances si tu envoies toutes tes armées disponibles (${n}).</div>${nav}`;
     }
     const max = avail(b.from); b.n = Math.min(Math.max(1, b.n || max), max);
-    MAP.hl = new Set([b.from]); MAP.hlRed = new Set([b.to]);
+    MAP.hl = new Set([b.from]); MAP.hlRed = new Set([b.to]); confirmHook();
     const def = st.provinces[b.to];
     const prob = Math.round(E.winProb(b.n + v + E.attackMod(st, pid), E.defenseOf(st, b.to)) * 100);
     const ally = def.owner && E.bound(st, pid, def.owner);
@@ -130,9 +132,9 @@ export function builderStep(b, steps) {
   }
   if (b.type === "march") {
     if (!b.from) { mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner === pid)).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); }; return `${steps(2)}<div class="prompt">${ICON.marcher}Clique <b>la province de départ</b> (une des tiennes, contour doré).</div>${MAP.sel.size ? "" : `<p class="warn">Aucune province ne peut envoyer d'armées vers une voisine à toi.</p>`}${nav}`; }
-    if (!b.to) { PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner === pid).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.to = id; b.n = Math.min(v, avail(b.from)); render(); }; return `${steps(2)}<div class="prompt">${ICON.marcher}Clique <b>la province d'arrivée</b> (voisine, à toi).</div>${nav}`; }
+    if (!b.to) { PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner === pid).forEach((id) => MAP.sel.add(id)); MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.to = id; b.n = Math.min(v, avail(b.from)); render(); }; targetHook(b); return `${steps(2)}<div class="prompt">${ICON.marcher}Clique <b>la province d'arrivée</b> (voisine, à toi).</div>${nav}`; }
     const max = Math.min(v, avail(b.from)); b.n = Math.min(Math.max(1, b.n || max), max);
-    MAP.hl = new Set([b.from, b.to]);
+    MAP.hl = new Set([b.from, b.to]); confirmHook();
     return `${steps(3)}<div class="pbox"><p class="ph">${ICON.marcher}${esc(PROVINCES[b.from].name)} → ${esc(PROVINCES[b.to].name)}</p><label class="ptext">Armées déplacées : <b id="b-nv">${b.n}</b> sur ${max}<input type="range" class="slider" id="b-n" min="1" max="${max}" value="${b.n}"></label><button class="btn btn-red btn-block" id="b-ok">Valider le déplacement</button>${nav}</div>`;
   }
   if (b.type === "levy") {
