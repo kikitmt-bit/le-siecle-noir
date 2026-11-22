@@ -1,26 +1,28 @@
 // =====================================================================
 //  AIDES À LA COMPRÉHENSION : icônes, définitions, effets, introduction
 // =====================================================================
-const S = (d, extra = "") => `<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" ${extra}>${d}</svg>`;
+// Icônes gravées (piste « Chronique ») : trait d'encre (currentColor), fond papier (--ia3), une touche de rubrique (--ia2).
+const S = (d) => `<svg class="ico" viewBox="0 0 32 32" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const P = 'style="fill:var(--ia3)"', R = 'style="fill:var(--ia2)"', K = 'fill="currentColor" stroke="none"';
 export const ICON = {
-  prestige: S('<path d="M3 18 L3 8 L8 12 L12 5 L16 12 L21 8 L21 18 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.5" stroke-linejoin="round"/>'),
-  gold: S('<circle cx="12" cy="12" r="8" fill="#E8C66A" stroke="#8A5F10" stroke-width="2"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" fill="none" stroke="#8A5F10" stroke-width="1.6"/>'),
-  colere: S('<path d="M12 21V9M7 3v5a5 5 0 0 0 10 0V3M12 3v6" fill="none" stroke="#8E1B1B" stroke-width="2.2" stroke-linecap="round"/>'),
-  peur: S('<path d="M12 3a8 8 0 0 0-8 8c0 3 1.5 4.5 3 5.5V20h10v-3.5c1.5-1 3-2.5 3-5.5a8 8 0 0 0-8-8z" fill="#E9DCBD" stroke="#2B1D12" stroke-width="1.6"/><circle cx="9" cy="11" r="2" fill="#2B1D12"/><circle cx="15" cy="11" r="2" fill="#2B1D12"/><path d="M10 17v3M14 17v3" stroke="#2B1D12" stroke-width="1.4"/>'),
-  army: S('<path d="M6 3v18M6 4h12l-3 4 3 4H6" fill="#8E1B1B" stroke="#2B1D12" stroke-width="1.6" stroke-linejoin="round"/>'),
-  frapper: S('<path d="M14 4l6-1-1 6-9 9-3-3zM7 14l3 3M4 20l3-3" fill="none" stroke="#2B1D12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'),
-  marcher: S('<path d="M4 12h13M13 7l5 5-5 5" fill="none" stroke="#2B1D12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'),
-  lever: S('<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z" fill="#E9DCBD" stroke="#2B1D12" stroke-width="1.6"/><path d="M12 8v8M8 12h8" stroke="#2F5233" stroke-width="2.4" stroke-linecap="round"/>'),
-  intrigue: S('<path d="M10 3h4M11 3v5l-5 9a3 3 0 0 0 2.6 4.5h6.8A3 3 0 0 0 18 17l-5-9V3" fill="#C9E0B5" stroke="#2B1D12" stroke-width="1.6" stroke-linejoin="round"/>'),
-  hidden: S('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="#8E1B1B" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="#8E1B1B"/><path d="M4 20L20 4" stroke="#8E1B1B" stroke-width="2"/>'),
-  province: S('<path d="M4 20V10h3V7h2v3h6V7h2v3h3v10z" fill="#E9DCBD" stroke="#2B1D12" stroke-width="1.5"/>'),
-  family: S('<circle cx="9" cy="8" r="3" fill="#2B1D12"/><circle cx="16" cy="9" r="2.5" fill="#6B5638"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M13 20c0-3 1.5-5 3-5s4 1.5 4 5" fill="none" stroke="#2B1D12" stroke-width="1.6"/>'),
-  scroll: S('<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" fill="#E9DCBD" stroke="#2B1D12" stroke-width="1.6"/><path d="M8 9h8M8 13h8M8 17h5" stroke="#2B1D12" stroke-width="1.4"/>'),
-  risk: S('<path d="M12 3l10 18H2z" fill="#F6E3A8" stroke="#8E1B1B" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v5M12 17.5v.5" stroke="#8E1B1B" stroke-width="2" stroke-linecap="round"/>'),
-  target: S('<circle cx="12" cy="12" r="8" fill="none" stroke="#8E1B1B" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#8E1B1B"/>'),
-  death: S('<path d="M10 3h4v5h5v4h-5v9h-4v-9H5V8h5z" fill="#2B1D12"/>'),
-  ring: S('<circle cx="9" cy="13" r="5" fill="none" stroke="#D9A441" stroke-width="2.2"/><circle cx="15" cy="13" r="5" fill="none" stroke="#D9A441" stroke-width="2.2"/>'),
-  plague: S('<circle cx="12" cy="12" r="8" fill="#3A2E24"/><circle cx="9" cy="10" r="1.6" fill="#E9DCBD"/><circle cx="14" cy="14" r="1.4" fill="#E9DCBD"/><circle cx="15" cy="9" r="1" fill="#E9DCBD"/>'),
+  prestige: S(`<path d="M15 28c-5.6-1.2-9.5-6-9.5-12.6 0-3 .8-5.6 2.2-7.6M17 28c5.6-1.2 9.5-6 9.5-12.6 0-3-.8-5.6-2.2-7.6"/><path d="M5.6 19.5l-3-1.2M5.4 14.6l-3-.8M8.8 23.6l-2.8.6M26.4 19.5l3-1.2M26.6 14.6l3-.8M23.2 23.6l2.8.6" stroke-width="1.6"/><path d="M16 7.5l1.4 2.9 3.2.4-2.4 2.2.7 3.1L16 14.5l-2.9 1.6.7-3.1-2.4-2.2 3.2-.4z" ${R}/>`),
+  gold: S(`<circle cx="16" cy="16" r="11.5" ${P}/><circle cx="16" cy="16" r="7.5"/><path d="M16 11.5v9M11.5 16h9"/>`),
+  colere: S(`<path d="M16 29.5V14M9.5 3.5v6.5a6.5 6.5 0 0 0 13 0V3.5M16 3.5V14"/><path d="M13.6 21.5h4.8M13.6 25h4.8" stroke-width="1.6" style="stroke:var(--ia2)"/>`),
+  peur: S(`<path d="M16 4.5c-6.4 0-10.5 4.4-10.5 10.3 0 3.4 1.6 5.6 3.8 6.8V26.5h13.4v-4.9c2.2-1.2 3.8-3.4 3.8-6.8 0-5.9-4.1-10.3-10.5-10.3z" ${P}/><ellipse cx="11.8" cy="15.2" rx="2.6" ry="2.9" ${K}/><ellipse cx="20.2" cy="15.2" rx="2.6" ry="2.9" ${K}/><path d="M16 18.8l-1.5 2.7h3z" ${K}/><path d="M13 26.5v-3M16 26.5v-3M19 26.5v-3" stroke-width="1.6"/>`),
+  army: S(`<path d="M10 29V6"/><path d="M10 3.5l-2.2 3.8h4.4z" ${K}/><path d="M10 8h16l-4.5 4.5L26 17H10z" ${R}/><path d="M6.5 29h7"/>`),
+  frapper: S(`<path d="M27.5 4.5l-.3 3.7L13 22.4 9.6 19 23.8 4.8z" ${P}/><path d="M7.4 17.4l7.2 7.2M10.6 21.4l-4.6 4.6"/><circle cx="4.8" cy="27.2" r="1.8" ${K}/>`),
+  marcher: S(`<path d="M6 16h19M19 9.5l6.8 6.5-6.8 6.5M6 16l-2.6-3.4M6 16l-2.6 3.4M9.4 16l-2.6-3.4M9.4 16l-2.6 3.4"/>`),
+  lever: S(`<path d="M16 3.5l11 4V15c0 7-4.8 11.6-11 13.5C9.8 26.6 5 22 5 15V7.5z" ${P}/><path d="M16 10v11M10.5 15.5h11" style="stroke:var(--ia2)"/>`),
+  intrigue: S(`<path d="M9.6 19h12.8l2.2 3.6a3.2 3.2 0 0 1-2.8 4.9H10.2a3.2 3.2 0 0 1-2.8-4.9z" ${R} stroke="none"/><path d="M12.5 3.5h7M14 3.5v8L7.4 22.6a3.2 3.2 0 0 0 2.8 4.9h11.6a3.2 3.2 0 0 0 2.8-4.9L18 11.5v-8"/>`),
+  hidden: S(`<path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z" ${P}/><circle cx="16" cy="16" r="3.5" ${K}/><path d="M6 27L26 5" style="stroke:var(--ia2)"/>`),
+  province: S(`<path d="M5 28V13h4V8.5h3.5V13h7V8.5H23V13h4v15z" ${P}/><path d="M13.5 28v-5a2.5 2.5 0 0 1 5 0v5"/>`),
+  family: S(`<circle cx="12" cy="10" r="4.2" ${P}/><circle cx="22.5" cy="12.5" r="3.2" ${P}/><path d="M3.5 28c0-5.2 3.6-8.4 8.5-8.4s8.5 3.2 8.5 8.4M19 28c0-4 1.6-6.6 3.5-6.6S28.5 23 28.5 28"/>`),
+  scroll: S(`<path d="M8 5h15a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V8" ${P}/><path d="M11.5 11h10M11.5 16h10M11.5 21h6.5" stroke-width="1.8"/>`),
+  risk: S(`<path d="M16 4l13 23H3z" ${P}/><path d="M16 12.5v7M16 23.2v.3" style="stroke:var(--ia2)" stroke-width="2.8"/>`),
+  target: S(`<circle cx="16" cy="16" r="11.5"/><circle cx="16" cy="16" r="5.5"/><circle cx="16" cy="16" r="2" ${R} stroke="none"/>`),
+  death: S(`<path d="M13.5 3.5h5v7H25v5h-6.5v13h-5v-13H7v-5h6.5z" ${K}/>`),
+  ring: S(`<circle cx="12" cy="19" r="7"/><circle cx="20" cy="19" r="7"/><path d="M20 6.5l2.2-2.8 2.2 2.8-2.2 2.4z" ${R}/>`),
+  plague: S(`<circle cx="16" cy="16" r="11.5" ${P}/><circle cx="12" cy="13" r="2.4" ${R} stroke="none"/><circle cx="19.5" cy="19.5" r="2.1" ${R} stroke="none"/><circle cx="20.5" cy="11.5" r="1.4" ${K}/><circle cx="12" cy="21.5" r="1.3" ${K}/>`),
 };
 
 // ---------- définitions (au toucher) ----------
@@ -137,9 +139,9 @@ export const UNLOCK_INFO = {
 };
 
 // ---------- légende de la carte ----------
-export const LEGEND = `<div class="legend-row"><svg width="26" height="26" viewBox="-13 -2 26 26"><path d="M-12,0 L12,0 L12,22 L0,16 L-12,22 Z" fill="#8E1B1B" stroke="#2B1D12"/><text x="0" y="14" text-anchor="middle" font-size="12" fill="#fff" font-family="Cinzel" font-weight="700">5</text></svg><span>Bannière : le nombre d'armées, à la couleur du propriétaire</span></div>
-<div class="legend-row"><svg width="30" height="30" viewBox="-17 -17 34 34"><circle r="17" fill="#2B1D12"/><circle r="15.5" fill="#D9A441"/><circle r="13" fill="#8E1B1B" stroke="#2B1D12"/><path d="M-8,7 V-3 h2.6 v-3 h2.6 v3 h1.5 V-8 h2.6 v2.4 h2.6 V-3 h1.5 v-3 h2.6 v3 h0 V7 h-6 v-4 a2,2 0 0 0 -4,0 v4 Z" fill="#F6ECD6" stroke="#2B1D12" stroke-width="0.8"/></svg><span>Médaillon doré au château : la capitale d'une maison (son nom de ville est écrit dessous)</span></div>
-<div class="legend-row"><svg width="26" height="26" viewBox="-12 -8 24 15"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12"/></svg><span>Couronne : le favori, le joueur en tête</span></div>
+export const LEGEND = `<div class="legend-row"><svg width="26" height="26" viewBox="-13 -2 26 26"><path d="M-12,0 L12,0 L12,22 L0,16 L-12,22 Z" fill="#A3221A" stroke="#241811"/><text x="0" y="14" text-anchor="middle" font-size="12" fill="#fff" font-family="Cinzel" font-weight="700">5</text></svg><span>Bannière : le nombre d'armées, à la couleur du propriétaire</span></div>
+<div class="legend-row"><svg width="30" height="30" viewBox="-17 -17 34 34"><circle r="17" fill="#241811"/><circle r="15.5" fill="#A9843A"/><circle r="13" fill="#A3221A" stroke="#241811"/><path d="M-8,7 V-3 h2.6 v-3 h2.6 v3 h1.5 V-8 h2.6 v2.4 h2.6 V-3 h1.5 v-3 h2.6 v3 h0 V7 h-6 v-4 a2,2 0 0 0 -4,0 v4 Z" fill="#F5EBD3" stroke="#241811" stroke-width="0.8"/></svg><span>Médaillon doré au château : la capitale d'une maison (son nom de ville est écrit dessous)</span></div>
+<div class="legend-row"><svg width="26" height="26" viewBox="-12 -8 24 15"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#A9843A" stroke="#241811"/></svg><span>Couronne : le favori, le joueur en tête</span></div>
 <div class="legend-row">${ICON.plague}<span>Points noirs : la peste</span></div>
 <div class="legend-row"><span class="lg-sw" style="background:#D9C9A3"></span><span>Province beige : neutre, défendue par une milice</span></div>
-<div class="legend-row"><span class="lg-sw" style="border:3px dashed #D9A441;background:transparent"></span><span>Contour doré clignotant : province sur laquelle tu peux cliquer</span></div>`;
+<div class="legend-row"><span class="lg-sw" style="border:3px dashed #A9843A;background:transparent"></span><span>Contour doré clignotant : province sur laquelle tu peux cliquer</span></div>`;

@@ -1,17 +1,17 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795309716";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { ICON } from "../help.js?v=1795309716";
-import { PROVINCES } from "../map.js?v=1795309716";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795309716";
-import { speak } from "./announce.js?v=1795309716";
-import { houseColor, houseName, setInput } from "./common.js?v=1795309716";
-import { shield } from "./draw.js?v=1795309716";
-import { entryHtml } from "./house.js?v=1795309716";
-import { drawArrows, fx, updateMap } from "./map.js?v=1795309716";
-import { colorize, houseTag } from "./names.js?v=1795309716";
-import { battleQuip } from "./news.js?v=1795309716";
+import * as A from "../audio.js?v=1795342564";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { ICON } from "../help.js?v=1795342564";
+import { PROVINCES } from "../map.js?v=1795342564";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795342564";
+import { speak } from "./announce.js?v=1795342564";
+import { houseColor, houseName, setInput } from "./common.js?v=1795342564";
+import { shield } from "./draw.js?v=1795342564";
+import { entryHtml } from "./house.js?v=1795342564";
+import { drawArrows, fx, updateMap } from "./map.js?v=1795342564";
+import { colorize, houseTag } from "./names.js?v=1795342564";
+import { battleQuip } from "./news.js?v=1795342564";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],
@@ -60,9 +60,9 @@ export function rvFocus(st) {
   const steps = (card.type === "battle" ? battleKs(st, card) : card.ks).map((k) => st.reveal.steps[k]);
   if (card.type === "battle") {
     const list = shownCard(st) === curCard(st) && RVX.bi >= 0 && RVX.bi < steps.length ? [steps[RVX.bi]] : steps;
-    for (const s of list) { if (!s.prov) continue; out.red.push(s.prov); out.hl.push(...(s.from || [])); out.arrows.push(...(s.from || []).map((f) => ({ from: f, to: s.prov, color: "#8E1B1B" }))); }
+    for (const s of list) { if (!s.prov) continue; out.red.push(s.prov); out.hl.push(...(s.from || [])); out.arrows.push(...(s.from || []).map((f) => ({ from: f, to: s.prov, color: "#A3221A" }))); }
   } else if (card.type === "move") {
-    for (const s of steps) { out.hl.push(...(s.provs || [])); out.arrows.push(...(s.mv || []).map((m) => ({ from: m.from, to: m.to, color: "#2B1D12" }))); out.badges.push(...(s.mv || []).map((m) => ({ prov: m.to, text: `+${m.n}`, color: "#2B1D12" })), ...(s.lv || []).map((l) => ({ prov: l.to, text: `+${l.n}`, color: "#2F5233" }))); }
+    for (const s of steps) { out.hl.push(...(s.provs || [])); out.arrows.push(...(s.mv || []).map((m) => ({ from: m.from, to: m.to, color: "#241811" }))); out.badges.push(...(s.mv || []).map((m) => ({ prov: m.to, text: `+${m.n}`, color: "#241811" })), ...(s.lv || []).map((l) => ({ prov: l.to, text: `+${l.n}`, color: "#2F5233" }))); }
   } else for (const s of steps) if (s.prov) (s.kind === "revolt" ? out.red : out.hl).push(s.prov);
   return out;
 }
@@ -78,7 +78,7 @@ function byHouse(st, steps, render = line) {
   const groups = new Map();
   for (const s of steps) { const k = s.pid && st.players[s.pid] ? s.pid : "_"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(s); }
   const order = [me(), ...st.order.filter((p) => p !== me()), "_"].filter((p) => groups.has(p));
-  return order.map((p) => `<div class="rv-house" style="--hc:${p === "_" ? "#6B5638" : houseColor(p)}"><div class="rv-hh">${p === "_" ? `<span>${ICON.scroll}</span><b>Le royaume</b>` : `${shield(st.players[p].house, 22)}<b>${esc(houseName(p))}</b>${p === me() ? '<i class="you">toi</i>' : ""}`}</div>${groups.get(p).map((s) => render(s)).join("")}</div>`).join("");
+  return order.map((p) => `<div class="rv-house" style="--hc:${p === "_" ? "#75603F" : houseColor(p)}"><div class="rv-hh">${p === "_" ? `<span>${ICON.scroll}</span><b>Le royaume</b>` : `${shield(st.players[p].house, 22)}<b>${esc(houseName(p))}</b>${p === me() ? '<i class="you">toi</i>' : ""}`}</div>${groups.get(p).map((s) => render(s)).join("")}</div>`).join("");
 }
 
 function councilHtml(st, s) {
@@ -89,7 +89,7 @@ function councilHtml(st, s) {
 function duelRow(st, s, i, state) {
   const a = s.atk[0];
   const hidden = state === "hidden", rolling = state === "rolling";
-  const side = (pid, n, bonus, total, win) => `<div class="ds ${hidden || rolling ? "" : win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 26) : '<svg width="26" height="30" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#2B1D12" stroke-width="3"/></svg>'}<span class="fc ${rolling ? "rolling" : ""}">${hidden || rolling ? "?" : total}</span><span class="dt">${n} arm.${bonus ? ` +${bonus}` : ""}</span></div>`;
+  const side = (pid, n, bonus, total, win) => `<div class="ds ${hidden || rolling ? "" : win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 26) : '<svg width="26" height="30" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#241811" stroke-width="3"/></svg>'}<span class="fc ${rolling ? "rolling" : ""}">${hidden || rolling ? "?" : total}</span><span class="dt">${n} arm.${bonus ? ` +${bonus}` : ""}</span></div>`;
   return `<button class="rv-duel ${hidden ? "pending" : ""}" data-battle="${i}"><div class="dl-title">${ICON.army}<b>${esc(PROVINCES[s.prov].name)}</b> · ${houseTag(a.pid)}${s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""} attaque ${s.def ? houseTag(s.def) : "<i>la milice</i>"}</div>
     <div class="dl-body">${side(a.pid, a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div>
     ${hidden ? "" : rolling ? `<div class="verdict">Le choc des armées…</div>` : `<div class="verdict">${s.attWins ? `${houseTag(a.pid)} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? houseTag(s.def) : "La milice"} tient bon.`}</div><p class="rv-quip">${esc(battleQuip(st, s))}</p>`}</button>`;
@@ -189,7 +189,7 @@ export function bindReveal() {
   const st = S();
   document.querySelectorAll("[data-rvc='ack']").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); setInput("revack", { round: st.round, card: curCard(st) }); A.play("seal"); rvPaint(); }));
   document.querySelectorAll("[data-rvview]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); const v = b.dataset.rvview; RVX.view = v === "cur" ? null : +v; if (RVX.view === curCard(st)) RVX.view = null; rvPaint(); }));
-  document.querySelectorAll("[data-battle]").forEach((b) => (b.onclick = () => { const i = +b.dataset.battle; const card = cardsOf(st)[shownCard(st)]; if (!card) return; const s = st.reveal.steps[battleKs(st, card)[i]]; if (s) { fx("battle", s.prov); MAP.hl = new Set(s.from || []); MAP.hlRed = new Set([s.prov]); drawArrows((s.from || []).map((f) => ({ from: f, to: s.prov, color: "#8E1B1B" }))); } }));
+  document.querySelectorAll("[data-battle]").forEach((b) => (b.onclick = () => { const i = +b.dataset.battle; const card = cardsOf(st)[shownCard(st)]; if (!card) return; const s = st.reveal.steps[battleKs(st, card)[i]]; if (s) { fx("battle", s.prov); MAP.hl = new Set(s.from || []); MAP.hlRed = new Set([s.prov]); drawArrows((s.from || []).map((f) => ({ from: f, to: s.prov, color: "#A3221A" }))); } }));
 }
 
 // animation des batailles une par une (même rythme chez tout le monde)

@@ -1,9 +1,9 @@
 // Arbitre : seul le navigateur de l'hôte exécute ce code
-import { HUMAN_HOUSES } from "./content.js?v=1795309716";
-import * as E from "./engine.js?v=1795309716";
-import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795309716";
-import { toast } from "./ui/common.js?v=1795309716";
-import { aiName } from "./ui/lobby.js?v=1795309716";
+import { HUMAN_HOUSES } from "./content.js?v=1795342564";
+import * as E from "./engine.js?v=1795342564";
+import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795342564";
+import { toast } from "./ui/common.js?v=1795342564";
+import { aiName } from "./ui/lobby.js?v=1795342564";
 
 // Lit une donnée sur le serveur en réessayant si la connexion est mauvaise (ok = false : lecture impossible).
 async function readRetry(fn, tries = 4) {
@@ -22,7 +22,7 @@ export async function becomeHost() {
   H.active = true; H.since = 0; H.inputs = {};
   const retryLater = (why) => {
     H.active = false; H.state = null; H.priv = null;
-    toast(`${why} Nouvel essai dans quelques secondes…`, "#8E1B1B", 5000);
+    toast(`${why} Nouvel essai dans quelques secondes…`, "#A3221A", 5000);
     setTimeout(() => { if (L.code && L.meta && L.meta.host === net.uid && !H.active) becomeHost(); }, 5000);
   };
   const rs = await readRetry(() => net.readState(L.code));
@@ -43,7 +43,7 @@ export async function becomeHost() {
       priv[p] = (await net.readPrivate(L.code, p).catch(() => null)) || emptyPriv();
     }
     H.state = state; H.priv = priv;
-    if (state.phase !== "end") toast("Tu es maintenant l'arbitre de la partie (ton navigateur calcule les manches).", "#D9A441");
+    if (state.phase !== "end") toast("Tu es maintenant l'arbitre de la partie (ton navigateur calcule les manches).", "#A9843A");
     giveGrace(); // les joueurs ont été absents : on redonne du temps à la phase en cours
   } else { H.state = null; H.priv = null; }
   syncInputListeners();
@@ -138,7 +138,7 @@ async function recheckHost() {
   H.busy = true;
   try {
     const meta = await net.roomExists(L.code);
-    if (meta && meta.host !== net.uid) { stopHost(); toast("Un autre joueur a repris l'arbitrage pendant ta pause.", "#6B5638"); }
+    if (meta && meta.host !== net.uid) { stopHost(); toast("Un autre joueur a repris l'arbitrage pendant ta pause.", "#75603F"); }
   } catch (e) { console.warn(e); }
   H.busy = false;
 }
@@ -273,7 +273,7 @@ export function hostTick() {
     }
   } catch (e) {
     console.error("Erreur d'arbitrage", e);
-    toast("Erreur d'arbitrage : " + esc(e.message), "#8E1B1B", 8000);
+    toast("Erreur d'arbitrage : " + esc(e.message), "#A3221A", 8000);
     H.busy = true; setTimeout(() => (H.busy = false), 3000);
   }
   if (changed) hostWrite(privChanged);

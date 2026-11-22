@@ -1,15 +1,15 @@
 // Panneau par phase : objectifs, choix des provinces, placement
-import * as A from "../audio.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { PROVINCES, REGIONS } from "../map.js?v=1795309716";
-import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795309716";
-import { houseColor, houseName, setInput, toast } from "./common.js?v=1795309716";
-import { panelDilemma } from "./dilemmas.js?v=1795309716";
-import { entryHtml } from "./house.js?v=1795309716";
-import { updateMap } from "./map.js?v=1795309716";
-import { panelOrders } from "./orders.js?v=1795309716";
-import { render } from "./render.js?v=1795309716";
-import { interludeLines, panelReveal } from "./reveal.js?v=1795309716";
+import * as A from "../audio.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { PROVINCES, REGIONS } from "../map.js?v=1795342564";
+import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795342564";
+import { houseColor, houseName, setInput, toast } from "./common.js?v=1795342564";
+import { panelDilemma } from "./dilemmas.js?v=1795342564";
+import { entryHtml } from "./house.js?v=1795342564";
+import { updateMap } from "./map.js?v=1795342564";
+import { panelOrders } from "./orders.js?v=1795342564";
+import { render } from "./render.js?v=1795342564";
+import { interludeLines, panelReveal } from "./reveal.js?v=1795342564";
 
 // ---------------------------------------------------------------------
 // PANNEAU PAR PHASE
@@ -48,7 +48,7 @@ export function panelObjectives() {
 export function confirmDraft() {
   const st = S(); const d = L.ui.draftSel;
   if (!d || d.idx !== st.draft.idx) return;
-  setInput("draftPick", d); A.play("seal"); toast(`Tu prends ${esc(PROVINCES[d.prov].art)}.`, "#6B5638", 2500); L.ui.draftSel = null; render();
+  setInput("draftPick", d); A.play("seal"); toast(`Tu prends ${esc(PROVINCES[d.prov].art)}.`, "#75603F", 2500); L.ui.draftSel = null; render();
 }
 
 export function panelDraft() {
@@ -73,7 +73,7 @@ export function panelDraft() {
 }
 
 export function regionsHelp() {
-  return `<div class="pbox"><p class="ph">Régions (bonus par manche)</p>${Object.values(REGIONS).map((r) => `<div style="font-size:14px;margin-bottom:4px"><b style="font-family:var(--caps);font-size:12px">${r.name}</b> : ${r.provs.map((p) => PROVINCES[p].name).join(", ")} <i>(+${r.provs.length - 1} armées, +1 prestige)</i></div>`).join("")}</div>`;
+  return `<div class="pbox"><p class="ph">Régions (bonus par manche)</p>${Object.values(REGIONS).map((r) => `<div style="font-size:14px;margin-bottom:4px"><b style="font-family:var(--caps);font-variant-caps:all-small-caps;font-size:14.5px">${r.name}</b> : ${r.provs.map((p) => PROVINCES[p].name).join(", ")} <i>(+${r.provs.length - 1} armées, +1 prestige)</i></div>`).join("")}</div>`;
 }
 
 export function panelPlacement() {

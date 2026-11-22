@@ -2,18 +2,18 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795309716";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795309716";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795309716";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795309716";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795309716";
-import { DIL_SOMBRES } from "./dil_sombres.js?v=1795309716";
+import { DIL_COUR } from "./dil_cour.js?v=1795342564";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795342564";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795342564";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795342564";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795342564";
+import { DIL_SOMBRES } from "./dil_sombres.js?v=1795342564";
 
 export const HOUSES = {
-  valcourt: { name: "Valcourt", color: "#8E1B1B", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
-  morlanges: { name: "Morlanges", color: "#1F3A5F", light: "#4F74A3", charge: "fish", motto: "Patience et poison" },
-  ravenel: { name: "Ravenel", color: "#2F5233", light: "#5E8C63", charge: "key", motto: "Ce qui est pris est gardé" },
-  aubrac: { name: "Aubrac", color: "#9A6B12", light: "#C99A3E", charge: "star", motto: "Dieu reconnaîtra les siens" },
+  valcourt: { name: "Valcourt", color: "#8E2A22", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
+  morlanges: { name: "Morlanges", color: "#2C4566", light: "#4F74A3", charge: "fish", motto: "Patience et poison" },
+  ravenel: { name: "Ravenel", color: "#3B5A3A", light: "#5E8C63", charge: "key", motto: "Ce qui est pris est gardé" },
+  aubrac: { name: "Aubrac", color: "#A07A2A", light: "#C99A3E", charge: "star", motto: "Dieu reconnaîtra les siens" },
   anglais: { name: "Angleterre", color: "#4A4F57", light: "#7D838C", charge: "lion", motto: "Dieu et mon droit", bot: true },
 };
 export const HUMAN_HOUSES = ["valcourt", "morlanges", "ravenel", "aubrac"];

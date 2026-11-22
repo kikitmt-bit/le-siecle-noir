@@ -1,13 +1,13 @@
 // Petits outils d'interface : affichage, toasts, bulles d'aide
-import { HOUSES } from "../content.js?v=1795309716";
-import { $, L, S, esc, net, store } from "../state.js?v=1795309716";
+import { HOUSES } from "../content.js?v=1795342564";
+import { $, L, S, esc, net, store } from "../state.js?v=1795342564";
 
 // ---------------------------------------------------------------------
 // utilitaires d'interface
 // ---------------------------------------------------------------------
 export function show(screen) { for (const s of ["home", "lobby", "game"]) $(`#screen-${s}`).classList.toggle("hidden", s !== screen); }
 
-export function toast(html, color = "#6B5638", ms = 5000) {
+export function toast(html, color = "#75603F", ms = 5000) {
   const t = document.createElement("div");
   t.className = "toast"; t.style.borderLeftColor = color; t.innerHTML = html;
   $("#toasts").appendChild(t);
@@ -16,7 +16,7 @@ export function toast(html, color = "#6B5638", ms = 5000) {
 
 export function houseName(pid) { const p = S() && S().players[pid]; return p ? p.hname || HOUSES[p.house].name : "?"; }
 
-export function houseColor(pid) { const p = S() && S().players[pid]; return p ? HOUSES[p.house].color : "#6B5638"; }
+export function houseColor(pid) { const p = S() && S().players[pid]; return p ? HOUSES[p.house].color : "#75603F"; }
 
 export function fmtTime(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 

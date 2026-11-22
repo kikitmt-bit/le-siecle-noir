@@ -1,20 +1,20 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795309716";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795309716";
-import { hostReplay } from "../host.js?v=1795309716";
-import { PROVINCES } from "../map.js?v=1795309716";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795309716";
-import { introHtml, nextModal } from "./aides.js?v=1795309716";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795309716";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795309716";
-import { shield, woodcut } from "./draw.js?v=1795309716";
-import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795309716";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795309716";
-import { dropGame } from "./games.js?v=1795309716";
-import { render } from "./render.js?v=1795309716";
-import { interludeLines } from "./reveal.js?v=1795309716";
+import * as A from "../audio.js?v=1795342564";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795342564";
+import { hostReplay } from "../host.js?v=1795342564";
+import { PROVINCES } from "../map.js?v=1795342564";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795342564";
+import { introHtml, nextModal } from "./aides.js?v=1795342564";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795342564";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795342564";
+import { shield, woodcut } from "./draw.js?v=1795342564";
+import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795342564";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795342564";
+import { dropGame } from "./games.js?v=1795342564";
+import { render } from "./render.js?v=1795342564";
+import { interludeLines } from "./reveal.js?v=1795342564";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -168,10 +168,10 @@ function scoreChart(st) {
   const max = Math.max(10, ...all), min = Math.min(0, ...all);
   const X = (i) => L0 + (i * (W - L0 - R0)) / (pts.length - 1);
   const Y = (v) => T + (Hh - T - B) * (1 - (v - min) / (max - min));
-  const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => { const v = min + (max - min) * f; return `<line x1="${L0}" x2="${W - R0}" y1="${Y(v)}" y2="${Y(v)}" stroke="#C9B48A" stroke-width="1"/><text x="${L0 - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#6B5638">${Math.round(v)}</text>`; }).join("");
+  const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => { const v = min + (max - min) * f; return `<line x1="${L0}" x2="${W - R0}" y1="${Y(v)}" y2="${Y(v)}" stroke="#C9B48A" stroke-width="1"/><text x="${L0 - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#75603F">${Math.round(v)}</text>`; }).join("");
   // étiquettes de fin écartées pour ne pas se chevaucher
   const lastY = {}; pids.map((p) => [p, Y(pts[pts.length - 1].s[p] || 0)]).sort((a, b) => a[1] - b[1]).reduce((prev, [p, y]) => { const yy = Math.max(y, prev + 14); lastY[p] = yy; return yy; }, -99);
-  const xl = pts.map((x, i) => `<text x="${X(i)}" y="${Hh - 6}" text-anchor="middle" font-size="11" fill="#6B5638">${x.round === "Fin" ? "Fin" : "M" + x.round}</text>`).join("");
+  const xl = pts.map((x, i) => `<text x="${X(i)}" y="${Hh - 6}" text-anchor="middle" font-size="11" fill="#75603F">${x.round === "Fin" ? "Fin" : "M" + x.round}</text>`).join("");
   const lines = pids.map((p) => { const c = houseColor(p); const d = pts.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(x.s[p] || 0).toFixed(1)}`).join(""); const last = pts[pts.length - 1].s[p] || 0; return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${p === me() ? 4 : 2.5}" stroke-linejoin="round"/><circle cx="${X(pts.length - 1)}" cy="${Y(last)}" r="4" fill="${c}"/><text x="${X(pts.length - 1) + 8}" y="${Math.min(Hh - B + 4, lastY[p]) + 4}" font-size="12" font-weight="700" fill="${c}">${esc(houseName(p))} ${last}</text>`; }).join("");
   return `<p class="ph">La course à la couronne</p><svg viewBox="0 0 ${W} ${Hh}" class="score-chart" role="img" aria-label="Évolution des scores par manche">${grid}${xl}${lines}</svg><p class="hint">Score visible à la fin de chaque manche ; « Fin » ajoute les objectifs secrets.</p>`;
 }
@@ -233,7 +233,7 @@ export function bindOverlay() {
     setInput(slot, { round: st.round, choice: cur, target: L.ui.dTarget ?? L.myInput[slot]?.target ?? null });
     A.play("seal"); L.ui.dChoice = null; L.ui.dTarget = null;
     const next = dilSlots().find((k) => k !== slot && !dilSealed(k));
-    if (next) { L.ui.dSlot = next; L.ovKey = ""; toast(`${ICON.scroll}Choix scellé. Passe à l'affaire suivante.`, "#D9A441", 2200); }
+    if (next) { L.ui.dSlot = next; L.ovKey = ""; toast(`${ICON.scroll}Choix scellé. Passe à l'affaire suivante.`, "#A9843A", 2200); }
     else { L.ui.dSlot = null; L.dilemmaClosed = true; }
     render();
   };

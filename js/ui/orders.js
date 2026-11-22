@@ -1,13 +1,13 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { ICON, term } from "../help.js?v=1795309716";
-import { PROVINCES } from "../map.js?v=1795309716";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795309716";
-import { houseName, setInput } from "./common.js?v=1795309716";
-import { bindDiplomacy } from "./diplomacy.js?v=1795309716";
-import { dieSvg, shield } from "./draw.js?v=1795309716";
-import { render } from "./render.js?v=1795309716";
+import * as A from "../audio.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { ICON, term } from "../help.js?v=1795342564";
+import { PROVINCES } from "../map.js?v=1795342564";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795342564";
+import { houseName, setInput } from "./common.js?v=1795342564";
+import { bindDiplomacy } from "./diplomacy.js?v=1795342564";
+import { dieSvg, shield } from "./draw.js?v=1795342564";
+import { render } from "./render.js?v=1795342564";
 
 // ---- ordres ----
 export function myDice() {
@@ -50,7 +50,7 @@ export function panelOrders() {
   const sealed = L.myInput.orders && L.myInput.orders.round === st.round && L.myInput.orders.sealed;
   const b = L.ui.build;
   const dv = myDice();
-  const arrows = L.ui.orders.filter((o) => o.type === "strike" || o.type === "march").map((o) => ({ from: o.from, to: o.to, color: o.type === "strike" ? "#8E1B1B" : "#2B1D12", dashed: o.type === "march" }));
+  const arrows = L.ui.orders.filter((o) => o.type === "strike" || o.type === "march").map((o) => ({ from: o.from, to: o.to, color: o.type === "strike" ? "#A3221A" : "#241811", dashed: o.type === "march" }));
   const tag = { strike: "FRAPPER", march: "MARCHER", levy: "LEVER", intrigue: "INTRIGUE" };
   const freeDice = dv.map((v, i) => i).filter((i) => dv[i] && !L.ui.orders.some((o) => o.die === i));
   const rerolling = L.ui.rerollPick && pl.rerolled !== st.round;
@@ -80,7 +80,7 @@ export function panelOrders() {
   } else builder = builderStep(b, steps);
   // récapitulatif
   const recap = L.ui.orders.length ? `<div class="recap"><p class="ph">Tes ordres pour cette manche</p><ul class="orderlist">${L.ui.orders.map((o, i) => `<li><span>${orderText(o)}</span>${sealed ? "" : `<button class="x" data-del="${i}" aria-label="Annuler cet ordre">×</button>`}</li>`).join("")}</ul>${!sealed && freeDice.length ? `<p class="warn">${ICON.risk}Il te reste ${freeDice.length} dé${freeDice.length > 1 ? "s" : ""} sans ordre : ${freeDice.length > 1 ? "ils ne serviront" : "il ne servira"} à rien si tu scelles maintenant.</p>` : ""}</div>` : "";
-  const seal = sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">${ICON.scroll}Sceller mes ordres</button>`;
+  const seal = sealed ? "" : `<button class="btn btn-red btn-block" id="btn-seal">Sceller mes ordres</button>`;
   // le trésor : relancer un dé, offrir une fête, et ce que la manche coûtera
   const free = pl.gold - goldPlanned();
   const inc = E.incomeOf(st, pid), up = E.upkeepOf(st, pid);
@@ -110,7 +110,7 @@ export function builderStep(b, steps) {
       PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner !== pid).forEach((id) => {
         MAP.sel.add(id);
         const pr = Math.round(E.winProb(n + v + E.attackMod(st, pid), E.defenseOf(st, id)) * 100);
-        MAP.badges.push({ prov: id, text: `${pr} %`, color: pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#8E1B1B" });
+        MAP.badges.push({ prov: id, text: `${pr} %`, color: pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#A3221A" });
       });
       MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); };
       return `${steps(2)}<div class="prompt">${ICON.target}Clique <b>la province à attaquer</b>. Le pourcentage affiché sur chacune = tes chances si tu envoies toutes tes armées disponibles (${n}).</div>${nav}`;

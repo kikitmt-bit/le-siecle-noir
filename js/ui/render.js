@@ -1,21 +1,21 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795309716";
-import { HOUSES } from "../content.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { ICON } from "../help.js?v=1795309716";
-import { PROVINCES } from "../map.js?v=1795309716";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795309716";
-import { applyCoach } from "./aides.js?v=1795309716";
-import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795309716";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795309716";
-import { shield } from "./draw.js?v=1795309716";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795309716";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795309716";
-import { drawArrows, updateMap } from "./map.js?v=1795309716";
-import { myDice, saveOrders } from "./orders.js?v=1795309716";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795309716";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795309716";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795309716";
+import * as A from "../audio.js?v=1795342564";
+import { HOUSES } from "../content.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { ICON } from "../help.js?v=1795342564";
+import { PROVINCES } from "../map.js?v=1795342564";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795342564";
+import { applyCoach } from "./aides.js?v=1795342564";
+import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795342564";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795342564";
+import { shield } from "./draw.js?v=1795342564";
+import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795342564";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795342564";
+import { drawArrows, updateMap } from "./map.js?v=1795342564";
+import { myDice, saveOrders } from "./orders.js?v=1795342564";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795342564";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795342564";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795342564";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -78,7 +78,7 @@ export function renderGuide() {
       if (cur === pid) {
         mine = true;
         if (L.ui.draftSel) { text = `<b>À toi :</b> tu as sélectionné <b>${esc(PROVINCES[L.ui.draftSel.prov].name)}</b>. Confirme, ou clique une autre province pour changer.`; btn = `<button class="btn btn-red" data-guide="draftok">Confirmer</button>`; }
-        else text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en jaune). Ce sera ta <b>capitale</b>.";
+        else text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en pointillés dorés). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en pointillés dorés). Ce sera ta <b>capitale</b>.";
       }
       else text = `${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))}) choisit une province… Attends ton tour.`;
       break;
@@ -156,7 +156,7 @@ export function renderGuide() {
     if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
     if (g === "draftok") confirmDraft();
     if (g === "next") { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); }
-    if (g === "force") { H.force = true; toast("La partie avance sans attendre les retardataires (leur intendant choisit pour eux).", "#D9A441"); }
+    if (g === "force") { H.force = true; toast("La partie avance sans attendre les retardataires (leur intendant choisit pour eux).", "#A9843A"); }
     if (g === "score") openModal("score");
   }));
 }
@@ -224,7 +224,7 @@ export function renderPlayers() {
     const showDice = ["dilemma", "orders"].includes(st.phase) && dice.length;
     const pw = E.housePower(st, pid);
     return `<button class="pchip hcard ${pid === meP ? "me" : ""}" data-pid="${pid}" style="--hc:${HOUSES[p.house].color}" aria-label="Voir la maison ${esc(houseName(pid))}">
-      <span class="hc-top">${st.leader === pid && !hide ? '<svg class="crown" width="22" height="14" viewBox="-12 -8 24 15" aria-hidden="true"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#D9A441" stroke="#2B1D12" stroke-width="1.2"/></svg>' : ""}${st.round > 0 && !hide ? `<span class="rankno">${rank + 1}</span>` : ""}${shield(p.house, 26)}
+      <span class="hc-top">${st.leader === pid && !hide ? '<svg class="crown" width="22" height="14" viewBox="-12 -8 24 15" aria-hidden="true"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#A9843A" stroke="#241811" stroke-width="1.2"/></svg>' : ""}${st.round > 0 && !hide ? `<span class="rankno">${rank + 1}</span>` : ""}${shield(p.house, 26)}
       <span class="hc-id"><span class="pc-name">${pid === meP ? "Toi · " : ""}${esc(houseName(pid))}${p.isBot ? " · ordi" : ""}</span><span class="hc-pw" title="${esc(pw.power || "")} Faiblesse : ${esc(pw.weak || "")}">${esc(pw.title || "")}</span></span>
       <span class="hc-score" title="Score visible (sans les objectifs secrets)">${hide ? "?" : pub(pid)}<small>pts</small></span></span>
       <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov} ${H_ICON.gold}${p.gold}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${relBadges(st, meP, pid)}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "reveal", "interlude"].includes(st.phase) ? ` <span class="ready">${st.phase === "reveal" ? "a lu ✓" : "prêt ✓"}</span>` : ""}</span>

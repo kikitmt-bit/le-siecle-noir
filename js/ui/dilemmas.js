@@ -1,12 +1,12 @@
 // Panneau des dilemmes
-import * as E from "../engine.js?v=1795309716";
-import { ICON, term } from "../help.js?v=1795309716";
-import { L, S, esc, me } from "../state.js?v=1795309716";
-import { houseName } from "./common.js?v=1795309716";
-import { dieSvg, shield } from "./draw.js?v=1795309716";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795309716";
-import { myDice } from "./orders.js?v=1795309716";
-import { render } from "./render.js?v=1795309716";
+import * as E from "../engine.js?v=1795342564";
+import { ICON, term } from "../help.js?v=1795342564";
+import { L, S, esc, me } from "../state.js?v=1795342564";
+import { houseName } from "./common.js?v=1795342564";
+import { dieSvg, shield } from "./draw.js?v=1795342564";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795342564";
+import { myDice } from "./orders.js?v=1795342564";
+import { render } from "./render.js?v=1795342564";
 
 export const DSLOTS = ["dilemma", "dilemma2", "council"];
 
@@ -32,5 +32,5 @@ export function panelDilemma() {
 
 export function dicePreview() {
   const st = S();
-  return `<div class="pbox"><p class="ph">Les dés de cette manche</p>${st.order.map((pid) => `<div class="row" style="margin-bottom:6px">${shield(st.players[pid].house, 18)}<span style="min-width:90px;font-family:var(--caps);font-size:12px">${esc(houseName(pid))}</span><span class="row" style="gap:4px">${(pid === me() ? myDice() : st.players[pid].dice).map((v, i) => (v ? dieSvg(v, 26, true) : '<span class="qdie" title="Dé caché">?</span>')).join("")}</span></div>`).join("")}<p class="hint">Chacun voit les dés des autres, sauf un dé caché par joueur. Un double donne un dé de 2 en plus.</p></div>`;
+  return `<div class="pbox"><p class="ph">Les dés de cette manche</p>${st.order.map((pid) => `<div class="row" style="margin-bottom:6px">${shield(st.players[pid].house, 18)}<span style="min-width:90px;font-family:var(--caps);font-variant-caps:all-small-caps;font-size:14.5px">${esc(houseName(pid))}</span><span class="row" style="gap:4px">${(pid === me() ? myDice() : st.players[pid].dice).map((v, i) => (v ? dieSvg(v, 26, true) : '<span class="qdie" title="Dé caché">?</span>')).join("")}</span></div>`).join("")}<p class="hint">Chacun voit les dés des autres, sauf un dé caché par joueur. Un double donne un dé de 2 en plus.</p></div>`;
 }

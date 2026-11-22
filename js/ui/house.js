@@ -1,12 +1,12 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795309716";
-import * as E from "../engine.js?v=1795309716";
-import { ICON } from "../help.js?v=1795309716";
-import { $, L, S, esc, me } from "../state.js?v=1795309716";
-import { scoresHidden, houseName } from "./common.js?v=1795309716";
-import { shield } from "./draw.js?v=1795309716";
-import { colorize } from "./names.js?v=1795309716";
-import { openModal } from "./overlays.js?v=1795309716";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795342564";
+import * as E from "../engine.js?v=1795342564";
+import { ICON } from "../help.js?v=1795342564";
+import { $, L, S, esc, me } from "../state.js?v=1795342564";
+import { scoresHidden, houseName } from "./common.js?v=1795342564";
+import { shield } from "./draw.js?v=1795342564";
+import { colorize } from "./names.js?v=1795342564";
+import { openModal } from "./overlays.js?v=1795342564";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -50,7 +50,7 @@ export function houseHtml(pid, full) {
     ${relationsHtml(st, pid)}
     ${spied ? `<div class="pbox"><p class="ph red">Objectifs secrets (volés par tes espions)</p>${spied.map((oid) => `<p class="ptext" style="margin:2px 0;font-size:14px">• ${esc((OBJECTIVES.find((o) => o.id === oid) || {}).text || "")}</p>`).join("")}</div>` : ""}
     <div class="kv"><span><b>Or</b> ${p.gold}</span><span><b>Prestige</b> ${hide ? "?" : p.prestige}</span><span><b>Provinces</b> ${E.provincesOf(st, pid).length}</span><span><b>Régions</b> ${E.regionsOf(st, pid).length}</span></div>
-    <div class="stat-row"><div class="stat"><div class="stat-l"><span>Colère du peuple</span><span>${p.colere}</span></div><div class="gauge"><div style="width:${p.colere}%;background:#8E1B1B"></div></div></div><div class="stat"><div class="stat-l"><span>Peur</span><span>${p.peur}</span></div><div class="gauge"><div style="width:${p.peur}%;background:#2B1D12"></div></div></div></div>
+    <div class="stat-row"><div class="stat"><div class="stat-l"><span>Colère du peuple</span><span>${p.colere}</span></div><div class="gauge"><div style="width:${p.colere}%;background:#A3221A"></div></div></div><div class="stat"><div class="stat-l"><span>Peur</span><span>${p.peur}</span></div><div class="gauge"><div style="width:${p.peur}%;background:#241811"></div></div></div></div>
     <p class="hint" style="margin:-4px 0 12px">Colère à 80 : une province se révolte. Peur : +1 en défense tous les 25 points, mais à 50 plus personne n'épouse tes enfants.</p>
     ${k && TRAITS[k.trait] ? `<p class="ptext" style="font-size:14px"><b>Effet du souverain :</b> ${esc(k.trait)}, ${esc(TRAITS[k.trait].desc.toLowerCase())}.</p>` : ""}
     <p class="ph">La famille ${pid === me() ? `<button class="btn btn-small" data-famintro="1" style="margin-left:8px;min-height:30px">Présentation</button>` : ""}</p>${consort && consort.alive && !fam.members.includes(consort) ? `<p class="hint" style="margin-top:0">Époux${consort.sex === "f" ? "se" : ""} du souverain : ${esc(E.personTitle(consort))} (${esc(houseName(E.ownerOf(st, consort)))})</p>` : ""}${famHtml}
@@ -110,21 +110,21 @@ export const TRAIT_FLAVOR = {
 
 export function portraitSvg(m, color) {
   const f = m.sex === "f", baby = m.age < 6, old = m.age >= 55;
-  const ink = "#1A120C";
+  const ink = "#1B130D";
   const headR = baby ? 15 : 19;
   const hy = baby ? 82 : 66;
   let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="pc-${m.id}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
     <ellipse cx="60" cy="70" rx="56" ry="66" fill="${color}" opacity=".35"/><g clip-path="url(#pc-${m.id})">
     <g opacity=".25" stroke="${ink}" stroke-width="1">${Array.from({ length: 12 }, (_, i) => `<path d="M0,${i * 12 + 4} H120"/>`).join("")}</g>`;
-  if (baby) h += `<path d="M30,140 Q30,96 60,94 Q90,96 90,140 Z" fill="#E9DCBD" stroke="${ink}" stroke-width="2"/><path d="M36,112 Q60,124 84,112 M38,126 Q60,138 82,126" stroke="${ink}" stroke-width="1.4" fill="none"/>`;
+  if (baby) h += `<path d="M30,140 Q30,96 60,94 Q90,96 90,140 Z" fill="#ECDEBD" stroke="${ink}" stroke-width="2"/><path d="M36,112 Q60,124 84,112 M38,126 Q60,138 82,126" stroke="${ink}" stroke-width="1.4" fill="none"/>`;
   else h += `<path d="M14,140 Q16,100 60,${hy + 28} Q104,100 106,140 Z" fill="${ink}"/>`;
   if (f && !baby) h += `<path d="M${60 - headR - 6},${hy + 34} Q${60 - headR - 8},${hy - 8} 60,${hy - headR - 6} Q${60 + headR + 8},${hy - 8} ${60 + headR + 6},${hy + 34} Z" fill="${ink}"/>`;
-  h += `<ellipse cx="60" cy="${hy}" rx="${headR - 2}" ry="${headR}" fill="#E9DCBD" stroke="${ink}" stroke-width="2"/>`;
+  h += `<ellipse cx="60" cy="${hy}" rx="${headR - 2}" ry="${headR}" fill="#ECDEBD" stroke="${ink}" stroke-width="2"/>`;
   h += `<path d="M53,${hy - 2} h3 M64,${hy - 2} h3" stroke="${ink}" stroke-width="2"/><path d="M56,${hy + 9} Q60,${hy + 11} 64,${hy + 9}" stroke="${ink}" stroke-width="1.5" fill="none"/>`;
   if (!f && old) h += `<path d="M46,${hy + 6} Q48,${hy + 34} 60,${hy + 38} Q72,${hy + 34} 74,${hy + 6} Q66,${hy + 16} 60,${hy + 16} Q54,${hy + 16} 46,${hy + 6} Z" fill="#CFC4AE" stroke="${ink}" stroke-width="1.5"/>`;
   if (!f && !baby && !old) h += `<path d="M42,${hy - 6} Q44,${hy - headR - 6} 60,${hy - headR - 4} Q76,${hy - headR - 6} 78,${hy - 6} Q70,${hy - 14} 60,${hy - 14} Q50,${hy - 14} 42,${hy - 6} Z" fill="${ink}"/>`;
-  if (m.role === "king" || m.role === "queen") { const cy = hy - headR + 2; h += `<path d="M${f ? 46 : 41},${cy} L${f ? 48 : 44},${cy - 14} L${f ? 54 : 52},${cy - 6} L60,${cy - 18} L${f ? 66 : 68},${cy - 6} L${f ? 72 : 76},${cy - 14} L${f ? 74 : 79},${cy} Z" fill="#D9A441" stroke="${ink}" stroke-width="1.5"/>`; }
-  if (m.trait === "Sanguinaire" || m.trait === "Cruel") h += `<path d="M66,${hy + 2} l8,8" stroke="#8E1B1B" stroke-width="2.5"/>`;
+  if (m.role === "king" || m.role === "queen") { const cy = hy - headR + 2; h += `<path d="M${f ? 46 : 41},${cy} L${f ? 48 : 44},${cy - 14} L${f ? 54 : 52},${cy - 6} L60,${cy - 18} L${f ? 66 : 68},${cy - 6} L${f ? 72 : 76},${cy - 14} L${f ? 74 : 79},${cy} Z" fill="#A9843A" stroke="${ink}" stroke-width="1.5"/>`; }
+  if (m.trait === "Sanguinaire" || m.trait === "Cruel") h += `<path d="M66,${hy + 2} l8,8" stroke="#A3221A" stroke-width="2.5"/>`;
   if (/Borgne/.test(m.infirm || "")) h += `<path d="M62,${hy - 5} h8 v6 h-8 Z" fill="${ink}"/><path d="M42,${hy - 8} L78,${hy - 2}" stroke="${ink}" stroke-width="1.2"/>`;
   h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
   return h;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1A120C">
+<meta name="theme-color" content="#1B130D">
 <title>Le Siècle Noir</title>
 <meta name="description" content="Jeu de conquête médiéval entre amis. France, 1347. Peste, trahisons et dynasties.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -33,15 +33,17 @@
 <meta name="twitter:image:alt" content="Le Siècle Noir : un blason rouge à la tour d'or, couronné, sur un parchemin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795309716">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Grenze+Gotisch:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=1795342564">
 </head>
 <body>
 <div id="app">
   <section id="screen-home" class="screen">
     <div class="home-card">
       <div class="home-crest" id="home-crest"></div>
-      <h1 class="gothic">Le Siècle Noir</h1>
+      <h1 class="gothic">Le <span class="r">S</span>iècle <span class="r">N</span>oir</h1>
+      <div class="home-rule" aria-hidden="true">✠</div>
+      <span class="home-ad">Anno Domini 1347</span>
       <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches (ou sept) pour régner sur les cendres.</p>
       <div id="games" class="games hidden"></div>
       <label class="field"><span>Ton nom de seigneur</span><input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Ex. : Étienne"></label>
@@ -139,6 +141,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795309716"></script>
+<script type="module" src="js/main.js?v=1795342564"></script>
 </body>
 </html>
