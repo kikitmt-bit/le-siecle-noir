@@ -1,15 +1,15 @@
 // Panneau par phase : objectifs, choix des provinces, placement
-import * as A from "../audio.js?v=1795342564";
-import * as E from "../engine.js?v=1795342564";
-import { PROVINCES, REGIONS } from "../map.js?v=1795342564";
-import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795342564";
-import { houseColor, houseName, setInput, toast } from "./common.js?v=1795342564";
-import { panelDilemma } from "./dilemmas.js?v=1795342564";
-import { entryHtml } from "./house.js?v=1795342564";
-import { updateMap } from "./map.js?v=1795342564";
-import { panelOrders } from "./orders.js?v=1795342564";
-import { render } from "./render.js?v=1795342564";
-import { interludeLines, panelReveal } from "./reveal.js?v=1795342564";
+import * as A from "../audio.js?v=1795349588";
+import * as E from "../engine.js?v=1795349588";
+import { PROVINCES, REGIONS } from "../map.js?v=1795349588";
+import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795349588";
+import { houseColor, houseName, setInput, toast } from "./common.js?v=1795349588";
+import { panelDilemma } from "./dilemmas.js?v=1795349588";
+import { entryHtml } from "./house.js?v=1795349588";
+import { updateMap } from "./map.js?v=1795349588";
+import { panelOrders } from "./orders.js?v=1795349588";
+import { render } from "./render.js?v=1795349588";
+import { interludeLines, panelReveal } from "./reveal.js?v=1795349588";
 
 // ---------------------------------------------------------------------
 // PANNEAU PAR PHASE

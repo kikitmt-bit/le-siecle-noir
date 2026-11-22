@@ -61,12 +61,13 @@ Règles du contenu :
 
 - Gravure sur bois populaire vers 1480, trait grossier et irrégulier. Surtout pas de rendu numérique lisse.
 - Le rouge est rare : deux ou trois touches par image.
-- Des gens abîmés et laids, jamais beaux ni idéalisés.
+- Réaliste, jamais caricatural : proportions justes, expressions retenues, pas de grimaces. La scène peut être crasseuse, violente ou dérangeante.
+- Des gens abîmés par la vie, jamais beaux ni idéalisés, mais jamais déformés.
 - Pas de fleur de lys, sauf quand la scène montre le roi de France.
 - Aucun texte, aucune lettre, aucun cadre dans l'image.
 - L'emblème du logo est dessiné en vectoriel, pas généré.
 
-En attendant les vraies gravures, les dessins SVG de `js/ui/draw.js` utilisent les mêmes trois couleurs.
+Gravures des dilemmes : 40 scènes dans `img/gravures/` (WebP 960×640), une par thème ; `js/gravures.js` associe chaque dilemme à sa gravure. Originaux et conversations ChatGPT dans le dossier du projet (`images-gravures/`). Les dessins SVG de `js/ui/draw.js` ne servent plus qu'aux interludes de fin de manche.
 
 ## Mouvement et son
 

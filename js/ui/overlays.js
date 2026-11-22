@@ -1,20 +1,21 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795342564";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795342564";
-import * as E from "../engine.js?v=1795342564";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795342564";
-import { hostReplay } from "../host.js?v=1795342564";
-import { PROVINCES } from "../map.js?v=1795342564";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795342564";
-import { introHtml, nextModal } from "./aides.js?v=1795342564";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795342564";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795342564";
-import { shield, woodcut } from "./draw.js?v=1795342564";
-import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795342564";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795342564";
-import { dropGame } from "./games.js?v=1795342564";
-import { render } from "./render.js?v=1795342564";
-import { interludeLines } from "./reveal.js?v=1795342564";
+import * as A from "../audio.js?v=1795349588";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795349588";
+import * as E from "../engine.js?v=1795349588";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795349588";
+import { hostReplay } from "../host.js?v=1795349588";
+import { PROVINCES } from "../map.js?v=1795349588";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795349588";
+import { introHtml, nextModal } from "./aides.js?v=1795349588";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795349588";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795349588";
+import { shield, woodcut } from "./draw.js?v=1795349588";
+import { GRAVURES } from "../gravures.js?v=1795349588";
+import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795349588";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795349588";
+import { dropGame } from "./games.js?v=1795349588";
+import { render } from "./render.js?v=1795349588";
+import { interludeLines } from "./reveal.js?v=1795349588";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -64,6 +65,14 @@ function councilCard(slot) {
     <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${cur ? "" : "disabled"}>${done ? "Vote scellé ✓ (changer)" : cur ? `Voter pour ${esc(houseName(cur))}` : "Choisis une maison"}</button></div></div>`;
 }
 
+// gravure du dilemme (img/gravures/) ; à défaut, une des 40 choisie d'après l'identifiant
+const ALL_GRAVURES = [...new Set(Object.values(GRAVURES))].sort();
+function gravure(id) {
+  let g = GRAVURES[id];
+  if (!g) { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0; g = ALL_GRAVURES[h % ALL_GRAVURES.length]; }
+  return `<img class="woodcut gravure" src="img/gravures/${g}.webp" width="960" height="640" alt="" decoding="async">`;
+}
+
 export function dilemmaCard() {
   const st = S(), pid = me();
   const slot = dilCurrent();
@@ -92,7 +101,7 @@ export function dilemmaCard() {
   const opt = card.type !== "pact" && cur !== null ? card.options[cur] : null;
   const canSend = cur !== null && (!opt || !opt.needsTarget || curT);
   const secretNote = card.type === "solo" ? "Affaire privée : les autres n'apprendront qu'une rumeur de ce qui s'est passé." : "Ce choix sera révélé à tous à la fin de la manche.";
-  return `<div class="card">${tabs}${slot === "dilemma" ? newsHtml() + ragotsHtml() : ""}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${woodcut(500, 220, (st.round + d.id.length) % 3)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>${extra}
+  return `<div class="card">${tabs}${slot === "dilemma" ? newsHtml() + ragotsHtml() : ""}<div class="card-top"><span class="card-kicker">${kicker}</span>${cardTimer()}</div><h2>${esc(E.fill(card.title, ctx))}</h2>${gravure(d.id)}<p>${esc(E.fill(card.text, ctx))}</p><div class="choices">${opts}</div>${extra}
     <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${canSend ? "" : "disabled"}>${done ? "Choix scellé ✓ (changer)" : cur === null ? "Choisis une option" : opt && opt.needsTarget && !curT ? "Choisis une maison" : (sl.length > 1 && sl.some((k) => k !== slot && !dilSealed(k)) ? "Sceller et passer à l'affaire suivante" : "Sceller ce choix")}</button></div><p class="hint">${secretNote}</p>${resLegend()}</div>`;
 }
 
