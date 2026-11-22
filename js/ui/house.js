@@ -1,14 +1,14 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795389807";
-import * as E from "../engine.js?v=1795389807";
-import { ICON } from "../help.js?v=1795389807";
-import { $, L, S, esc, me } from "../state.js?v=1795389807";
-import { scoresHidden, houseName } from "./common.js?v=1795389807";
-import { shield } from "./draw.js?v=1795389807";
-import { colorize } from "./names.js?v=1795389807";
-import { openModal } from "./overlays.js?v=1795389807";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795389807";
-import { nicknameLine } from "./surnoms.js?v=1795389807";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795390620";
+import * as E from "../engine.js?v=1795390620";
+import { ICON } from "../help.js?v=1795390620";
+import { $, L, S, esc, me } from "../state.js?v=1795390620";
+import { scoresHidden, houseName } from "./common.js?v=1795390620";
+import { shield } from "./draw.js?v=1795390620";
+import { colorize } from "./names.js?v=1795390620";
+import { openModal } from "./overlays.js?v=1795390620";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795390620";
+import { nicknameLine } from "./surnoms.js?v=1795390620";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {

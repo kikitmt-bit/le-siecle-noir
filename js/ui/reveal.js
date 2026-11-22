@@ -1,18 +1,18 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795389807";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795389807";
-import * as E from "../engine.js?v=1795389807";
-import { ICON } from "../help.js?v=1795389807";
-import { PROVINCES } from "../map.js?v=1795389807";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795389807";
-import { speak } from "./announce.js?v=1795389807";
-import { houseColor, houseName, setInput } from "./common.js?v=1795389807";
-import { dieSvg, shield } from "./draw.js?v=1795389807";
-import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795389807";
-import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795389807";
-import { colorize, houseTag, peopleIn } from "./names.js?v=1795389807";
-import { battleQuip } from "./news.js?v=1795389807";
-import { openModal } from "./overlays.js?v=1795389807";
+import * as A from "../audio.js?v=1795390620";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795390620";
+import * as E from "../engine.js?v=1795390620";
+import { ICON } from "../help.js?v=1795390620";
+import { PROVINCES } from "../map.js?v=1795390620";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795390620";
+import { speak } from "./announce.js?v=1795390620";
+import { houseColor, houseName, setInput } from "./common.js?v=1795390620";
+import { dieSvg, shield } from "./draw.js?v=1795390620";
+import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795390620";
+import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795390620";
+import { colorize, houseTag, peopleIn } from "./names.js?v=1795390620";
+import { battleQuip } from "./news.js?v=1795390620";
+import { openModal } from "./overlays.js?v=1795390620";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],
@@ -104,7 +104,7 @@ function duelRow(st, s, i, state) {
   const side = (pid, n, bonus, total, win) => `<div class="ds ${hidden || rolling ? "" : win ? "win" : "lose"}">${pid ? shield(st.players[pid].house, 26) : '<svg width="26" height="30" viewBox="0 0 64 74"><path d="M4,4 H60 V34 C60,54 46,66 32,70 C18,66 4,54 4,34 Z" fill="#8C7556" stroke="#241811" stroke-width="3"/></svg>'}<span class="fc ${rolling ? "rolling" : ""}">${hidden || rolling ? "?" : total}</span><span class="dt">${n} arm.${bonus ? ` +${bonus}` : ""}</span></div>`;
   return `<button class="rv-duel ${hidden ? "pending" : ""}" data-battle="${i}"><div class="dl-title">${ICON.army}<b>${esc(PROVINCES[s.prov].name)}</b> · ${houseTag(a.pid)}${s.atk.length > 1 ? ` (+${s.atk.length - 1})` : ""} attaque ${s.def ? houseTag(s.def) : "<i>la milice</i>"}</div>
     <div class="dl-body">${side(a.pid, a.n, a.bonus, a.total, s.attWins)}<span class="vs">contre</span>${side(s.def, s.defArmies, s.defBonus, s.defTotal, !s.attWins)}</div>
-    ${hidden ? "" : rolling ? `<div class="verdict">Le choc des armées…</div>` : `<div class="verdict">${s.attWins ? `${houseTag(a.pid)} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? houseTag(s.def) : "La milice"} tient bon.`}</div><p class="rv-quip">${esc(battleQuip(st, s))}</p>`}</button>`;
+    ${hidden ? "" : rolling ? `<div class="verdict">Le choc des armées…</div>` : `<div class="verdict">${s.attWins ? `${houseTag(a.pid)} prend ${esc(PROVINCES[s.prov].art)} !` : `${s.def ? houseTag(s.def) : "La milice"} tient bon.`}</div>${s.away ? `<p class="rv-away">${esc(s.away)}</p>` : ""}<p class="rv-quip">${esc(battleQuip(st, s))}</p>`}</button>`;
 }
 
 function econHtml(st, s) {

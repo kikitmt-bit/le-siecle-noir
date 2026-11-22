@@ -1,9 +1,9 @@
 // Calculs sur la carte, chronique, situation des dilemmes
-import { HOUSE_POWERS } from "../content.js?v=1795389807";
-import { PROVINCES, REGIONS } from "../map.js?v=1795389807";
-import { COSTS, MERC_COST, PROV_IDS, levyAmount, maisonName, peurBonus, yearOf } from "./core.js?v=1795389807";
-import { heirs, king, kingLabel, personTitle, queen } from "./people.js?v=1795389807";
-import { bound, marriageable } from "./succession.js?v=1795389807";
+import { HOUSE_POWERS } from "../content.js?v=1795390620";
+import { PROVINCES, REGIONS } from "../map.js?v=1795390620";
+import { COSTS, MERC_COST, PROV_IDS, levyAmount, maisonName, peurBonus, yearOf } from "./core.js?v=1795390620";
+import { heirs, king, kingLabel, personTitle, queen } from "./people.js?v=1795390620";
+import { bound, marriageable } from "./succession.js?v=1795390620";
 
 // ---------- calculs ----------
 export function provincesOf(state, pid) { return PROV_IDS.filter((id) => state.provinces[id].owner === pid); }

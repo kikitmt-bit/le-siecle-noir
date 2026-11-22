@@ -1,8 +1,8 @@
 // Création de partie, choix des provinces (draft) et placement
-import { OBJ_CLASH, OBJECTIVES } from "../content.js?v=1795389807";
-import { PROVINCES, REGIONS } from "../map.js?v=1795389807";
-import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795389807";
-import { makeFamily } from "./people.js?v=1795389807";
+import { OBJ_CLASH, OBJECTIVES } from "../content.js?v=1795390620";
+import { PROVINCES, REGIONS } from "../map.js?v=1795390620";
+import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795390620";
+import { makeFamily } from "./people.js?v=1795390620";
 
 export function createGame({ players, tutorial = false, randomDraft = false, code = "", rounds = MAX_ROUNDS }, rng) {
   // players: [{pid, name, house, isBot}]

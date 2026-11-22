@@ -685,6 +685,7 @@ select { font-family: var(--serif); font-size: 16px; padding: 8px 10px; border: 
 .rv-duel .vs { font-family: var(--gothic); color: var(--gold); font-size: 22px; }
 .rv-duel .verdict { text-align: center; font-family: var(--caps); font-size: 17px; color: var(--gold); margin-top: 2px; letter-spacing: .04em; font-variant-caps: all-small-caps; }
 .rv-duel .rv-quip { margin: 4px 0 0; font-size: 14px; }
+.rv-away { text-align: center; font-size: 14.5px; color: var(--gold, #C9A35A); margin: 6px 0 0; }
 .rv-econ table, .rv-sum { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0; }
 .rv-econ th, .rv-sum th { font-family: var(--caps); font-size: 13.5px; color: var(--gold); text-align: left; padding: 4px; border-bottom: 1px solid rgba(201,163,90,.4); letter-spacing: .04em; font-variant-caps: all-small-caps; }
 .rv-econ td, .rv-sum td { padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,.08); }

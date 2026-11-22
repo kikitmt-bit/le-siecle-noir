@@ -2,15 +2,15 @@
 // on choisit sa province → un menu s'ouvre à côté (dé, Frapper, Marcher, Lever) → une flèche vise la cible,
 // aimantée sur la plus proche du curseur → une bulle confirme (armées, chances). Sur PC, on peut aussi glisser.
 // Le parcours classique par le panneau de droite reste possible.
-import * as A from "../audio.js?v=1795389807";
-import * as E from "../engine.js?v=1795389807";
-import { PROVINCES } from "../map.js?v=1795389807";
-import { $, L, MAP, S, VIEW, esc, me } from "../state.js?v=1795389807";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795389807";
-import { dieSvg } from "./draw.js?v=1795389807";
-import { avail, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795389807";
-import { applyView, zoomBy } from "./map.js?v=1795389807";
-import { render } from "./render.js?v=1795389807";
+import * as A from "../audio.js?v=1795390620";
+import * as E from "../engine.js?v=1795390620";
+import { PROVINCES } from "../map.js?v=1795390620";
+import { $, L, MAP, S, VIEW, esc, me } from "../state.js?v=1795390620";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795390620";
+import { dieSvg } from "./draw.js?v=1795390620";
+import { avail, availStrike, incoming, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795390620";
+import { applyView, zoomBy } from "./map.js?v=1795390620";
+import { render } from "./render.js?v=1795390620";
 
 // état propre à la carte (jamais envoyé aux autres joueurs)
 const MO = { menu: null, die: null, focus: null, padAt: 0, synth: false, drag: null, snap: null, lastSrc: "mouse" };
@@ -22,7 +22,7 @@ const freeDice = () => { const dv = myDice(); return dv.map((v, i) => i).filter(
 const bestDie = () => { const dv = myDice(); return freeDice().sort((a, b) => dv[b] - dv[a])[0]; };
 const center = (id) => ({ x: PROVINCES[id].cx, y: PROVINCES[id].cy + 6 });
 const neighbors = (id, mine) => { const st = st0(), pid = me(); return PROVINCES[id].adj.filter((a) => (st.provinces[a].owner === pid) === mine); };
-const canStrike = (id) => avail(id) >= 1 && neighbors(id, false).length > 0;
+const canStrike = (id) => availStrike(id) >= 1 && neighbors(id, false).length > 0;
 const canMarch = (id) => avail(id) >= 1 && neighbors(id, true).length > 0;
 const strikePct = (from, to, n, v) => { const st = st0(), pid = me(); return Math.round(E.winProb(n + v + E.attackMod(st, pid), E.defenseOf(st, to)) * 100); };
 const pctColor = (pr) => (pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#A3221A");
@@ -70,15 +70,15 @@ function showMenu() {
   if (!id || st.provinces[id].owner !== pid) { MO.menu = null; closeBox(); return; }
   const dv = myDice(), fd = freeDice();
   if (!fd.includes(MO.die)) MO.die = bestDie();
-  const v = dv[MO.die], a = avail(id);
+  const v = dv[MO.die], a = avail(id), as = availStrike(id), inc = incoming(id);
   const mc = E.mercCostOf(st, pid), canMerc = pl.gold - goldPlanned() >= mc;
   const dice = fd.map((i) => `<button class="mm-die ${i === MO.die ? "on" : ""}" data-mdie="${i}" aria-label="Dé ${dv[i]}">${dieSvg(dv[i])}</button>`).join("");
   const sNb = neighbors(id, false), mNb = neighbors(id, true);
-  const best = sNb.length && a >= 1 ? Math.max(...sNb.map((t) => strikePct(id, t, a, v))) : 0;
+  const best = sNb.length && as >= 1 ? Math.max(...sNb.map((t) => strikePct(id, t, as, v))) : 0;
   const btn = (act, label, sub, ok) => `<button class="mm-act" data-mact="${act}" ${ok ? "" : "disabled"}><b>${label}</b><span>${sub}</span></button>`;
-  const html = `<p class="mm-title">${esc(PROVINCES[id].name)} <span>${st.provinces[id].armies} armée${st.provinces[id].armies > 1 ? "s" : ""}</span></p>
+  const html = `<p class="mm-title">${esc(PROVINCES[id].name)} <span>${st.provinces[id].armies} armée${st.provinces[id].armies > 1 ? "s" : ""}${inc ? ` + ${inc} prévue${inc > 1 ? "s" : ""}` : ""}</span></p>
     <div class="mm-dice"><span class="mm-lab">Dé</span>${dice}${fd.length > 1 ? `<span class="mm-pad">LT · RT</span>` : ""}</div>
-    ${btn("strike", "Frapper", a < 1 ? "il faut 2 armées ici" : !sNb.length ? "aucun voisin à attaquer" : `jusqu'à ${a} armée${a > 1 ? "s" : ""} + ${v} · meilleure chance ${best} %`, canStrike(id))}
+    ${btn("strike", "Frapper", as < 1 ? "il faut 2 armées ici" : !sNb.length ? "aucun voisin à attaquer" : `jusqu'à ${as} armée${as > 1 ? "s" : ""} + ${v} · meilleure chance ${best} %`, canStrike(id))}
     ${btn("march", "Marcher", a < 1 ? "il faut 2 armées ici" : !mNb.length ? "aucune voisine à toi" : `jusqu'à ${Math.min(v, a)} armée${Math.min(v, a) > 1 ? "s" : ""} vers une voisine à toi`, canMarch(id))}
     ${btn("levy", "Lever", `+${E.levyFor(st, pid, v)} armées ici`, true)}
     ${btn("merc", "Lever avec mercenaires", canMerc ? `+${E.levyFor(st, pid, v) + E.MERC_ARMIES} armées ici, ${mc} or` : `il faut ${mc} or`, canMerc)}
@@ -105,7 +105,7 @@ function menuAction(act) {
   void st;
 }
 
-function scoreTarget(t) { const b = L.ui.build; if (!b || b.type !== "strike") return 0; return strikePct(b.from, t, avail(b.from), myDice()[b.die]); }
+function scoreTarget(t) { const b = L.ui.build; if (!b || b.type !== "strike") return 0; return strikePct(b.from, t, availStrike(b.from), myDice()[b.die]); }
 
 // ---------------------------------------------------------------- la cible : consigne près de la province de départ
 function showTargetHint(b) {
@@ -119,7 +119,7 @@ function showTargetHint(b) {
 // ---------------------------------------------------------------- confirmation : armées et chances
 function showConfirm(b) {
   const st = st0(), pid = me(), v = myDice()[b.die];
-  const max = b.type === "strike" ? avail(b.from) : Math.min(v, avail(b.from));
+  const max = b.type === "strike" ? availStrike(b.from) : Math.min(v, avail(b.from));
   b.n = Math.min(Math.max(1, b.n || max), max);
   const def = st.provinces[b.to];
   const pr = b.type === "strike" ? strikePct(b.from, b.to, b.n, v) : null;
@@ -203,7 +203,7 @@ function drawDrag() {
   const f = center(from);
   let t = to ? center(to) : MO.drag && MO.drag.pt ? MO.drag.pt : null;
   if (!t) { g.innerHTML = ""; return; }
-  if (type === "strike" && to) { const v = myDice()[MO.drag && MO.drag.active ? MO.drag.die : L.ui.build.die]; const pr = strikePct(from, to, avail(from), v); tip = `<g transform="translate(${t.x},${t.y - 30})"><rect x="-27" y="-13" width="54" height="24" rx="12" fill="${pctColor(pr)}" stroke="#F5EBD3" stroke-width="2"/><text y="5" text-anchor="middle" class="drag-pct">${pr} %</text></g>`; }
+  if (type === "strike" && to) { const v = myDice()[MO.drag && MO.drag.active ? MO.drag.die : L.ui.build.die]; const pr = strikePct(from, to, availStrike(from), v); tip = `<g transform="translate(${t.x},${t.y - 30})"><rect x="-27" y="-13" width="54" height="24" rx="12" fill="${pctColor(pr)}" stroke="#F5EBD3" stroke-width="2"/><text y="5" text-anchor="middle" class="drag-pct">${pr} %</text></g>`; }
   if (type === "march" && to) tip = `<g transform="translate(${t.x},${t.y - 30})"><rect x="-30" y="-13" width="60" height="24" rx="12" fill="#241811" stroke="#F5EBD3" stroke-width="2"/><text y="5" text-anchor="middle" class="drag-pct">marche</text></g>`;
   const mx = (f.x + t.x) / 2 + (t.y - f.y) * 0.15, my = (f.y + t.y) / 2 - (t.x - f.x) * 0.15;
   const col = type === "march" ? "#241811" : "#A3221A";

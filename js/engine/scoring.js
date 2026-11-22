@@ -1,9 +1,9 @@
 // Objectifs, score final, fin de partie
-import { OBJECTIVES } from "../content.js?v=1795389807";
-import { PROVINCES, REGIONS } from "../map.js?v=1795389807";
-import { GOLD_PER_PT, PTS_PROVINCE, PTS_REGION, chron, provincesOf, regionsOf } from "./calc.js?v=1795389807";
-import { capitalize, maisonName, yearOf } from "./core.js?v=1795389807";
-import { deName, king, kingLabel } from "./people.js?v=1795389807";
+import { OBJECTIVES } from "../content.js?v=1795390620";
+import { PROVINCES, REGIONS } from "../map.js?v=1795390620";
+import { GOLD_PER_PT, PTS_PROVINCE, PTS_REGION, chron, provincesOf, regionsOf } from "./calc.js?v=1795390620";
+import { capitalize, maisonName, yearOf } from "./core.js?v=1795390620";
+import { deName, king, kingLabel } from "./people.js?v=1795390620";
 
 // ---------- score final ----------
 export function objectiveDone(state, pid, oid) {

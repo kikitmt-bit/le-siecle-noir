@@ -1,16 +1,16 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795389807";
-import * as E from "../engine.js?v=1795389807";
-import { ICON, term } from "../help.js?v=1795389807";
-import { PROVINCES } from "../map.js?v=1795389807";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795389807";
-import { houseName, sealStamp, setInput } from "./common.js?v=1795389807";
-import { bindDiplomacy } from "./diplomacy.js?v=1795389807";
-import { dieSvg, shield } from "./draw.js?v=1795389807";
-import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795389807";
-import { render } from "./render.js?v=1795389807";
-import { portraitSvg } from "./house.js?v=1795389807";
-import { HOUSES } from "../content.js?v=1795389807";
+import * as A from "../audio.js?v=1795390620";
+import * as E from "../engine.js?v=1795390620";
+import { ICON, term } from "../help.js?v=1795390620";
+import { PROVINCES } from "../map.js?v=1795390620";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795390620";
+import { houseName, sealStamp, setInput } from "./common.js?v=1795390620";
+import { bindDiplomacy } from "./diplomacy.js?v=1795390620";
+import { dieSvg, shield } from "./draw.js?v=1795390620";
+import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795390620";
+import { render } from "./render.js?v=1795390620";
+import { portraitSvg } from "./house.js?v=1795390620";
+import { HOUSES } from "../content.js?v=1795390620";
 
 // ---- ordres ----
 export function myDice() {
@@ -22,6 +22,13 @@ export function myDice() {
 export function committed(provId, exceptIdx = -1) { return L.ui.orders.reduce((s, o, i) => s + (i !== exceptIdx && (o.type === "strike" || o.type === "march") && o.from === provId ? o.n : 0), 0); }
 
 export function avail(provId) { const p = S().provinces[provId]; return p.armies - 1 - committed(provId); }
+// renforts prévus ce tour vers une province (levées et marches) : le moteur joue les marches et les levées
+// avant les batailles, donc une attaque partie de là peut les emmener. Invisible pour les autres jusqu'à la révélation.
+export function incoming(provId) {
+  const st = S(), pid = me(), dv = myDice();
+  return L.ui.orders.reduce((s, o) => s + (o.type === "levy" && o.to === provId ? E.levyFor(st, pid, dv[o.die]) + (o.merc ? E.MERC_ARMIES : 0) : o.type === "march" && o.to === provId ? o.n : 0), 0);
+}
+export function availStrike(provId) { return avail(provId) + incoming(provId); }
 
 export function goldPlanned() { const st = S(), pid = me(); return L.ui.orders.reduce((s, o) => s + (o.type === "intrigue" ? E.costOf(st, pid, o.kind) : o.type === "levy" && o.merc ? E.mercCostOf(st, pid) : 0), 0) + (L.ui.feast ? E.FEAST_COST : 0); }
 const intrBonus = (st, pid, kind) => { const pl = st.players[pid], k = E.king(st, pid); return (k && k.trait === "Rusé" ? 1 : 0) + (pl.intrigueBonus || 0) + (E.housePower(st, pid).intr || 0) + (kind === "seduction" && k && k.trait === "Séduisant" ? 1 : 0); };
@@ -107,21 +114,21 @@ export function builderStep(b, steps) {
   const nav = `<div class="row" style="margin-top:8px">${back}${cancel}</div>`;
   if (b.type === "strike") {
     if (!b.from) {
-      mine.filter((id) => avail(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner !== pid)).forEach((id) => MAP.sel.add(id));
+      mine.filter((id) => availStrike(id) >= 1 && PROVINCES[id].adj.some((a) => st.provinces[a].owner !== pid)).forEach((id) => MAP.sel.add(id));
       MAP.hl = new Set(MAP.sel); MAP.onPick = (id) => { b.from = id; render(); };
       return `${steps(2)}<div class="prompt">${ICON.frapper}Sur la carte, clique <b>ta province d'où part l'attaque</b> (contour doré). Il faut au moins 2 armées : une reste toujours sur place.</div>${MAP.sel.size ? "" : `<p class="warn">Aucune de tes provinces n'a assez d'armées pour attaquer. Choisis plutôt Lever.</p>`}${nav}`;
     }
     if (!b.to) {
-      const n = avail(b.from);
+      const n = availStrike(b.from);
       PROVINCES[b.from].adj.filter((a) => st.provinces[a].owner !== pid).forEach((id) => {
         MAP.sel.add(id);
         const pr = Math.round(E.winProb(n + v + E.attackMod(st, pid), E.defenseOf(st, id)) * 100);
         MAP.badges.push({ prov: id, text: `${pr} %`, color: pr >= 67 ? "#2F5233" : pr >= 45 ? "#8A5F10" : "#A3221A" });
       });
-      MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = avail(b.from); render(); }; targetHook(b);
+      MAP.hlRed = new Set(MAP.sel); MAP.hl = new Set([b.from]); MAP.onPick = (id) => { b.to = id; b.n = availStrike(b.from); render(); }; targetHook(b);
       return `${steps(2)}<div class="prompt">${ICON.target}Clique <b>la province à attaquer</b>. Le pourcentage affiché sur chacune = tes chances si tu envoies toutes tes armées disponibles (${n}).</div>${nav}`;
     }
-    const max = avail(b.from); b.n = Math.min(Math.max(1, b.n || max), max);
+    const max = availStrike(b.from); b.n = Math.min(Math.max(1, b.n || max), max);
     MAP.hl = new Set([b.from]); MAP.hlRed = new Set([b.to]); confirmHook();
     const def = st.provinces[b.to];
     const prob = Math.round(E.winProb(b.n + v + E.attackMod(st, pid), E.defenseOf(st, b.to)) * 100);

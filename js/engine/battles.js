@@ -1,14 +1,14 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795389807";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795389807";
-import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795389807";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795389807";
-import { validateOrders } from "./dilemmas.js?v=1795389807";
-import { addEpithet } from "./effects.js?v=1795389807";
-import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795389807";
-import { passTime } from "./rounds.js?v=1795389807";
-import { prepareResult } from "./scoring.js?v=1795389807";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795389807";
+import { PROVINCES } from "../map.js?v=1795390620";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795390620";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795390620";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795390620";
+import { validateOrders } from "./dilemmas.js?v=1795390620";
+import { addEpithet } from "./effects.js?v=1795390620";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795390620";
+import { passTime } from "./rounds.js?v=1795390620";
+import { prepareResult } from "./scoring.js?v=1795390620";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795390620";
 
 export const FEAST_COST = 3;
 // La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)
@@ -169,11 +169,23 @@ export function resolveRound(state, priv, inputs, rng) {
     }
   }
   const betrayed = new Set();
-  const targets = shuffle(rng, [...new Set(strikes.map((s) => s.to))]);
+  // Toutes les armées sont parties en même temps. Pour que le récit se tienne, une bataille menée DEPUIS une
+  // province est racontée avant celle qui se livre SUR cette province : on voit l'armée quitter le Berry
+  // (et gagner ou perdre ailleurs) avant d'apprendre que le Berry, vidé, est tombé.
+  const pool = shuffle(rng, [...new Set(strikes.map((s) => s.to))]);
+  const leavesFrom = (x) => strikes.filter((s) => s.to !== x && s.froms.includes(x) && s.pid === P[x].owner);
+  const targets = [];
+  while (pool.length) {
+    const i = pool.findIndex((t) => !leavesFrom(t).some((s) => pool.includes(s.to)));
+    targets.push(pool.splice(i < 0 ? 0 : i, 1)[0]); // i < 0 : deux armées qui se croisent, l'ordre reste au hasard
+  }
   for (const to of targets) {
     const atts = strikes.filter((s) => s.to === to);
     const def = P[to].owner;
     const defArmies = P[to].armies;
+    // armées du défenseur parties attaquer ailleurs depuis cette province (déjà racontées plus haut)
+    const away = def ? strikes.filter((s) => s.pid === def && s.to !== to && s.froms.includes(to)) : [];
+    const awayTxt = away.length ? ` L'armée ${PROVINCES[to].de} était partie vers ${away.map((s) => PROVINCES[s.to].art).join(" et ")} : il ne restait que ${defArmies} armée${defArmies > 1 ? "s" : ""} pour défendre la ville.` : "";
     for (const a of atts) {
       if (def && bound(state, a.pid, def) && !betrayed.has(a.pid + def)) {
         betrayed.add(a.pid + def);
@@ -233,7 +245,8 @@ export function resolveRound(state, priv, inputs, rng) {
       if (def && totals.some((a) => leaderLost(a.pid)) && def !== state.leader) { state.players[def].prestige += 2; text += ` Le favori plie : +2 Prestige.`; }
       set = snap(to, ...totals.flatMap((a) => a.froms));
     }
-    steps.push({ kind: "battle", text, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle",
+    text += awayTxt;
+    steps.push({ kind: "battle", text, away: awayTxt.trim() || undefined, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle",
       atk: totals.map((a) => ({ pid: a.pid, n: a.n, bonus: a.bonus, total: a.total })), def, defArmies, defTotal, defBonus: defBonusOf(state, def) });
     if (attWins && def) noteRel(state, "conquete", best.pid, def);
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
