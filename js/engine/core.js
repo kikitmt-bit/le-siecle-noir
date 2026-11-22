@@ -1,6 +1,6 @@
 // Constantes et petits utilitaires du moteur
-import { HOUSES } from "../content.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
+import { HOUSES } from "../content.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
 
 export const PROV_IDS = Object.keys(PROVINCES);
 

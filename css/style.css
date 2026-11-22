@@ -916,3 +916,14 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
 .drag-arrow { fill: none; stroke-width: 4; stroke-linecap: round; }
 .drag-pct { font-family: var(--caps); font-weight: 700; font-size: 14px; fill: #F5EBD3; font-variant-numeric: lining-nums; }
 @media (max-width: 600px) { .mapmenu { width: 250px; } .mm-act { min-height: 46px; } }
+/* page « test manette » */
+.padtest .pt-status { font-style: italic; color: var(--ink2); }
+.pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 8px 0; }
+.pt-b { border: 1.5px solid var(--ink3); border-radius: 2px; padding: 6px 8px; background: var(--parch); display: flex; flex-direction: column; gap: 1px; }
+.pt-b b { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .05em; font-size: 17px; }
+.pt-b span { font-size: 13px; font-style: italic; color: var(--ink2); }
+.pt-b.seen { border-color: #2F5233; background: #DDE8CF; }
+.pt-b.seen b::after { content: " ✓"; color: #2F5233; }
+.pt-b.on { background: var(--gold); border-color: var(--ink); }
+.pt-sticks { display: flex; gap: 18px; font-size: 15px; margin-bottom: 10px; }
+.pt-sticks i { font-style: normal; font-variant-numeric: tabular-nums; }

@@ -1,14 +1,14 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795365668";
-import * as E from "../engine.js?v=1795365668";
-import { ICON, term } from "../help.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795365668";
-import { houseName, setInput } from "./common.js?v=1795365668";
-import { bindDiplomacy } from "./diplomacy.js?v=1795365668";
-import { dieSvg, shield } from "./draw.js?v=1795365668";
-import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795365668";
-import { render } from "./render.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import * as E from "../engine.js?v=1795368011";
+import { ICON, term } from "../help.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795368011";
+import { houseName, setInput } from "./common.js?v=1795368011";
+import { bindDiplomacy } from "./diplomacy.js?v=1795368011";
+import { dieSvg, shield } from "./draw.js?v=1795368011";
+import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795368011";
+import { render } from "./render.js?v=1795368011";
 
 // ---- ordres ----
 export function myDice() {

@@ -2,14 +2,15 @@
 // on choisit sa province → un menu s'ouvre à côté (dé, Frapper, Marcher, Lever) → une flèche vise la cible,
 // aimantée sur la plus proche du curseur → une bulle confirme (armées, chances). Sur PC, on peut aussi glisser.
 // Le parcours classique par le panneau de droite reste possible.
-import * as A from "../audio.js?v=1795365668";
-import * as E from "../engine.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
-import { $, L, MAP, S, esc, me } from "../state.js?v=1795365668";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795365668";
-import { dieSvg } from "./draw.js?v=1795365668";
-import { avail, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795365668";
-import { render } from "./render.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import * as E from "../engine.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
+import { $, L, MAP, S, VIEW, esc, me } from "../state.js?v=1795368011";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795368011";
+import { dieSvg } from "./draw.js?v=1795368011";
+import { avail, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795368011";
+import { applyView, zoomBy } from "./map.js?v=1795368011";
+import { render } from "./render.js?v=1795368011";
 
 // état propre à la carte (jamais envoyé aux autres joueurs)
 const MO = { menu: null, die: null, focus: null, padAt: 0, synth: false, drag: null, snap: null, lastSrc: "mouse" };
@@ -76,7 +77,7 @@ function showMenu() {
   const best = sNb.length && a >= 1 ? Math.max(...sNb.map((t) => strikePct(id, t, a, v))) : 0;
   const btn = (act, label, sub, ok) => `<button class="mm-act" data-mact="${act}" ${ok ? "" : "disabled"}><b>${label}</b><span>${sub}</span></button>`;
   const html = `<p class="mm-title">${esc(PROVINCES[id].name)} <span>${st.provinces[id].armies} armée${st.provinces[id].armies > 1 ? "s" : ""}</span></p>
-    <div class="mm-dice"><span class="mm-lab">Dé</span>${dice}${fd.length > 1 ? `<span class="mm-pad">LB · RB</span>` : ""}</div>
+    <div class="mm-dice"><span class="mm-lab">Dé</span>${dice}${fd.length > 1 ? `<span class="mm-pad">LT · RT</span>` : ""}</div>
     ${btn("strike", "Frapper", a < 1 ? "il faut 2 armées ici" : !sNb.length ? "aucun voisin à attaquer" : `jusqu'à ${a} armée${a > 1 ? "s" : ""} + ${v} · meilleure chance ${best} %`, canStrike(id))}
     ${btn("march", "Marcher", a < 1 ? "il faut 2 armées ici" : !mNb.length ? "aucune voisine à toi" : `jusqu'à ${Math.min(v, a)} armée${Math.min(v, a) > 1 ? "s" : ""} vers une voisine à toi`, canMarch(id))}
     ${btn("levy", "Lever", `+${E.levyFor(st, pid, v)} armées ici`, true)}
@@ -317,7 +318,14 @@ function padA() {
 }
 function press(el) { MO.padAt = Date.now(); MO.synth = true; try { el.click(); } finally { MO.synth = false; } }
 function cycleDie(k) { if (!MO.menu) return; const fd = freeDice(); if (fd.length < 2) return; const i = fd.indexOf(MO.die); MO.die = fd[(i + k + fd.length) % fd.length]; A.play("click"); render(); focusSel(`[data-mdie="${MO.die}"]`); }
-function padB() { return back(); }
+// le retour (B de la manette, bouton retour du navigateur) : ferme ce qui est ouvert, ou recule d'un pas dans l'ordre
+export function uiBack() {
+  const open = document.querySelector("#modal:not(.hidden), #overlay:not(.hidden), #popover:not(.hidden), #legend:not(.hidden)");
+  if (open) { const btn = open.querySelector("#md-close, #ov-close, .pop-x"); if (btn) btn.click(); else open.classList.add("hidden"); return true; }
+  const st = S();
+  if (st && st.phase === "orders" && me()) return back();
+  return false;
+}
 
 // un appui sur A arrive aussi comme un clic de curseur (mode souris de la Xbox) : on n'en garde qu'un
 document.addEventListener("click", (e) => { if (!MO.synth && Date.now() - MO.padAt < 260) { e.stopPropagation(); e.preventDefault(); } }, true);
@@ -334,9 +342,11 @@ document.addEventListener("keydown", (e) => {
   if ((e.key === "[" || e.key === "]") && MO.menu) { cycleDie(e.key === "]" ? 1 : -1); }
 });
 
-// manette : croix (12-15), A (0), B (1), LB (4), RB (5). B ferme déjà les fenêtres (main.js).
+// manette (Xbox) : croix (12-15) province ou bouton suivant, A (0) choisir, LT/RT (6/7) dé dans le menu ou zoom,
+// stick droit (axes 2-3) déplacer la carte zoomée, Y (3) fiche de la province, X (2) onglet suivant, Menu (9) sceller.
+// B (1) est géré dans main.js (c'est aussi le « retour » du navigateur). LB/RB sont pris par Edge (onglets) : pas utilisés.
 let padOn = false;
-window.addEventListener("gamepadconnected", () => {
+function startPad() {
   if (padOn) return; padOn = true;
   const was = {}, rep = {};
   const poll = () => {
@@ -345,21 +355,75 @@ window.addEventListener("gamepadconnected", () => {
       const now = performance.now();
       const btn = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
       const edge = (i) => btn(i) && !was[i];
-      const dir = [[12, 0, -1], [13, 0, 1], [14, -1, 0], [15, 1, 0]];
-      for (const [i, dx, dy] of dir) {
-        if (edge(i)) { rep[i] = now + 320; MO.lastSrc = "pad"; padDir(dx, dy); }
-        else if (btn(i) && now > rep[i]) { rep[i] = now + 150; padDir(dx, dy); }
-      }
+      const held = (i, first, every) => { if (edge(i)) { rep[i] = now + first; return true; } if (btn(i) && now > rep[i]) { rep[i] = now + every; return true; } return false; };
+      for (const [i, dx, dy] of [[12, 0, -1], [13, 0, 1], [14, -1, 0], [15, 1, 0]]) if (held(i, 320, 150)) { MO.lastSrc = "pad"; padDir(dx, dy); }
       if (edge(0) && (MO.focus || inBox() || $("#mapmenu"))) { MO.lastSrc = "pad"; padA(); }
-      if (edge(1) && S().phase === "orders") padB();
-      if (edge(4)) cycleDie(-1);
-      if (edge(5)) cycleDie(1);
+      for (const [i, k] of [[6, -1], [7, 1]]) if (held(i, 400, 260)) { if (MO.menu) cycleDie(k); else zoomBy(k > 0 ? 0.75 : 1 / 0.75); }
+      if (edge(3)) padCard();
+      if (edge(2)) nextTab();
+      if (edge(9)) padSeal();
+      panStick(gp.axes[2] || 0, gp.axes[3] || 0);
       for (let i = 0; i < gp.buttons.length; i++) was[i] = btn(i);
     }
     requestAnimationFrame(poll);
   };
   poll();
-});
+}
+window.addEventListener("gamepadconnected", startPad);
+
+function panStick(ax, ay) {
+  const dz = 0.25;
+  if ((Math.abs(ax) < dz && Math.abs(ay) < dz) || VIEW.w >= 840) return;
+  const k = VIEW.w * 0.014;
+  VIEW.x = Math.max(-100, Math.min(840 - VIEW.w + 100, VIEW.x + (Math.abs(ax) >= dz ? ax : 0) * k));
+  VIEW.y = Math.max(-100, Math.min(780 - VIEW.h + 100, VIEW.y + (Math.abs(ay) >= dz ? ay : 0) * k));
+  applyView();
+}
+function padCard() {
+  if (!$("#popover").classList.contains("hidden")) { hidePopover(); return; }
+  const id = MO.focus || MO.menu || ($("#mapmenu") && $("#mapmenu").dataset.anchor);
+  if (!id || !PROVINCES[id]) return;
+  const [x, y] = screenOf(id); A.play("click"); showPopover(provinceCard(id), x, y);
+}
+function nextTab() {
+  const tabs = [...document.querySelectorAll("#side-tabs button")]; if (!tabs.length) return;
+  const i = tabs.findIndex((b) => b.classList.contains("active"));
+  tabs[(i + 1) % tabs.length].click(); A.play("click");
+}
+function padSeal() {
+  const st = S(); if (!st || st.phase !== "orders") return;
+  const b = $("#btn-seal"); if (!b) return;
+  const left = freeDice().length;
+  if (confirm(left ? `Sceller tes ordres ? Il te reste ${left} dé${left > 1 ? "s" : ""} sans ordre.` : "Sceller tes ordres pour cette manche ?")) { const b2 = $("#btn-seal"); if (b2) press(b2); } // le panneau a pu être redessiné pendant la question
+}
+
+// ---------------------------------------------------------------- page « test manette » (dans l'aide)
+const PAD_NAMES = ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "Vue", "Menu", "Clic stick gauche", "Clic stick droit", "Croix haut", "Croix bas", "Croix gauche", "Croix droite", "Xbox"];
+const PAD_USE = ["choisir", "revenir, fermer", "onglet suivant", "fiche de la province", "pris par le navigateur (onglets)", "pris par le navigateur (onglets)", "dé précédent, dézoomer", "dé suivant, zoomer", "", "sceller les ordres", "", "", "province, bouton", "province, bouton", "province, bouton", "province, bouton", ""];
+export function openPadTest() {
+  const m = $("#modal"); const seen = new Set();
+  m.innerHTML = `<div class="card padtest"><span class="card-kicker">MANETTE</span><h2>Tester la manette</h2>
+    <p>Appuie sur chaque bouton. Ceux qui s'allument arrivent jusqu'au jeu. Si un bouton fait aussi réagir le navigateur (onglet, zoom, retour…), note-le. <b>B</b> ferme cette page.</p>
+    <p class="pt-status" id="pt-status">Appuie sur un bouton pour réveiller la manette.</p>
+    <div class="pt-grid">${PAD_NAMES.map((n, i) => `<div class="pt-b" id="pt-${i}"><b>${n}</b><span>${PAD_USE[i] || "libre"}</span></div>`).join("")}</div>
+    <div class="pt-sticks"><span>Stick gauche <i id="pt-ls">0 · 0</i></span><span>Stick droit <i id="pt-rs">0 · 0</i></span></div>
+    <button class="btn btn-block" id="md-close">Fermer</button></div>`;
+  m.classList.remove("hidden");
+  $("#md-close").onclick = () => m.classList.add("hidden");
+  const tick = () => {
+    if (m.classList.contains("hidden") || !$("#pt-status")) return;
+    const gp = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
+    if (gp) {
+      $("#pt-status").textContent = `Manette : ${gp.id.slice(0, 60)} · ${gp.buttons.length} boutons`;
+      gp.buttons.forEach((b, i) => { const el = $(`#pt-${i}`); if (!el) return; if (b.pressed) seen.add(i); el.classList.toggle("on", b.pressed); el.classList.toggle("seen", seen.has(i)); });
+      const f = (v) => (v || 0).toFixed(1);
+      $("#pt-ls").textContent = `${f(gp.axes[0])} · ${f(gp.axes[1])}`; $("#pt-rs").textContent = `${f(gp.axes[2])} · ${f(gp.axes[3])}`;
+      startPad();
+    }
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
 
 export function closeMenu() { if (MO.menu) { MO.menu = null; render(); } }
 

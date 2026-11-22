@@ -1,13 +1,13 @@
 // Carte SVG, zoom et déplacement
-import * as A from "../audio.js?v=1795365668";
-import { HOUSES } from "../content.js?v=1795365668";
-import { LEGEND } from "../help.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
-import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795365668";
-import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795365668";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795365668";
-import { houseColor } from "./common.js?v=1795365668";
-import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import { HOUSES } from "../content.js?v=1795368011";
+import { LEGEND } from "../help.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
+import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795368011";
+import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795368011";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795368011";
+import { houseColor } from "./common.js?v=1795368011";
+import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795368011";
 
 export function buildMap() {
   const svg = $("#map");
@@ -103,7 +103,7 @@ export function fx(kind, prov, color) {
 
 export function applyView() { $("#map").setAttribute("viewBox", `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`); if (MAP.onView) MAP.onView(); }
 
-export function zoomBy(f) { const cx = VIEW.x + VIEW.w / 2, cy = VIEW.y + VIEW.h / 2; VIEW.w = Math.max(260, Math.min(840, VIEW.w * f)); VIEW.h = VIEW.w * 780 / 840; VIEW.x = Math.max(-100, Math.min(840 - VIEW.w + 100, cx - VIEW.w / 2)); VIEW.y = Math.max(-100, Math.min(780 - VIEW.h + 100, cy - VIEW.h / 2)); applyView(); }
+export function zoomBy(f) { const cx = VIEW.x + VIEW.w / 2, cy = VIEW.y + VIEW.h / 2; VIEW.w = Math.max(260, Math.min(840, VIEW.w * f)); VIEW.h = VIEW.w * 780 / 840; VIEW.x = Math.max(-100, Math.min(840 - VIEW.w + 100, cx - VIEW.w / 2)); VIEW.y = Math.max(-100, Math.min(780 - VIEW.h + 100, cy - VIEW.h / 2)); if (VIEW.w >= 840) { VIEW.x = 0; VIEW.y = 0; } applyView(); }
 
 $("#zoom-in").onclick = () => zoomBy(0.75);
 

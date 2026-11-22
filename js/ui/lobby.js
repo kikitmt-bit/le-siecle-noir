@@ -1,16 +1,16 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795365668";
-import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795365668";
-import * as E from "../engine.js?v=1795365668";
-import { hostStart, stopHost } from "../host.js?v=1795365668";
-import * as local from "../localnet.js?v=1795365668";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795365668";
-import { show, toast } from "./common.js?v=1795365668";
-import { shield } from "./draw.js?v=1795365668";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795365668";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795365668";
-import { palmaresHtml } from "./overlays.js?v=1795365668";
-import { render } from "./render.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795368011";
+import * as E from "../engine.js?v=1795368011";
+import { hostStart, stopHost } from "../host.js?v=1795368011";
+import * as local from "../localnet.js?v=1795368011";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795368011";
+import { show, toast } from "./common.js?v=1795368011";
+import { shield } from "./draw.js?v=1795368011";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795368011";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795368011";
+import { palmaresHtml } from "./overlays.js?v=1795368011";
+import { render } from "./render.js?v=1795368011";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
@@ -171,5 +171,6 @@ $("#btn-start").onclick = () => { A.unlock(); hostStart({ tutorial: $("#opt-tuto
 export function quitGame() {
   if (!confirm("Quitter cette partie et revenir à l'accueil ?\n\nEn ligne, tu pourras la reprendre depuis l'accueil tant qu'elle existe.")) return;
   try { speechSynthesis.cancel(); } catch {}
+  L.leaving = true;
   location.href = location.pathname + (new URLSearchParams(location.search).has("test") ? "?test" : "");
 }

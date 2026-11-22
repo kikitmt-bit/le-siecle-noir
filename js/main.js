@@ -1,14 +1,15 @@
 // LE SIÈCLE NOIR — application : branche les boutons et démarre
-import * as A from "./audio.js?v=1795365668";
-import { TAUNTS } from "./content.js?v=1795365668";
-import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795365668";
-import { narratorIcon, speak } from "./ui/announce.js?v=1795365668";
-import { show, toast } from "./ui/common.js?v=1795365668";
-import { refreshGames } from "./ui/games.js?v=1795365668";
-import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795365668";
-import { openModal } from "./ui/overlays.js?v=1795365668";
-import { render, renderTop } from "./ui/render.js?v=1795365668";
-import "./ui/clock.js?v=1795365668"; // boucle de temps (effets au chargement)
+import * as A from "./audio.js?v=1795368011";
+import { TAUNTS } from "./content.js?v=1795368011";
+import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795368011";
+import { narratorIcon, speak } from "./ui/announce.js?v=1795368011";
+import { show, toast } from "./ui/common.js?v=1795368011";
+import { refreshGames } from "./ui/games.js?v=1795368011";
+import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795368011";
+import { openModal } from "./ui/overlays.js?v=1795368011";
+import { render, renderTop } from "./ui/render.js?v=1795368011";
+import "./ui/clock.js?v=1795368011"; // boucle de temps (effets au chargement)
+import { uiBack } from "./ui/maporders.js?v=1795368011";
 
 // ---------------------------------------------------------------------
 // boutons globaux et démarrage
@@ -27,24 +28,30 @@ $("#btn-full").onclick = () => {
   } catch (e) { toast("Le plein écran n'est pas disponible sur cet appareil.", "#75603F"); }
 };
 
-// Le bouton B de la manette Xbox (et le bouton « retour » du navigateur) ne doit pas faire quitter la partie par erreur :
-// en partie, le retour arrière ferme seulement la fenêtre ouverte, ou ne fait rien.
-function guardBack() { if (L.code) history.pushState({ sn: 1 }, ""); }
-window.addEventListener("popstate", () => {
-  if (!L.code) return;
-  history.pushState({ sn: 1 }, "");
-  const open = document.querySelector("#modal:not(.hidden), #overlay:not(.hidden), #popover:not(.hidden)");
-  if (open) { const btn = open.querySelector("#md-close, #ov-close, .pop-x"); if (btn) btn.click(); else open.classList.add("hidden"); }
-  else toast("Pour quitter la partie, utilise le bouton « Quitter » en haut à droite.", "#75603F", 3000);
-});
-document.addEventListener("click", guardBack, { once: true });
-// manette : B ferme une fenêtre (sans quitter la page)
+// Le bouton B de la manette Xbox est le « retour » du navigateur : en partie, il ne doit jamais faire quitter le jeu.
+// On garde quelques entrées d'historique « tampon » au-dessus de la page, posées seulement pendant un vrai geste
+// (clic, touche, toucher) : Chrome et Edge sautent les entrées posées sans geste, ce qui faisait quitter le jeu au 2e appui.
+// Chaque retour ferme la fenêtre ouverte ou revient d'un pas dans l'ordre en cours, sinon il ne fait rien.
+const GUARD = 4;
+function armBack() { if (!L.code) return; const d = (history.state && history.state.sn) || 0; try { for (let i = d + 1; i <= GUARD; i++) history.pushState({ sn: i }, ""); } catch {} }
+["pointerdown", "keydown", "touchend"].forEach((t) => document.addEventListener(t, armBack, true));
+let lastBack = 0;
+function backOnce() {
+  const now = Date.now(); if (now - lastBack < 400) return; // sur Xbox, B arrive deux fois : retour du navigateur et manette
+  lastBack = now;
+  if (!uiBack()) toast("Pour quitter la partie, utilise le bouton « Quitter » en haut à droite.", "#75603F", 3000);
+}
+window.addEventListener("popstate", () => { if (L.code) backOnce(); });
+// dernier filet : quitter la page en pleine partie demande confirmation (sauf en test et en passant par « Quitter »)
+const TEST = new URLSearchParams(location.search).has("test");
+window.addEventListener("beforeunload", (e) => { if (L.code && !L.leaving && !TEST && L.state && L.state.phase !== "lobby") { e.preventDefault(); e.returnValue = ""; } });
+// manette branchée sur PC (où B n'est pas le retour du navigateur) : même effet
 window.addEventListener("gamepadconnected", () => {
   let was = false;
   const poll = () => {
     const gp = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
     const b = gp && gp.buttons[1] && gp.buttons[1].pressed;
-    if (b && !was) { const open = document.querySelector("#modal:not(.hidden), #overlay:not(.hidden)"); const btn = open && open.querySelector("#md-close, #ov-close"); if (btn) btn.click(); }
+    if (b && !was && L.code) backOnce();
     was = !!b; requestAnimationFrame(poll);
   };
   poll();

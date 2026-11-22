@@ -1,21 +1,22 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795365668";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795365668";
-import * as E from "../engine.js?v=1795365668";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795365668";
-import { hostReplay } from "../host.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795365668";
-import { introHtml, nextModal } from "./aides.js?v=1795365668";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795365668";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795365668";
-import { shield, woodcut } from "./draw.js?v=1795365668";
-import { GRAVURES } from "../gravures.js?v=1795365668";
-import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795365668";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795365668";
-import { dropGame } from "./games.js?v=1795365668";
-import { render } from "./render.js?v=1795365668";
-import { interludeLines } from "./reveal.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795368011";
+import * as E from "../engine.js?v=1795368011";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795368011";
+import { hostReplay } from "../host.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795368011";
+import { introHtml, nextModal } from "./aides.js?v=1795368011";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795368011";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795368011";
+import { shield, woodcut } from "./draw.js?v=1795368011";
+import { GRAVURES } from "../gravures.js?v=1795368011";
+import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795368011";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795368011";
+import { dropGame } from "./games.js?v=1795368011";
+import { render } from "./render.js?v=1795368011";
+import { interludeLines } from "./reveal.js?v=1795368011";
+import { openPadTest } from "./maporders.js?v=1795368011";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -247,7 +248,7 @@ export function bindOverlay() {
     render();
   };
   if ($("#btn-replay")) $("#btn-replay").onclick = () => hostReplay();
-  if ($("#btn-home")) $("#btn-home").onclick = () => { if (L.code) dropGame(L.code); location.href = location.pathname + (new URLSearchParams(location.search).has("test") ? "?test" : ""); };
+  if ($("#btn-home")) $("#btn-home").onclick = () => { if (L.code) dropGame(L.code); L.leaving = true; location.href = location.pathname + (new URLSearchParams(location.search).has("test") ? "?test" : ""); };
   if ($("#btn-next")) $("#btn-next").onclick = () => { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); };
 }
 
@@ -259,7 +260,7 @@ export function openModal(kind, data) {
   if (kind === "unlock") { const u = UNLOCK_INFO[data]; html = `<div class="card"><span class="card-kicker">PREMIÈRE PARTIE · MANCHE ${S().round}</span><div class="intro-icon">${u.icon.replace('width="16" height="16"', 'width="56" height="56"')}</div><h2 style="text-align:center">${u.title}</h2><p>${u.text}</p><button class="btn btn-red btn-block" id="md-close">Compris</button></div>`; }
   if (kind === "score") { const st = S(), pid = me(); const e = pid ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null; html = `<div class="card"><span class="card-kicker">COMMENT GAGNER</span><h2>Le score</h2><p>${GLOSSARY.score[1]}</p>${e ? `<div class="score-box"><b>${e.total}</b> points aujourd'hui :<br>${ICON.prestige}Prestige ${e.prestige} · ${ICON.province}provinces ${e.provinces} · régions ${e.regions} · objectifs ${e.objectives} · ${ICON.family}famille ${e.family}</div>` : ""}<p class="hint">Les objectifs secrets ne comptent que s'ils sont réussis à la fin. Détail dans l'onglet « Ma maison ».</p><button class="btn btn-block" id="md-close">Fermer</button></div>`; }
   if (kind === "house") html = `<div class="card">${houseHtml(L.ui.viewHouse, false)}<button class="btn btn-block" id="md-close" style="margin-top:12px">Fermer</button></div>`;
-  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><button class="btn btn-small" data-intro="0">Revoir l'introduction</button>
+  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><div class="row wrap"><button class="btn btn-small" data-intro="0">Revoir l'introduction</button><button class="btn btn-small" data-padtest="1">Tester la manette</button></div>
     <p><b>But :</b> avoir le plus de points après la dernière manche (10, ou 7 en partie courte). Score = Prestige + <b>3 par province</b> + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille + 1 par tranche de 10 or. Quinze provinces = victoire immédiate.</p>
     <h3>Une manche</h3><ul><li><b>Dilemmes</b> secrets : une affaire de ta maison (les autres n'en apprennent qu'une rumeur), une affaire avec un rival (révélée à tous). Aux manches 3, 6 et 9, le <b>Conseil du Roi</b> : un vote public (on ne vote jamais pour soi).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (2 à 4 armées), Intriguer (poison, séduction, corruption). Un double donne un dé bonus. Tu peux relancer un dé (2 or) et offrir une fête au peuple (3 or, −15 Colère).</li><li><b>Révélation partagée</b> : tout le monde voit les mêmes cartes ; on passe à la suivante quand tous ont validé.</li><li><b>Trois ans passent</b> : revenus (1 or par province, +1 par mariage), solde des troupes (1 or pour 5 armées, sinon désertions), 2 armées dans ta capitale + bonus de régions, vieillissement, naissances, morts, révoltes, peste.</li></ul>
     <h3>Les maisons</h3><p>Bâtisseurs (Valcourt) : +1 en défense, solde +1. Marchands (Morlanges) : or des côtes, mercenaires à 2 or, +3 Colère par manche. Ombres (Ravenel) : intrigues meilleures et moins chères, mariages sans or. Lignée sacrée (Aubrac) : +1 Prestige par manche si Colère sous 50, −2 or par manche.</p>
@@ -268,10 +269,12 @@ export function openModal(kind, data) {
     <h3>Bluff et diplomatie</h3><ul><li><b>Dé caché</b> : chaque joueur a un dé que les autres ne voient pas.</li><li><b>Mariage</b> : alliance permanente, +1 or par manche. <b>Trêve</b> : 3 manches. Attaquer un allié ou rompre une trêve = trahison (−5 Prestige).</li><li><b>Or</b> : tu peux envoyer de l'or à qui tu veux (cadeau, rançon, achat de voix).</li><li><b>Accusation</b> : un poison réussi est anonyme ; accuser juste rapporte, accuser à tort coûte.</li></ul>
     <h3>Jauges</h3><p>Colère à 80 en fin de manche : une province (pas la capitale) se révolte et devient neutre, puis la Colère retombe à 50. Peur : +1 en défense tous les 25 points, mais à 50 plus aucun mariage.</p>
     <h3>Le favori</h3><p>Le joueur au meilleur score visible porte la couronne : battre ses armées rapporte +2 Prestige. La maison la plus en retard reçoit chaque manche +2 armées et +2 or. Dernière manche : conquêtes à 3 Prestige, scores cachés, puis le Couronnement révèle les objectifs secrets.</p>
+    <h3>À la manette</h3><ul><li><b>Croix</b> : passer d'une province à l'autre (ou d'un bouton à l'autre dans un menu). <b>A</b> : choisir. <b>B</b> : revenir ou fermer.</li><li><b>LT / RT</b> : changer de dé dans le menu d'une province, sinon zoomer la carte. <b>Stick droit</b> : déplacer la carte zoomée.</li><li><b>Y</b> : fiche de la province. <b>X</b> : onglet suivant du panneau. <b>Menu</b> : sceller tes ordres.</li></ul>
     <button class="btn btn-block" id="md-close">Fermer</button></div>`;
   m.innerHTML = html; m.classList.remove("hidden");
   const close = () => { m.classList.add("hidden"); setTimeout(nextModal, 50); };
   m.querySelectorAll("#md-close").forEach((b) => (b.onclick = close));
+  m.querySelectorAll("[data-padtest]").forEach((b) => (b.onclick = () => openPadTest()));
   m.querySelectorAll("[data-intro]").forEach((b) => (b.onclick = () => openModal("intro", +b.dataset.intro)));
   m.querySelectorAll("[data-fam]").forEach((b) => (b.onclick = () => { A.play("click"); openModal("family", +b.dataset.fam); }));
   m.onclick = (e) => { if (e.target === m && !["intro", "unlock", "family"].includes(kind)) close(); };

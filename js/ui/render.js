@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795365668";
-import { HOUSES } from "../content.js?v=1795365668";
-import * as E from "../engine.js?v=1795365668";
-import { ICON } from "../help.js?v=1795365668";
-import { PROVINCES } from "../map.js?v=1795365668";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795365668";
-import { applyCoach } from "./aides.js?v=1795365668";
-import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795365668";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795365668";
-import { shield } from "./draw.js?v=1795365668";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795365668";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795365668";
-import { drawArrows, updateMap } from "./map.js?v=1795365668";
-import { myDice, saveOrders } from "./orders.js?v=1795365668";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795365668";
-import { afterRender } from "./maporders.js?v=1795365668";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795365668";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795365668";
+import * as A from "../audio.js?v=1795368011";
+import { HOUSES } from "../content.js?v=1795368011";
+import * as E from "../engine.js?v=1795368011";
+import { ICON } from "../help.js?v=1795368011";
+import { PROVINCES } from "../map.js?v=1795368011";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795368011";
+import { applyCoach } from "./aides.js?v=1795368011";
+import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795368011";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795368011";
+import { shield } from "./draw.js?v=1795368011";
+import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795368011";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795368011";
+import { drawArrows, updateMap } from "./map.js?v=1795368011";
+import { myDice, saveOrders } from "./orders.js?v=1795368011";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795368011";
+import { afterRender } from "./maporders.js?v=1795368011";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795368011";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795368011";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
