@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" seed="5"/><feColorMatrix values="0 0 0 0 .18 0 0 0 0 .11 0 0 0 0 .05 0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+    <radialGradient id="bord" cx="50%" cy="46%" r="52%"><stop offset=".7" stop-color="#8A5A26" stop-opacity="0"/><stop offset="1" stop-color="#8A5A26" stop-opacity=".28"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#1B130D"/>
+  <g transform="translate(256 256) scale(1.0) translate(-256 -256)">
+    <circle cx="256" cy="256" r="236" fill="#F0E4C7"/>
+    <circle cx="256" cy="256" r="236" fill="#F0E4C7" filter="url(#grain)" opacity=".3"/>
+    <circle cx="256" cy="256" r="236" fill="url(#bord)"/>
+    <circle cx="256" cy="256" r="231" fill="none" stroke="#241811" stroke-width="9"/>
+    <circle cx="256" cy="256" r="217" fill="none" stroke="#241811" stroke-width="2.5"/>
+    <g transform="translate(256 258) scale(.86) translate(-261 -273)">
+  <defs>
+    <filter id="encre" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="11"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
+    <path id="corbeau" d="
+      M142 152
+      C 154 131 180 119 206 118
+      C 216 104 236 96 256 96
+      C 277 97 291 108 294 126
+      C 296 134 298 140 302 148
+      C 318 182 332 228 338 288
+      L 368 372 L 380 428 L 350 410 L 334 352
+      C 330 332 326 320 318 312
+      C 306 306 296 305 288 305
+      C 262 305 234 292 220 268
+      C 208 248 204 228 206 206
+      L 198 200 L 208 193 L 197 186 L 207 180 L 197 172 L 206 166 L 199 160
+      C 182 163 162 160 144 155 Z"/>
+    <!-- la croix est évidée autour de l'oiseau : un filet de vide, quel que soit le fond -->
+    <mask id="evide" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512"><rect width="512" height="512" fill="#fff"/><use href="#corbeau" fill="#000" stroke="#000" stroke-width="11" stroke-linejoin="round"/></mask>
+  </defs>
+  <g filter="url(#encre)" stroke-linejoin="round" stroke-linecap="round">
+    <!-- la croix de peste -->
+    <g mask="url(#evide)">
+    <path d="M250 314 L298 314 L295 358 L366 352 L370 402 L295 396 L300 484 L248 484 L253 396 L178 402 L182 352 L253 358 Z" fill="#A3221A" stroke="#241811" stroke-width="7"/>
+    <g stroke="#241811" stroke-width="2.4" fill="none" opacity=".7">
+      <path d="M286 328 L284 350 M 288 406 L 291 474 M 190 364 L 244 368 M 192 390 L 244 388"/>
+    </g>
+    </g>
+    <!-- le corbeau -->
+    <use href="#corbeau" fill="#241811"/>
+    <!-- bec : fente, narine, soies -->
+    <path d="M150 154 C 168 157 186 158 202 159" stroke="#EADBB6" stroke-width="2.2" fill="none"/>
+    <path d="M180 128 C 189 125 198 124 207 124 M 178 135 C 187 131 197 130 205 130" stroke="#EADBB6" stroke-width="1.6" fill="none" opacity=".75"/>
+    <!-- oeil -->
+    <circle cx="234" cy="120" r="5.4" fill="#EADBB6"/><circle cx="233" cy="120" r="2.9" fill="#241811"/>
+    <!-- plumes gravées -->
+    <g stroke="#EADBB6" fill="none" stroke-width="2.4">
+      <path d="M276 152 C 306 196 334 268 362 366"/>
+      <path d="M232 240 C 262 280 300 314 352 366"/>
+      <path d="M314 272 C 328 302 342 334 356 364" stroke-width="1.8"/>
+      <path d="M300 290 C 318 316 334 340 350 364" stroke-width="1.8"/>
+      <path d="M272 178 C 280 190 290 196 300 198 M 266 200 C 276 212 288 218 302 220 M 264 222 C 276 236 292 242 308 244 M 270 246 C 282 258 296 264 312 266" stroke-width="1.8"/>
+      <path d="M352 394 L 372 422 M 342 380 L 360 410" stroke-width="1.8"/>
+      <path d="M214 214 C 218 226 224 236 232 242 M 218 248 C 226 260 238 268 250 274 M 212 188 C 214 196 218 202 224 206" stroke-width="1.6"/>
+      <path d="M246 134 C 256 140 266 142 278 140 M 252 152 C 262 158 272 160 284 158" stroke-width="1.4" opacity=".7"/>
+    </g>
+    <!-- pattes agrippées au bout de la croix -->
+    <g stroke="#241811" fill="none">
+      <path d="M266 300 L 263 316 M 290 302 L 288 316" stroke-width="8"/>
+      <path d="M263 315 L 240 315 C 235 316 234 322 239 326" stroke-width="5.5"/>
+      <path d="M263 315 L 284 315 M 288 315 L 268 316 C 263 317 263 323 267 326" stroke-width="5.5"/>
+      <path d="M288 315 L 306 315 C 311 317 311 323 307 326" stroke-width="5.5"/>
+    </g>
+    <!-- couronne -->
+    <path d="M232 102 L 226 74 L 242 88 L 256 64 L 268 88 L 286 76 L 280 106 C 266 100 248 99 232 102 Z" fill="#A9843A" stroke="#241811" stroke-width="5"/>
+    <circle cx="226" cy="72" r="5" fill="#241811"/><circle cx="256" cy="62" r="5.5" fill="#241811"/><circle cx="286" cy="74" r="5" fill="#241811"/>
+  </g>
+</g>
+  </g>
+</svg>

@@ -1,22 +1,21 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795349588";
-import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795349588";
-import * as E from "../engine.js?v=1795349588";
-import { hostStart, stopHost } from "../host.js?v=1795349588";
-import * as local from "../localnet.js?v=1795349588";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795349588";
-import { show, toast } from "./common.js?v=1795349588";
-import { shield } from "./draw.js?v=1795349588";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795349588";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795349588";
-import { palmaresHtml } from "./overlays.js?v=1795349588";
-import { render } from "./render.js?v=1795349588";
+import * as A from "../audio.js?v=1795350372";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795350372";
+import * as E from "../engine.js?v=1795350372";
+import { hostStart, stopHost } from "../host.js?v=1795350372";
+import * as local from "../localnet.js?v=1795350372";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795350372";
+import { show, toast } from "./common.js?v=1795350372";
+import { shield } from "./draw.js?v=1795350372";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795350372";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795350372";
+import { palmaresHtml } from "./overlays.js?v=1795350372";
+import { render } from "./render.js?v=1795350372";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
 // ---------------------------------------------------------------------
 export function initHome() {
-  $("#home-crest").innerHTML = HUMAN_HOUSES.map((h) => shield(h, 34)).join("");
   const ph = palmaresHtml(); if (ph) $("#home-msg").insertAdjacentHTML("afterend", ph);
   $("#in-name").value = store.get("sn_name") || "";
   $("#in-hname").value = store.get("sn_hname") || "";

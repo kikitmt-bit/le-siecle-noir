@@ -1,17 +1,17 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795349588";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795349588";
-import * as E from "../engine.js?v=1795349588";
-import { ICON } from "../help.js?v=1795349588";
-import { PROVINCES } from "../map.js?v=1795349588";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795349588";
-import { speak } from "./announce.js?v=1795349588";
-import { houseColor, houseName, setInput } from "./common.js?v=1795349588";
-import { shield } from "./draw.js?v=1795349588";
-import { entryHtml } from "./house.js?v=1795349588";
-import { drawArrows, fx, updateMap } from "./map.js?v=1795349588";
-import { colorize, houseTag } from "./names.js?v=1795349588";
-import { battleQuip } from "./news.js?v=1795349588";
+import * as A from "../audio.js?v=1795350372";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795350372";
+import * as E from "../engine.js?v=1795350372";
+import { ICON } from "../help.js?v=1795350372";
+import { PROVINCES } from "../map.js?v=1795350372";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795350372";
+import { speak } from "./announce.js?v=1795350372";
+import { houseColor, houseName, setInput } from "./common.js?v=1795350372";
+import { shield } from "./draw.js?v=1795350372";
+import { entryHtml } from "./house.js?v=1795350372";
+import { drawArrows, fx, updateMap } from "./map.js?v=1795350372";
+import { colorize, houseTag } from "./names.js?v=1795350372";
+import { battleQuip } from "./news.js?v=1795350372";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],

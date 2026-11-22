@@ -1,13 +1,13 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795349588";
-import * as E from "../engine.js?v=1795349588";
-import { ICON, term } from "../help.js?v=1795349588";
-import { PROVINCES } from "../map.js?v=1795349588";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795349588";
-import { houseName, setInput } from "./common.js?v=1795349588";
-import { bindDiplomacy } from "./diplomacy.js?v=1795349588";
-import { dieSvg, shield } from "./draw.js?v=1795349588";
-import { render } from "./render.js?v=1795349588";
+import * as A from "../audio.js?v=1795350372";
+import * as E from "../engine.js?v=1795350372";
+import { ICON, term } from "../help.js?v=1795350372";
+import { PROVINCES } from "../map.js?v=1795350372";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795350372";
+import { houseName, setInput } from "./common.js?v=1795350372";
+import { bindDiplomacy } from "./diplomacy.js?v=1795350372";
+import { dieSvg, shield } from "./draw.js?v=1795350372";
+import { render } from "./render.js?v=1795350372";
 
 // ---- ordres ----
 export function myDice() {

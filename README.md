@@ -21,7 +21,7 @@ Hébergé sur GitHub Pages, synchronisé en temps réel avec Firebase (Realtime 
 - `js/main.js` : démarrage et boutons globaux ; `js/ui/*.js` : l'interface, un fichier par sujet (accueil, carte, ordres, diplomatie, révélation…) ; `js/host.js` : l'arbitre
 - `js/net.js`, `js/firebase-config.js` : la synchronisation Firebase ; `js/localnet.js` : le même réseau en mémoire pour le mode solo
 - `js/audio.js` : les sons, générés dans le navigateur
-- `manifest.webmanifest`, `sw.js`, `icons/`, `og.png` : appli installable, icônes et image de partage (refaites avec `node tools/make-assets.cjs`)
+- `manifest.webmanifest`, `sw.js`, `icons/`, `og.jpg` : appli installable, icônes, logo et image de partage. L'emblème est dessiné à la main dans `icons/embleme.svg` ; tout le reste en découle avec `python tools/make_assets.py` (Playwright + Chrome, Pillow)
 - `tests/` : les tests (voir `tests/README.md`)
 
 ## Mettre en ligne

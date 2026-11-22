@@ -1,14 +1,14 @@
 // LE SIÈCLE NOIR — application : branche les boutons et démarre
-import * as A from "./audio.js?v=1795349588";
-import { TAUNTS } from "./content.js?v=1795349588";
-import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795349588";
-import { narratorIcon, speak } from "./ui/announce.js?v=1795349588";
-import { show, toast } from "./ui/common.js?v=1795349588";
-import { refreshGames } from "./ui/games.js?v=1795349588";
-import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795349588";
-import { openModal } from "./ui/overlays.js?v=1795349588";
-import { render, renderTop } from "./ui/render.js?v=1795349588";
-import "./ui/clock.js?v=1795349588"; // boucle de temps (effets au chargement)
+import * as A from "./audio.js?v=1795350372";
+import { TAUNTS } from "./content.js?v=1795350372";
+import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795350372";
+import { narratorIcon, speak } from "./ui/announce.js?v=1795350372";
+import { show, toast } from "./ui/common.js?v=1795350372";
+import { refreshGames } from "./ui/games.js?v=1795350372";
+import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795350372";
+import { openModal } from "./ui/overlays.js?v=1795350372";
+import { render, renderTop } from "./ui/render.js?v=1795350372";
+import "./ui/clock.js?v=1795350372"; // boucle de temps (effets au chargement)
 
 // ---------------------------------------------------------------------
 // boutons globaux et démarrage

@@ -49,6 +49,21 @@ Tailles minimales : 15 px pour lire, 13 px pour une étiquette en petites capita
 - **Icônes** : gravées, monochromes. Trait d'encre, fond papier, une seule touche de rubrique. Jamais de couleurs d'émoji. 18 px minimum, toujours accompagnées d'un mot.
 - **Surfaces sombres** (révélation, bandeaux, ragots) : fond nuit, texte parchemin, filets et titres or terni clair.
 
+## Logo
+
+Fait au chantier 3.5. Deux pièces, toujours dans cet ordre :
+
+- **L'emblème** : un corbeau couronné perché sur une croix de peste. Corbeau à l'encre, plumes taillées en traits de papier, couronne or terni sans fleur de lys, croix rubrique. Dessiné à la main en vectoriel dans `icons/embleme.svg`, avec un léger tremblé d'encre (filtre SVG) pour ne pas faire net et numérique. La croix est évidée autour de l'oiseau : l'emblème se pose sur n'importe quel papier sans liseré.
+- **Le mot-symbole** : « Le Siècle Noir » en Grenze Gotisch 700, le S et le N en rubrique. En dessous, si la place le permet : un filet rouge à croix ✠, puis « Anno Domini 1347 » en petites capitales, encre pâle.
+
+Usages :
+
+- Accueil : l'emblème au-dessus du mot-symbole. Barre du haut : le mot-symbole seul (l'emblème disparaîtrait sur la nuit).
+- Icônes de l'appli et favicon (`icons/icone.svg`) : un sceau, disque de parchemin cerclé d'encre sur fond nuit, l'emblème au centre.
+- Image de partage (`og.jpg`) et logo complet sur fond transparent (`icons/logo.png`).
+- Toutes ces images se refont depuis l'emblème avec `python tools/make_assets.py`. On ne retouche jamais les PNG à la main.
+- Jamais l'emblème en couleurs inversées, étiré, ou posé directement sur la nuit sans son disque de parchemin.
+
 ## Illustrations
 
 Méthode validée au chantier 3.2 :

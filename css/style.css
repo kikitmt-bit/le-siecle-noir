@@ -41,7 +41,7 @@ button { font-family: inherit; color: inherit; }
 .home-card, .lobby-card { width: min(480px, 100%); background: var(--parch); border: 3px solid var(--ink); outline: 2px solid var(--ink3); outline-offset: -12px; padding: 36px 34px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.6); margin: auto; }
 .home-card h1 { font-size: 56px; margin: 6px 0 8px; line-height: 1; }
 .home-sub { font-size: 17px; line-height: 1.4; color: var(--ink2); margin: 0 0 22px; font-style: italic; }
-.home-crest { display: flex; justify-content: center; gap: 6px; }
+.home-emblem { display: block; width: 128px; height: 128px; margin: -8px auto 0; }
 .field { display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 14px; }
 .field span { font-family: var(--caps); font-size: 16px; font-weight: 600; letter-spacing: .04em; font-variant-caps: all-small-caps; }
 input { font-family: var(--serif); font-size: 18px; padding: 10px 12px; border: 2px solid var(--ink); border-radius: 2px; background: var(--cream); color: var(--ink); min-height: 46px; }
@@ -845,6 +845,7 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
   .hud-res .term { font-size: 13.5px; }
   .card h2 { font-size: 34px; }
   .home-card h1 { font-size: 50px; }
+  .home-emblem { width: 104px; height: 104px; }
 }
 .guide .btn { font-size: 16px; padding: 0 14px; min-height: 42px; }
 .hud-btns { flex-wrap: nowrap; }
