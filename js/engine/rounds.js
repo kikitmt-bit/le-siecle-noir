@@ -1,14 +1,14 @@
 // Début de manche : revenus, événements du monde, dés
-import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795380938";
-import { PROVINCES, REGIONS } from "../map.js?v=1795380938";
-import { aiOffers } from "./ai.js?v=1795380938";
-import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795380938";
-import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795380938";
-import { dealDilemmas } from "./dilemmas.js?v=1795380938";
-import { seedPlague } from "./effects.js?v=1795380938";
-import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795380938";
-import { estimateScore } from "./scoring.js?v=1795380938";
-import { killPerson } from "./succession.js?v=1795380938";
+import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795381958";
+import { PROVINCES, REGIONS } from "../map.js?v=1795381958";
+import { aiOffers } from "./ai.js?v=1795381958";
+import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795381958";
+import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795381958";
+import { dealDilemmas } from "./dilemmas.js?v=1795381958";
+import { seedPlague } from "./effects.js?v=1795381958";
+import { deName, heirs, king, kingLabel, mother, naturalEpithet, newPerson, personTitle, takenNames } from "./people.js?v=1795381958";
+import { estimateScore } from "./scoring.js?v=1795381958";
+import { killPerson } from "./succession.js?v=1795381958";
 
 // ---------- début de manche ----------
 export function snapshotPlayers(state) {
@@ -87,6 +87,7 @@ export function passTime(state, priv, rng, out) {
       const capPlague = pl.capital && state.provinces[pl.capital].plague > 0;
       for (const m of fam.members.filter((x) => x.alive && ["king", "queen", "child", "widow"].includes(x.role))) {
         m.age += 3;
+        { const old = personTitle(m); if (naturalEpithet(state, pid, m)) { const t = `${old}, ${deName(state, pid)} : on ne l'appelle plus que ${personTitle(m)}.`; out.push({ kind: "event", text: t, pid }); chron(state, t, "text"); } }
         let target = m.age < 40 ? 0 : m.age < 50 ? 1 : m.age < 60 ? 2 : m.age < 68 ? 3 : 4;
         if (m.trait === "Robuste") target--;
         if (m.trait === "Fragile") target++;

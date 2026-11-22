@@ -59,7 +59,7 @@ const SOUNDS = {
 };
 
 // ---- les enregistrements ----
-import { SONS } from "./sons.js?v=1795380938";
+import { SONS } from "./sons.js?v=1795381958";
 const SAMPLES = { dice: 0.9, coins: 0.7, seal: 0.9, page: 0.6, card: 0.6, march: 0.55, battle: 0.8, bell: 0.55, bells: 0.5, knell: 0.75, crows: 0.5, ambience: 1 };
 const buf = {};
 function loadSamples() {

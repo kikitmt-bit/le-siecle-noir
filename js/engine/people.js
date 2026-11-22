@@ -1,6 +1,6 @@
 // Famille : accesseurs et création des personnages
-import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795380938";
-import { pick, uid } from "./core.js?v=1795380938";
+import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795381958";
+import { pick, uid } from "./core.js?v=1795381958";
 
 // ---------- famille ----------
 export function family(state, pid) { return state.families[pid]; }
@@ -25,7 +25,21 @@ export function ownerOf(state, person) { for (const p of Object.keys(state.famil
 
 export function deName(state, pid) { const pl = state.players[pid]; if (!pl) return "des rebelles"; if (pl.house === "anglais") return "d'Angleterre"; const n = pl.hname || HOUSES[pl.house].name; return /^[AEIOUÂÉ]/i.test(n) ? "d'" + n : "de " + n; }
 
-export const FEM = { "le Boucher": "la Bouchère", "l'Empoisonneur": "l'Empoisonneuse", "le Traître": "la Traîtresse", "le Cruel": "la Cruelle", "le Maudit": "la Maudite", "le Parricide": "la Parricide", "l'Étrangleur": "l'Étrangleuse", "le Pestilentiel": "la Pestilentielle", "le Tricheur": "la Tricheuse", "le Couard": "la Couarde" };
+export const FEM = { "le Boucher": "la Bouchère", "l'Empoisonneur": "l'Empoisonneuse", "le Traître": "la Traîtresse", "le Cruel": "la Cruelle", "le Maudit": "la Maudite", "le Parricide": "la Parricide", "l'Étrangleur": "l'Étrangleuse", "le Pestilentiel": "la Pestilentielle", "le Tricheur": "la Tricheuse", "le Couard": "la Couarde", "le Vieux": "la Vieille", "le Conquérant": "la Conquérante", "le Malheureux": "la Malheureuse" };
+// Surnoms que la vie donne (âge, visage, guerres) : ils ne remplacent jamais un surnom gagné par un acte ou une infirmité de naissance
+export const NATURAL_EPITHETS = ["le Chauve", "le Vieux", "le Conquérant", "le Malheureux"];
+export function naturalEpithet(state, pid, m) {
+  if (!m.alive || m.infirm || m.epithets.some((e) => !NATURAL_EPITHETS.includes(e))) return null;
+  const isKing = king(state, pid) === m;
+  let ep = null;
+  if (isKing && (m.won || 0) >= 4) ep = "le Conquérant";
+  else if (isKing && (m.lost || 0) >= 3 && !(m.won || 0)) ep = "le Malheureux";
+  else if (m.sex === "m" && m.age >= 50 && faceTags(m.face).includes("chauve")) ep = "le Chauve";
+  else if (m.age >= 70) ep = "le Vieux";
+  if (!ep || m.epithets.includes(ep)) return null;
+  m.epithets.push(ep);
+  return ep;
+}
 
 export function personTitle(p) {
   if (!p) return "personne";

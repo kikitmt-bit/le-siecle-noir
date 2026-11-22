@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795380938";
-import * as E from "../engine.js?v=1795380938";
-import { ICON } from "../help.js?v=1795380938";
-import { $, L, S, esc, me } from "../state.js?v=1795380938";
-import { scoresHidden, houseName } from "./common.js?v=1795380938";
-import { shield } from "./draw.js?v=1795380938";
-import { colorize } from "./names.js?v=1795380938";
-import { openModal } from "./overlays.js?v=1795380938";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795380938";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795381958";
+import * as E from "../engine.js?v=1795381958";
+import { ICON } from "../help.js?v=1795381958";
+import { $, L, S, esc, me } from "../state.js?v=1795381958";
+import { scoresHidden, houseName } from "./common.js?v=1795381958";
+import { shield } from "./draw.js?v=1795381958";
+import { colorize } from "./names.js?v=1795381958";
+import { openModal } from "./overlays.js?v=1795381958";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795381958";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -137,12 +137,18 @@ function drawnPortrait(m, color) {
 // Portrait gravé (img/portraits/, 240×288, yeux alignés en (88.8, 120) et (151.2, 120)) + calques d'état vectoriels.
 // Dans ce repère 120×140, l'image est réduite à 104 px de large : les yeux tombent en (46.5, 62) et (73.5, 62).
 // fichier du visage gravé d'un personnage et son recentrage (null pour un nourrisson dessiné)
+// âge du visage gravé : j = 16–29, m = 30–49, v = 50+. Les visages « chauve » n'ont perdu leurs cheveux que dans
+// leur version âgée : un personnage surnommé « le Chauve » prend donc cette version à tout âge adulte.
+function ageCode(m, face) {
+  if (/Chauve/.test(m.infirm || "") && E.faceTags(face).includes("chauve")) return "v";
+  return m.age < 30 ? "j" : m.age < 50 ? "m" : "v";
+}
 export function portraitSrc(m) {
   if (m.age < 6) return null;
   const child = m.age < 16;
   const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
   if (!face) return null;
-  const name = child ? face : `${face}${m.age < 30 ? "j" : m.age < 50 ? "m" : "v"}`;
+  const name = child ? face : `${face}${ageCode(m, face)}`;
   return { src: `img/portraits/${name}.webp`, dx: PORTRAIT_DX[name] || 0 };
 }
 
@@ -157,7 +163,7 @@ export function portraitSvg(m, color) {
   const child = m.age < 16;
   const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
   if (!face) return drawnPortrait(m, color);
-  const src = child ? `${face}.webp` : `${face}${m.age < 30 ? "j" : m.age < 50 ? "m" : "v"}.webp`;
+  const src = child ? `${face}.webp` : `${face}${ageCode(m, face)}.webp`;
   const ink = "#1B130D", gold = "#A9843A";
   const L = 46.5, R = 73.5, Y = 62;
   const sick = m.alive && m.health >= 3, dying = m.alive && m.health >= 4;

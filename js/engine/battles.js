@@ -1,14 +1,14 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795380938";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795380938";
-import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795380938";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795380938";
-import { validateOrders } from "./dilemmas.js?v=1795380938";
-import { addEpithet } from "./effects.js?v=1795380938";
-import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795380938";
-import { passTime } from "./rounds.js?v=1795380938";
-import { prepareResult } from "./scoring.js?v=1795380938";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795380938";
+import { PROVINCES } from "../map.js?v=1795381958";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795381958";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795381958";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795381958";
+import { validateOrders } from "./dilemmas.js?v=1795381958";
+import { addEpithet } from "./effects.js?v=1795381958";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795381958";
+import { passTime } from "./rounds.js?v=1795381958";
+import { prepareResult } from "./scoring.js?v=1795381958";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795381958";
 
 export const FEAST_COST = 3;
 // La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)
@@ -196,7 +196,7 @@ export function resolveRound(state, priv, inputs, rng) {
     const attWins = best.total > defTotal && (totals.length === 1 || best.total > totals[1].total);
     const defName = def ? maisonName(state, def) : "la milice";
     const leaderLost = (loser) => loser && state.leader && loser === state.leader;
-    for (const a of totals) { state.players[a.pid].stats.attacks = (state.players[a.pid].stats.attacks || 0) + 1; if (!(attWins && a === best)) state.players[a.pid].stats.attackLost = (state.players[a.pid].stats.attackLost || 0) + 1; }
+    for (const a of totals) { state.players[a.pid].stats.attacks = (state.players[a.pid].stats.attacks || 0) + 1; if (!(attWins && a === best)) { state.players[a.pid].stats.attackLost = (state.players[a.pid].stats.attackLost || 0) + 1; const kk = king(state, a.pid); if (kk) kk.lost = (kk.lost || 0) + 1; } }
     let text, set;
     const sumOthersN = totals.slice(1).reduce((s, a) => s + a.n, 0);
     const lostNames = totals.map((a) => maisonName(state, a.pid));
@@ -206,6 +206,7 @@ export function resolveRound(state, priv, inputs, rng) {
       P[to].owner = best.pid; P[to].armies = remaining;
       const wpl = state.players[best.pid];
       wpl.stats.conquests++;
+      { const kk = king(state, best.pid); if (kk) kk.won = (kk.won || 0) + 1; } // victoires du souverain lui-même (pour son surnom)
       wpl.stats.armiesKilled += defArmies + sumOthersN;
       wpl.prestige += lastRound ? 3 : 1;
       // survivants du défenseur

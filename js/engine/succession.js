@@ -1,8 +1,8 @@
 // Mort, succession, guerre civile, mariages, traités
-import { PROVINCES } from "../map.js?v=1795380938";
-import { allied, chron, provincesOf } from "./calc.js?v=1795380938";
-import { capitalize, maisonName, shuffle, yearOf } from "./core.js?v=1795380938";
-import { deName, heirs, mother, newPerson, ownerOf, personTitle, queen, takenNames } from "./people.js?v=1795380938";
+import { PROVINCES } from "../map.js?v=1795381958";
+import { allied, chron, provincesOf } from "./calc.js?v=1795381958";
+import { capitalize, maisonName, shuffle, yearOf } from "./core.js?v=1795381958";
+import { deName, heirs, mother, newPerson, ownerOf, personTitle, queen, takenNames } from "./people.js?v=1795381958";
 
 // ---------- mort et succession ----------
 export function killPerson(state, pid, person, cause, killer = null, out = []) {

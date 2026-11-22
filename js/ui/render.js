@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795380938";
-import { HOUSES } from "../content.js?v=1795380938";
-import * as E from "../engine.js?v=1795380938";
-import { ICON } from "../help.js?v=1795380938";
-import { PROVINCES } from "../map.js?v=1795380938";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795380938";
-import { applyCoach } from "./aides.js?v=1795380938";
-import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795380938";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795380938";
-import { shield } from "./draw.js?v=1795380938";
-import { crownMark, portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795380938";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795380938";
-import { drawArrows, updateMap } from "./map.js?v=1795380938";
-import { myDice, saveOrders } from "./orders.js?v=1795380938";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795380938";
-import { afterRender } from "./maporders.js?v=1795380938";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795380938";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795380938";
+import * as A from "../audio.js?v=1795381958";
+import { HOUSES } from "../content.js?v=1795381958";
+import * as E from "../engine.js?v=1795381958";
+import { ICON } from "../help.js?v=1795381958";
+import { PROVINCES } from "../map.js?v=1795381958";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795381958";
+import { applyCoach } from "./aides.js?v=1795381958";
+import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795381958";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795381958";
+import { shield } from "./draw.js?v=1795381958";
+import { crownMark, portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795381958";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795381958";
+import { drawArrows, updateMap } from "./map.js?v=1795381958";
+import { myDice, saveOrders } from "./orders.js?v=1795381958";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795381958";
+import { afterRender } from "./maporders.js?v=1795381958";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795381958";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795381958";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -199,10 +199,12 @@ function famStrip(st, pid) {
     const tr = m.trait ? ` · ${m.trait}` : "";
     const tip = `${E.personTitle(m)} — ${roleOf(m)}, ${m.age} ans${tr}${sp ? ` · marié${m.sex === "f" ? "e" : ""} à ${E.personTitle(sp)} (${spH ? spH.hname || HOUSES[spH.house].name : "?"})` : ""}${m.bastardOf && m.bastardOf !== pid && st.players[m.bastardOf] ? " · on murmure qu'il est le bâtard d'une autre maison" : ""}${isDead ? ` · ✝ ${m.cause || "mort"}` : ""}`;
     const born = !isDead && start.length && !start.includes(m.id);
-    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n">${crownMark(m)}${esc(m.name)}</span></span>`;
+    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n ${m.name.length > 9 ? "long vlong" : m.name.length > 7 ? "long" : ""}">${crownMark(m)}${esc(m.name)}</span></span>`;
   };
-  const shown = order.slice(0, 7);
-  return `<span class="famstrip">${shown.map((m) => one(m, false)).join("")}${order.length > 7 ? `<span class="fm more">+${order.length - 7}</span>` : ""}${dead.slice(0, 2).map((m) => one(m, true)).join("")}${!order.length ? '<span class="fm-none">Plus aucun héritier !</span>' : ""}</span>`;
+  // 7 places : le souverain en grand, puis 6 cases (vivants d'abord, les morts de la manche en rouge de deuil au bout)
+  const deadShown = dead.slice(0, 2), room = 7 - deadShown.length;
+  const shown = order.length > room ? order.slice(0, room - 1) : order;
+  return `<span class="famstrip">${shown.map((m) => one(m, false)).join("")}${order.length > shown.length ? `<span class="fm more" title="Toute la famille dans « Ma maison »">+${order.length - shown.length}</span>` : ""}${deadShown.map((m) => one(m, true)).join("")}${!order.length ? '<span class="fm-none">Plus aucun héritier !</span>' : ""}</span>`;
 }
 
 function relBadges(st, meP, pid) {
