@@ -1,20 +1,20 @@
 // Réception des données (salon, messages privés, état de la partie)
-import * as A from "../audio.js?v=1795368011";
-import { AI_REPLIES, WHISPERS } from "../content.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { ICON, term } from "../help.js?v=1795368011";
-import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795368011";
-import { $, H, L, S, SOLO, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795368011";
-import { queueModal } from "./aides.js?v=1795368011";
-import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795368011";
-import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795368011";
-import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795368011";
-import { shield } from "./draw.js?v=1795368011";
-import { infoFromState, noteGame } from "./games.js?v=1795368011";
-import { badFormat, renderLobby } from "./lobby.js?v=1795368011";
-import { buildMap } from "./map.js?v=1795368011";
-import { recordPalmares } from "./overlays.js?v=1795368011";
-import { render } from "./render.js?v=1795368011";
+import * as A from "../audio.js?v=1795371626";
+import { AI_REPLIES, WHISPERS } from "../content.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { ICON, term } from "../help.js?v=1795371626";
+import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795371626";
+import { $, H, L, S, SOLO, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795371626";
+import { queueModal } from "./aides.js?v=1795371626";
+import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795371626";
+import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795371626";
+import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795371626";
+import { shield } from "./draw.js?v=1795371626";
+import { infoFromState, noteGame } from "./games.js?v=1795371626";
+import { badFormat, renderLobby } from "./lobby.js?v=1795371626";
+import { buildMap } from "./map.js?v=1795371626";
+import { recordPalmares } from "./overlays.js?v=1795371626";
+import { render } from "./render.js?v=1795371626";
 
 // ---------------------------------------------------------------------
 // réception des données

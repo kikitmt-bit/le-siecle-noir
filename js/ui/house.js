@@ -1,12 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { ICON } from "../help.js?v=1795368011";
-import { $, L, S, esc, me } from "../state.js?v=1795368011";
-import { scoresHidden, houseName } from "./common.js?v=1795368011";
-import { shield } from "./draw.js?v=1795368011";
-import { colorize } from "./names.js?v=1795368011";
-import { openModal } from "./overlays.js?v=1795368011";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { ICON } from "../help.js?v=1795371626";
+import { $, L, S, esc, me } from "../state.js?v=1795371626";
+import { scoresHidden, houseName } from "./common.js?v=1795371626";
+import { shield } from "./draw.js?v=1795371626";
+import { colorize } from "./names.js?v=1795371626";
+import { openModal } from "./overlays.js?v=1795371626";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795371626";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -146,7 +147,7 @@ export function portraitSvg(m, color) {
   const cid = `pc-${String(m.id).replace(/[^\w-]/g, "")}`;
   let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="${cid}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
     <ellipse cx="60" cy="70" rx="56" ry="66" fill="#ECDEBD"/><g clip-path="url(#${cid})">
-    <image href="img/portraits/${src}" x="8" y="10" width="104" height="124.8"${filt ? ` style="filter:${filt}"` : ""}/>
+    <image href="img/portraits/${src}" x="${8 + (PORTRAIT_DX[src.replace(".webp", "")] || 0)}" y="10" width="104" height="124.8"${filt ? ` style="filter:${filt}"` : ""}/>
     <ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${color}" stroke-width="10" opacity=".35"/>`;
   if (sick) {
     // teint cireux, cernes, et pour un mourant les joues creusées
@@ -230,3 +231,124 @@ export function renderLog() {
   $("#tab-log").innerHTML = `<div class="log-filters">${LOG_FILTERS.map(([k, t]) => `<button class="btn btn-small ${logFilter === k ? "btn-dark" : ""}" data-logf="${k}">${t}</button>`).join("")}</div>${items || `<p class="ptext wait">Rien dans la chronique pour ce filtre.</p>`}`;
   document.querySelectorAll("[data-logf]").forEach((b) => (b.onclick = () => { logFilter = b.dataset.logf; renderLog(); }));
 }
+
+// ---------------------------------------------------------------------
+// FICHES EN GRAND (télé) : personnage, maison, chronique paginée
+// ---------------------------------------------------------------------
+// retrouve un personnage dans toutes les familles (un époux peut venir d'une autre maison)
+export function findPerson(st, id) {
+  for (const pid of st.order || []) {
+    const m = st.families[pid] && st.families[pid].members.find((x) => String(x.id) === String(id));
+    if (m) return { m, pid };
+  }
+  return null;
+}
+
+export function roleLabel(st, pid, m) {
+  const k = E.king(st, pid), co = E.consort(st, pid), h = E.heirs(st, pid);
+  if (!m.alive) return m.sex === "f" ? "Défunte" : "Défunt";
+  if (k && k.id === m.id) return m.sex === "f" ? "Reine régnante" : "Roi";
+  if ((co && co.id === m.id) || m.role === "queen") return m.sex === "f" ? "Reine" : "Prince consort";
+  if (h[0] && h[0].id === m.id) return m.sex === "f" ? "Héritière" : "Héritier";
+  if (m.role === "widow") return "Douairière";
+  if (m.role === "monk") return m.sex === "f" ? "Au couvent" : "Au monastère";
+  if (m.role === "gone") return "Partie";
+  if (m.role === "child") return m.bastard && !m.legit ? (m.sex === "f" ? "Bâtarde" : "Bâtard") : m.sex === "f" ? "Fille" : "Fils";
+  return m.sex === "f" ? "Dame" : "Seigneur";
+}
+
+// vignette cliquable : visage + nom + rôle (ouvre la fiche du personnage)
+export function personTile(st, pid, m, extra = "") {
+  const color = HOUSES[st.players[pid].house].color;
+  const tr = TRAITS[m.trait];
+  return `<button class="ptile ${m.alive ? "" : "dead"} ${extra}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}<span class="pt-n">${esc(E.personTitle(m))}</span><span class="pt-r">${roleLabel(st, pid, m)} · ${m.age} ans</span>${m.alive && m.trait ? `<span class="pt-t ${tr && tr.good ? "good" : "bad"}">${esc(m.trait)}</span>` : m.alive ? "" : `<span class="pt-t">✝ ${esc(m.cause || "mort")}</span>`}</button>`;
+}
+
+export function personHtml(ref) {
+  const st = S();
+  const f = findPerson(st, ref.id);
+  if (!f) return `<div class="card"><p>Personnage introuvable.</p><button class="btn btn-block" id="md-close">Fermer</button></div>`;
+  const { m, pid } = f;
+  const color = HOUSES[st.players[pid].house].color;
+  const tr = TRAITS[m.trait];
+  const sp = m.spouse ? E.personById(st, m.spouse) : null;
+  const fl = TRAIT_FLAVOR[m.trait] ? TRAIT_FLAVOR[m.trait][m.sex === "f" ? 1 : 0] : "";
+  const hIdx = E.heirs(st, pid).findIndex((x) => x.id === m.id);
+  const isKing = E.king(st, pid) && E.king(st, pid).id === m.id;
+  return `<div class="card person-card" style="--hc:${color}">
+    <div class="pc-portrait">${portraitSvg(m, color)}</div>
+    <div class="pc-body">
+      <span class="card-kicker">${shield(st.players[pid].house, 22)} Maison ${esc(houseName(pid))}</span>
+      <h2>${esc(E.personTitle(m))}</h2>
+      <p class="pc-role">${roleLabel(st, pid, m)} · ${m.age} ans${m.alive && (["king", "queen", "widow"].includes(m.role) || m.health >= 2) ? ` · ${HEALTH[m.health]}` : ""}${hIdx > 0 ? ` · ${hIdx + 1}<sup>e</sup> dans l'ordre de succession` : ""}${!m.alive ? ` · ✝ ${esc(m.cause || "mort")}` : ""}</p>
+      ${fl && m.alive ? `<p class="fam-flavor">${esc(fl)}</p>` : ""}
+      ${tr ? `<div class="fam-trait ${tr.good ? "good" : "bad"}"><b>${esc(m.trait)}</b> : ${esc(tr.desc)}${isKing ? "" : " (compte surtout quand il ou elle règne)"}</div>` : ""}
+      ${m.infirm ? `<p class="hint">Son surnom, « ${esc(m.infirm)} », la cour le lui a donné. Personne n'ose le dire devant ${m.sex === "f" ? "elle" : "lui"}.</p>` : ""}
+      ${m.bastard && m.legit ? `<p class="hint">Bâtard légitimé : il peut hériter.</p>` : ""}
+      ${sp ? `<div class="pc-spouse"><span class="ph">Marié${m.sex === "f" ? "e" : ""} à</span>${personTile(st, m.spouse.pid, sp)}</div>` : ""}
+      <div class="row" style="margin-top:auto"><button class="btn grow" data-house="${esc(pid)}">Toute la maison</button><button class="btn btn-red grow" id="md-close">Fermer</button></div>
+    </div></div>`;
+}
+
+export function houseSheetHtml(pid) {
+  const st = S();
+  const p = st.players[pid];
+  if (!p) return "";
+  const h = HOUSES[p.house];
+  const fam = st.families[pid];
+  const hide = scoresHidden(st) && pid !== me();
+  const order = ["king", "queen", "widow", "child", "monk", "gone"];
+  const k = E.king(st, pid), co = E.consort(st, pid);
+  const alive = fam.members.filter((m) => m.alive).sort((a, b) => (k && a.id === k.id ? -1 : k && b.id === k.id ? 1 : 0) || order.indexOf(a.role) - order.indexOf(b.role) || b.age - a.age);
+  if (co && co.alive && !alive.includes(co)) alive.splice(1, 0, co);
+  const dead = fam.members.filter((m) => !m.alive).slice(-6).reverse();
+  const myObj = pid === me() && L.priv && L.priv.objectives ? L.priv.objectives : [];
+  const est = pid === me() ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null;
+  const spied = pid !== me() && L.priv && L.priv.spied && L.priv.spied.target === pid ? L.priv.spied.objectives : null;
+  const ownerOf = (m) => (fam.members.includes(m) ? pid : E.ownerOf(st, m));
+  return `<div class="card house-sheet" style="--hc:${HOUSES[p.house].color}">
+    <div class="hs-head">${shield(p.house, 56)}<div class="grow"><span class="card-kicker">${pid === me() ? "TA MAISON" : "MAISON RIVALE"}</span><h2>Maison ${esc(houseName(pid))}</h2><div class="hm">« ${esc(h.motto)} » · ${esc(p.name)}${p.isBot ? " (ordinateur)" : ""}</div></div>
+      <div class="kv hs-kv"><span>${ICON.prestige}<b>Prestige</b> ${hide ? "?" : p.prestige}</span><span>${ICON.gold}<b>Or</b> ${p.gold}</span><span>${ICON.province}<b>Provinces</b> ${E.provincesOf(st, pid).length}</span><span><b>Régions</b> ${E.regionsOf(st, pid).length}</span></div>
+      <button class="btn" id="md-close">Fermer</button></div>
+    <div class="hs-body">
+      <div class="hs-fam"><p class="ph">La famille ${pid === me() ? `<button class="btn btn-small" data-famintro="1" style="margin-left:8px;min-height:30px">Présentation</button>` : ""}</p>
+        <div class="ptiles">${alive.slice(0, 12).map((m, i) => personTile(st, ownerOf(m), m, i === 0 && k && m.id === k.id ? "big" : "")).join("")}</div>
+        ${dead.length ? `<p class="ph" style="margin-top:10px">Les défunts</p><div class="ptiles small">${dead.map((m) => personTile(st, pid, m)).join("")}</div>` : ""}
+      </div>
+      <div class="hs-side">
+        ${powerBox(st, pid)}
+        ${est ? `<div class="score-box"><span class="ph" style="margin:0">Score si la partie finissait maintenant</span><br><b>${est.total}</b> points <span class="hint">(Prestige ${est.prestige} + provinces ${est.provinces} + régions ${est.regions} + objectifs ${est.objectives} + famille ${est.family} + or ${est.gold})</span></div>` : ""}
+        <div class="stat-row"><div class="stat"><div class="stat-l"><span>Colère du peuple</span><span>${p.colere}</span></div><div class="gauge"><div style="width:${p.colere}%;background:#A3221A"></div></div></div><div class="stat"><div class="stat-l"><span>Peur</span><span>${p.peur}</span></div><div class="gauge"><div style="width:${p.peur}%;background:#241811"></div></div></div></div>
+        ${myObj.length ? `<p class="ph">Tes objectifs secrets</p>${myObj.map((oid) => { const o = OBJECTIVES.find((x) => x.id === oid); const ok = E.objectiveDone(st, pid, oid); return `<div class="obj"><span class="${ok ? "ok" : "ko"}">${ok ? "✓" : "○"}</span><span>${esc(o.text)} <i>(+${o.pts})</i></span></div>`; }).join("")}` : ""}
+        ${spied ? `<p class="ph red">Objectifs secrets (volés par tes espions)</p>${spied.map((oid) => `<div class="obj">• ${esc((OBJECTIVES.find((o) => o.id === oid) || {}).text || "")}</div>`).join("")}` : ""}
+        ${relationsHtml(st, pid)}
+      </div>
+    </div></div>`;
+}
+
+// la chronique en grand : une manche par page, en colonnes (jamais d'ascenseur)
+const CHR_PER_PAGE = () => (innerHeight > 900 ? 15 : 9);
+export function chronicleHtml() {
+  const st = S(), pid = me();
+  const myName = pid ? E.maisonName(st, pid) : null;
+  const myPeople = pid ? st.families[pid].members.map((m) => E.personTitle(m)) : [];
+  const keep = (e) => {
+    if (logFilter === "all") return true;
+    if (logFilter === "me") return !!pid && (e.text.includes(myName) || e.text.includes(E.maisonName(st, pid, "La maison")) || myPeople.some((n) => e.text.includes(n)) || (e.choice || "").includes(myName));
+    if (logFilter === "war") return ["battle", "betrayal", "exile", "revolt", "council"].includes(e.kind);
+    if (logFilter === "fam") return ["death", "birth", "marriage", "claim"].includes(e.kind);
+    if (logFilter === "plot") return ["intrigue", "gift"].includes(e.kind) || /poison|accuse|anonyme|crime/i.test(e.text);
+    return true;
+  };
+  const all = (st.chronicle || []).filter(keep);
+  // pages : chaque manche, découpée en paquets
+  const pages = [];
+  const rounds = [...new Set(all.map((e) => e.round))].sort((a, b) => a - b);
+  for (const r of rounds) { const es = all.filter((e) => e.round === r); for (let i = 0; i < es.length; i += CHR_PER_PAGE()) pages.push({ r, year: es[0].year, es: es.slice(i, i + CHR_PER_PAGE()), part: i / CHR_PER_PAGE() + 1, parts: Math.ceil(es.length / CHR_PER_PAGE()) }); }
+  if (L.ui.chrPage == null || L.ui.chrPage >= pages.length) L.ui.chrPage = pages.length - 1;
+  const pg = pages[L.ui.chrPage];
+  return `<div class="card chron-card"><div class="hs-head"><div class="grow"><span class="card-kicker">LA CHRONIQUE DU ROYAUME</span><h2>${pg ? `Manche ${pg.r} · an ${pg.year}${pg.parts > 1 ? ` <small>(${pg.part}/${pg.parts})</small>` : ""}` : "La chronique"}</h2></div><div class="log-filters">${LOG_FILTERS.map(([k, t]) => `<button class="btn btn-small ${logFilter === k ? "btn-dark" : ""}" data-logf="${k}">${t}</button>`).join("")}</div><button class="btn" id="md-close">Fermer</button></div>
+    <div class="chron-cols">${pg ? pg.es.map((e) => `<div class="log-entry ch-entry k-${e.kind}">${entryHtml(e)}</div>`).join("") : `<p class="ptext wait">Rien dans la chronique pour ce filtre.</p>`}</div>
+    <div class="row chron-nav"><button class="btn grow" data-chr="-1" ${!pg || L.ui.chrPage <= 0 ? "disabled" : ""}>← Plus ancien</button><span class="chron-pos">${pages.length ? `Page ${L.ui.chrPage + 1} sur ${pages.length}` : ""}</span><button class="btn grow" data-chr="1" ${!pg || L.ui.chrPage >= pages.length - 1 ? "disabled" : ""}>Plus récent →</button></div></div>`;
+}
+export function setLogFilter(f) { logFilter = f; L.ui.chrPage = null; }

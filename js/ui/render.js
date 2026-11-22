@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795368011";
-import { HOUSES } from "../content.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { ICON } from "../help.js?v=1795368011";
-import { PROVINCES } from "../map.js?v=1795368011";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795368011";
-import { applyCoach } from "./aides.js?v=1795368011";
-import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795368011";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795368011";
-import { shield } from "./draw.js?v=1795368011";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795368011";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795368011";
-import { drawArrows, updateMap } from "./map.js?v=1795368011";
-import { myDice, saveOrders } from "./orders.js?v=1795368011";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795368011";
-import { afterRender } from "./maporders.js?v=1795368011";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795368011";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795368011";
+import * as A from "../audio.js?v=1795371626";
+import { HOUSES } from "../content.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { ICON } from "../help.js?v=1795371626";
+import { PROVINCES } from "../map.js?v=1795371626";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795371626";
+import { applyCoach } from "./aides.js?v=1795371626";
+import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795371626";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795371626";
+import { shield } from "./draw.js?v=1795371626";
+import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795371626";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795371626";
+import { drawArrows, updateMap } from "./map.js?v=1795371626";
+import { myDice, saveOrders } from "./orders.js?v=1795371626";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795371626";
+import { afterRender } from "./maporders.js?v=1795371626";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795371626";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795371626";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -138,23 +138,28 @@ export function renderGuide() {
   }
   el.className = `guide ${mine ? "" : "wait"}`;
   const key = step + text + btn;
-  if (el.dataset.k !== key) {
-    el.dataset.k = key;
+  const hud = $("#tb-hud");
+  {
     const track = st.round > 0 ? `<div class="hud-track" title="Les ${st.maxRounds} manches">${Array.from({ length: st.maxRounds }, (_, i) => `<span class="${i + 1 < st.round ? "past" : i + 1 === st.round ? "now" : ""} ${i + 1 === st.maxRounds ? "last" : ""}">${i + 1 === st.maxRounds ? "♛" : i + 1}</span>`).join("")}</div>` : `<div class="hud-track prep"><span class="now">Préparatifs</span></div>`;
     const stages = st.round > 0 ? ["Dilemmes", "Ordres", "Révélation"] : ["Objectifs", "Provinces", "Armées"];
     const cur = st.round > 0 ? stage : prepStage;
     const stepper = `<div class="hud-steps">${stages.map((n, i) => `<span class="${i < cur ? "done" : i === cur ? "cur" : ""}">${i + 1}. ${n}</span>`).join('<i>›</i>')}</div>`;
-    el.innerHTML = `<div class="hud-left">${track}${stepper}</div><div class="hud-main"><span class="g-text">${text}</span><span class="hud-btns">${btn}</span></div><div class="hud-right">${L.hudScore || ""}${hudRes()}<span class="hud-goal">But : avoir le plus de points après ${st.maxRounds} manches</span></div>`;
-    if (mine && el.dataset.last !== st.phase + st.round) { el.dataset.last = st.phase + st.round; el.classList.add("mine"); }
+    // haut d'écran : manches, étapes, score et jauges ; panneau de droite : ce que je dois faire
+    if (hud) hud.innerHTML = `<div class="hud-left">${track}${stepper}</div><div class="hud-right">${L.hudScore || ""}${hudRes()}</div>`;
+    if (el.dataset.k !== key) {
+      el.dataset.k = key;
+      el.innerHTML = `<span class="g-step">${step}</span><span class="g-text">${text}</span>${btn ? `<span class="hud-btns">${btn}</span>` : ""}`;
+      if (mine && el.dataset.last !== st.phase + st.round) { el.dataset.last = st.phase + st.round; el.classList.add("mine"); }
+    }
   }
-  el.querySelectorAll("[data-guide]").forEach((b) => (b.onclick = () => {
+  [...el.querySelectorAll("[data-guide]"), ...(hud ? hud.querySelectorAll("[data-guide]") : [])].forEach((b) => (b.onclick = () => {
     const g = b.dataset.guide;
     if (g === "obj") { L.objClosed = false; render(); }
     if (g === "dil") { L.ui.dSlot = null; L.ui.dChoice = null; L.ui.dTarget = null; L.dilemmaClosed = false; L.ovKey = ""; render(); }
     if (g === "end") { L.endClosed = false; render(); }
     if (g === "plauto") { setInput("placement", { ok: true }); A.play("seal"); render(); }
     if (g === "plok") { const mineP = E.provincesOf(st, pid); const alloc = { ok: true }; mineP.forEach((id) => (alloc[id] = (L.ui.placement || {})[id] || 1)); setInput("placement", alloc); A.play("seal"); render(); }
-    if (g === "actions") { L.ui.tab = "panel"; render(); document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
+    if (g === "actions") { L.ui.tab = "panel"; render(); if (innerWidth <= 900) document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
     if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
     if (g === "draftok") confirmDraft();
     if (g === "next") { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); }
@@ -192,10 +197,10 @@ function famStrip(st, pid) {
     const tr = m.trait ? ` · ${m.trait}` : "";
     const tip = `${E.personTitle(m)} — ${roleOf(m)}, ${m.age} ans${tr}${sp ? ` · marié${m.sex === "f" ? "e" : ""} à ${E.personTitle(sp)} (${spH ? spH.hname || HOUSES[spH.house].name : "?"})` : ""}${m.bastardOf && m.bastardOf !== pid && st.players[m.bastardOf] ? " · on murmure qu'il est le bâtard d'une autre maison" : ""}${isDead ? ` · ✝ ${m.cause || "mort"}` : ""}`;
     const born = !isDead && start.length && !start.includes(m.id);
-    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n">${esc(m.name)}</span></span>`;
+    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n">${esc(m.name)}</span></span>`;
   };
-  const shown = order.slice(0, 6);
-  return `<span class="famstrip">${shown.map((m) => one(m, false)).join("")}${order.length > 6 ? `<span class="fm more">+${order.length - 6}</span>` : ""}${dead.slice(0, 2).map((m) => one(m, true)).join("")}${!order.length ? '<span class="fm-none">Plus aucun héritier !</span>' : ""}</span>`;
+  const shown = order.slice(0, 7);
+  return `<span class="famstrip">${shown.map((m) => one(m, false)).join("")}${order.length > 7 ? `<span class="fm more">+${order.length - 7}</span>` : ""}${dead.slice(0, 2).map((m) => one(m, true)).join("")}${!order.length ? '<span class="fm-none">Plus aucun héritier !</span>' : ""}</span>`;
 }
 
 function relBadges(st, meP, pid) {
@@ -225,14 +230,19 @@ export function renderPlayers() {
     const dice = pid === meP ? myDice() : p.dice || [];
     const showDice = ["dilemma", "orders"].includes(st.phase) && dice.length;
     const pw = E.housePower(st, pid);
-    return `<button class="pchip hcard ${pid === meP ? "me" : ""}" data-pid="${pid}" style="--hc:${HOUSES[p.house].color}" aria-label="Voir la maison ${esc(houseName(pid))}">
+    return `<div class="pchip hcard ${pid === meP ? "me" : ""}" role="button" tabindex="0" data-pid="${pid}" style="--hc:${HOUSES[p.house].color}" aria-label="Voir la maison ${esc(houseName(pid))}">
       <span class="hc-top">${st.leader === pid && !hide ? '<svg class="crown" width="22" height="14" viewBox="-12 -8 24 15" aria-hidden="true"><path d="M-11,6 L-11,-4 L-5,1 L0,-7 L5,1 L11,-4 L11,6 Z" fill="#A9843A" stroke="#241811" stroke-width="1.2"/></svg>' : ""}${st.round > 0 && !hide ? `<span class="rankno">${rank + 1}</span>` : ""}${shield(p.house, 26)}
       <span class="hc-id"><span class="pc-name">${pid === meP ? "Toi · " : ""}${esc(houseName(pid))}${p.isBot ? " · ordi" : ""}</span><span class="hc-pw" title="${esc(pw.power || "")} Faiblesse : ${esc(pw.weak || "")}">${esc(pw.title || "")}</span></span>
       <span class="hc-score" title="Score visible (sans les objectifs secrets)">${hide ? "?" : pub(pid)}<small>pts</small></span></span>
       <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov} ${H_ICON.gold}${p.gold}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${relBadges(st, meP, pid)}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "reveal", "interlude"].includes(st.phase) ? ` <span class="ready">${st.phase === "reveal" ? "a lu ✓" : "prêt ✓"}</span>` : ""}</span>
       ${st.round > 0 && !hide ? `<span class="racebar"><div style="width:${Math.max(4, (pub(pid) / top) * 100)}%;background:${HOUSES[p.house].color}"></div></span>` : ""}
       ${st.families && st.families[pid] ? famStrip(st, pid) : ""}
-    </button>`;
+    </div>`;
   }).join("");
-  $("#playersbar").querySelectorAll(".pchip").forEach((b) => (b.onclick = () => { L.ui.viewHouse = b.dataset.pid; openModal("house"); }));
+  // un clic sur un visage ouvre la fiche du personnage ; ailleurs sur la carte de maison, la fiche de la maison
+  $("#playersbar").querySelectorAll(".pchip").forEach((b) => (b.onclick = (e) => {
+    const f = e.target.closest("[data-who]");
+    if (f) { const [fp, id] = f.dataset.who.split("|"); openModal("person", { pid: fp, id }); return; }
+    L.ui.viewHouse = b.dataset.pid; openModal("house");
+  }));
 }

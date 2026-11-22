@@ -1,17 +1,18 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795368011";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { ICON } from "../help.js?v=1795368011";
-import { PROVINCES } from "../map.js?v=1795368011";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795368011";
-import { speak } from "./announce.js?v=1795368011";
-import { houseColor, houseName, setInput } from "./common.js?v=1795368011";
-import { shield } from "./draw.js?v=1795368011";
-import { entryHtml } from "./house.js?v=1795368011";
-import { drawArrows, fx, updateMap } from "./map.js?v=1795368011";
-import { colorize, houseTag } from "./names.js?v=1795368011";
-import { battleQuip } from "./news.js?v=1795368011";
+import * as A from "../audio.js?v=1795371626";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { ICON } from "../help.js?v=1795371626";
+import { PROVINCES } from "../map.js?v=1795371626";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795371626";
+import { speak } from "./announce.js?v=1795371626";
+import { houseColor, houseName, setInput } from "./common.js?v=1795371626";
+import { shield } from "./draw.js?v=1795371626";
+import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795371626";
+import { drawArrows, fx, updateMap } from "./map.js?v=1795371626";
+import { colorize, houseTag, peopleIn } from "./names.js?v=1795371626";
+import { battleQuip } from "./news.js?v=1795371626";
+import { openModal } from "./overlays.js?v=1795371626";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],
@@ -68,7 +69,15 @@ export function rvFocus(st) {
 }
 
 // ---------- contenu des cartes ----------
-const line = (s, extra = "") => `<div class="rv-item k-${s.kind} ${extra}">${itemIcon(s)}<div>${s.title ? entryHtml(s) : colorize(s.text)}</div></div>`;
+const line = (s, extra = "") => { const f = itemFace(s); return `<div class="rv-item k-${s.kind} ${extra} ${f ? "has-face" : ""}">${f || itemIcon(s)}<div>${s.title ? entryHtml(s) : colorize(s.text)}</div></div>`; };
+// morts, naissances, mariages, complots : le visage de la personne plutôt qu'une icône
+function itemFace(s) {
+  if (!["death", "birth", "marriage", "claim", "intrigue", "betrayal"].includes(s.kind)) return "";
+  const st = S(), r = peopleIn(s.text, 1)[0];
+  const f = r && findPerson(st, r.id);
+  if (!f) return "";
+  return `<span class="rv-face" data-who="${esc(f.pid)}|${esc(f.m.id)}">${portraitSvg(f.m, HOUSES[st.players[f.pid].house].color)}</span>`;
+}
 function itemIcon(s) {
   const I = { death: ICON.death, birth: ICON.family, marriage: ICON.ring, betrayal: ICON.target, intrigue: ICON.intrigue, bribe: ICON.gold, gift: ICON.gold, plague: ICON.plague, revolt: ICON.colere, treaty: ICON.scroll, feast: ICON.colere, council: ICON.prestige, claim: ICON.province, exile: ICON.province, event: ICON.scroll, economy: ICON.gold };
   return `<span class="rv-ic">${I[s.kind] || ICON.scroll}</span>`;
@@ -189,6 +198,7 @@ export function bindReveal() {
   const st = S();
   document.querySelectorAll("[data-rvc='ack']").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); setInput("revack", { round: st.round, card: curCard(st) }); A.play("seal"); rvPaint(); }));
   document.querySelectorAll("[data-rvview]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); const v = b.dataset.rvview; RVX.view = v === "cur" ? null : +v; if (RVX.view === curCard(st)) RVX.view = null; rvPaint(); }));
+  document.querySelectorAll(".rv-face[data-who]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); const [pid, id] = b.dataset.who.split("|"); openModal("person", { pid, id }); }));
   document.querySelectorAll("[data-battle]").forEach((b) => (b.onclick = () => { const i = +b.dataset.battle; const card = cardsOf(st)[shownCard(st)]; if (!card) return; const s = st.reveal.steps[battleKs(st, card)[i]]; if (s) { fx("battle", s.prov); MAP.hl = new Set(s.from || []); MAP.hlRed = new Set([s.prov]); drawArrows((s.from || []).map((f) => ({ from: f, to: s.prov, color: "#A3221A" }))); } }));
 }
 

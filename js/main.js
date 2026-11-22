@@ -1,15 +1,15 @@
 // LE SIÈCLE NOIR — application : branche les boutons et démarre
-import * as A from "./audio.js?v=1795368011";
-import { TAUNTS } from "./content.js?v=1795368011";
-import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795368011";
-import { narratorIcon, speak } from "./ui/announce.js?v=1795368011";
-import { show, toast } from "./ui/common.js?v=1795368011";
-import { refreshGames } from "./ui/games.js?v=1795368011";
-import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795368011";
-import { openModal } from "./ui/overlays.js?v=1795368011";
-import { render, renderTop } from "./ui/render.js?v=1795368011";
-import "./ui/clock.js?v=1795368011"; // boucle de temps (effets au chargement)
-import { uiBack } from "./ui/maporders.js?v=1795368011";
+import * as A from "./audio.js?v=1795371626";
+import { TAUNTS } from "./content.js?v=1795371626";
+import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795371626";
+import { narratorIcon, speak } from "./ui/announce.js?v=1795371626";
+import { show, toast } from "./ui/common.js?v=1795371626";
+import { refreshGames } from "./ui/games.js?v=1795371626";
+import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795371626";
+import { openModal } from "./ui/overlays.js?v=1795371626";
+import { render, renderTop } from "./ui/render.js?v=1795371626";
+import "./ui/clock.js?v=1795371626"; // boucle de temps (effets au chargement)
+import { uiBack } from "./ui/maporders.js?v=1795371626";
 
 // ---------------------------------------------------------------------
 // boutons globaux et démarrage
@@ -71,7 +71,12 @@ $("#btn-taunt").onclick = (e) => {
 
 document.addEventListener("click", (e) => { if (!e.target.closest("#taunt-pop") && !e.target.closest("#btn-taunt")) $("#taunt-pop").classList.add("hidden"); });
 
-document.querySelectorAll("#side-tabs button").forEach((b) => (b.onclick = () => { L.ui.tab = b.dataset.tab; render(); }));
+// « Ma maison » et « Chronique » s'ouvrent en grand (fiche plein écran), les autres onglets restent dans le panneau
+document.querySelectorAll("#side-tabs button").forEach((b) => (b.onclick = () => {
+  if (b.dataset.tab === "house") { if (me()) { L.ui.viewHouse = me(); openModal("house"); } return; }
+  if (b.dataset.tab === "log") { openModal("chronicle"); return; }
+  L.ui.tab = b.dataset.tab; render();
+}));
 
 document.addEventListener("pointerdown", () => A.unlock(), { once: true });
 

@@ -927,3 +927,269 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
 .pt-b.on { background: var(--gold); border-color: var(--ink); }
 .pt-sticks { display: flex; gap: 18px; font-size: 15px; margin-bottom: 10px; }
 .pt-sticks i { font-style: normal; font-variant-numeric: tabular-nums; }
+
+/* =====================================================================
+   REFONTE TÉLÉ (Xbox d'abord) : tout tient dans l'écran 16:9, sans ascenseur.
+   Haut : un seul bandeau fin. Gauche : les maisons et leurs visages. Centre : la carte. Droite : quoi faire + actions.
+   ===================================================================== */
+.mapwrap { background: #E6D5AF; }
+#map { overflow: visible; }
+.tb-hud { display: none; }
+.ptile, .face, .rv-face { font: inherit; color: inherit; }
+
+/* visages : partout cliquables */
+[data-who] { cursor: zoom-in; }
+.fm[data-who]:hover .portrait, .ptile:hover .portrait, .face:hover .portrait { filter: drop-shadow(0 0 0 var(--gold)) drop-shadow(0 0 3px var(--gold)); }
+
+@media (min-width: 901px) {
+  #screen-game { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+  /* ---- bandeau du haut : titre, manches, étapes, score, jauges, boutons ---- */
+  .topbar { gap: 16px; padding: 4px 12px; min-height: 58px; }
+  .tb-left { flex-direction: column; gap: 0; align-items: flex-start; flex-shrink: 0; }
+  .tb-title { font-size: 25px; line-height: 1.05; }
+  .tb-round { font-size: 14px; line-height: 1.1; }
+  .tb-phase { display: none; }
+  .tb-hud { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: space-between; gap: 16px; }
+  .tb-hud .hud-left { gap: 3px; }
+  .tb-hud .hud-track span { width: 21px; height: 21px; background: transparent; color: var(--parch3); border-color: rgba(240,228,199,.4); }
+  .tb-hud .hud-track span.past { background: rgba(240,228,199,.25); color: var(--parch); }
+  .tb-hud .hud-track span.now { background: var(--red); border-color: var(--red); color: var(--cream); }
+  .tb-hud .hud-track span.last { border-color: var(--gold); color: var(--gold); }
+  .tb-hud .hud-track.prep span { color: var(--cream); }
+  .tb-hud .hud-steps { font-size: 14px; }
+  .tb-hud .hud-steps span { color: var(--parch3); padding: 0 3px; }
+  .tb-hud .hud-steps span.done { color: rgba(240,228,199,.5); }
+  .tb-hud .hud-steps span.cur { color: var(--gold); box-shadow: inset 0 -2px 0 var(--gold); }
+  .tb-hud .hud-steps i { color: rgba(240,228,199,.4); }
+  .tb-hud .hud-right { flex-direction: row; align-items: center; gap: 10px; }
+  .tb-hud .hud-res { gap: 6px; }
+  .tb-hud .hud-res .term, .tb-hud .g-score { color: var(--parch); border-color: rgba(240,228,199,.35); font-size: 17px; padding: 3px 9px; }
+  .tb-hud .hud-res .term .ico, .tb-hud .g-score .ico { --ia3: transparent; }
+  .tb-hud .hud-res .term.warn { background: rgba(201,163,90,.25); }
+  .tb-hud .hud-res .term.bad { background: var(--red2); color: var(--cream); }
+  .tb-right { gap: 6px; flex-shrink: 0; }
+  .icon-btn { width: 42px; height: 42px; }
+
+  /* ---- plateau : maisons | carte | panneau ---- */
+  .board { display: grid; grid-template-columns: clamp(290px, 21vw, 420px) minmax(0, 1fr) clamp(350px, 24vw, 470px); min-height: 0; }
+  .mapwrap { border-right: 1.5px solid var(--ink); border-left: 1.5px solid var(--ink); }
+
+  /* ---- colonne des maisons ---- */
+  .playersbar { --ph: clamp(64px, calc((100vh - 62px) / 4 - 102px), 168px); flex-direction: column; overflow: hidden; padding: 8px; gap: 8px; border-bottom: 0; }
+  .hcard { flex: 1 1 0; min-height: 0; min-width: 0; max-width: none; width: 100%; padding: 6px 10px 6px; gap: 3px; overflow: hidden; cursor: pointer; }
+  .hcard:hover { background: color-mix(in srgb, var(--hc) 10%, var(--parch)); }
+  .hcard .pc-name { font-size: 17px; }
+  .hc-pw { font-size: 13px; }
+  .hc-score { font-size: 25px; }
+  .hcard .pc-stats { font-size: 14.5px; gap: 6px; }
+  .pchip .racebar { height: 4px; }
+  .famstrip { flex: 1; min-height: 0; display: grid; grid-template-columns: calc(var(--ph) * 120 / 140) repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); grid-auto-rows: 0; column-gap: 6px; row-gap: 2px; align-items: end; overflow: hidden; margin-top: 2px; }
+  .fm { width: auto; min-width: 0; justify-content: flex-end; }
+  .fm .portrait { width: 100%; height: auto; max-height: calc(var(--ph) / 2 - 14px); }
+  .fm:first-child { grid-row: 1 / 3; }
+  .fm:first-child .portrait, .fm.ruler .portrait { width: calc(var(--ph) * 120 / 140); height: auto; max-height: calc(var(--ph) - 16px); }
+  .fm-n { font-size: 12px; max-width: 100%; }
+  .fm:first-child .fm-n { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .fm .new { font-size: 11px; }
+  .fm .ring { width: 18px; height: 18px; font-size: 12px; }
+  .fm .cross { font-size: 24px; top: 30%; }
+  .fm.more { height: auto; align-self: center; }
+  .fm-none { grid-column: 1 / -1; }
+
+  /* ---- panneau de droite : quoi faire, puis les actions ---- */
+  .side { min-height: 0; }
+  .guide { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 12px 16px 12px 18px; border-bottom: 1.5px solid var(--ink); }
+  .guide .g-step { font-size: 15px; }
+  .guide .g-text { font-size: 17.5px; line-height: 1.35; }
+  .guide .hud-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .guide .hud-btns .btn { flex: 1 1 auto; }
+  .tab { padding: 12px 16px 14px; }
+  .side-tabs button { min-height: 42px; }
+  .side-tabs button[data-modal]::after { content: " ↗"; font-size: .8em; color: var(--ink3); }
+  .rv-content { max-height: none; }
+
+  /* ---- fenêtres : larges et basses plutôt que hautes ---- */
+  .overlay { padding: 16px; }
+  .card { max-height: calc(100vh - 32px); }
+
+  /* dilemme : gravure et visages à gauche, texte et choix à droite */
+  .dil-card { width: min(1640px, 100%); padding: 22px 26px; }
+  .dil-grid { display: grid; grid-template-columns: minmax(0, 45fr) minmax(0, 55fr); gap: 28px; align-items: start; }
+  .dil-left > .woodcut.gravure { margin: 0 0 12px; }
+  .dil-right h2 { margin-top: 2px; }
+  .dil-text { font-size: 18.5px !important; }
+  .dil-text::first-letter { float: left; font-family: var(--gothic); font-weight: 700; color: var(--red); font-size: 3.9em; line-height: .78; padding: 6px 8px 0 0; }
+  .dil-btns { margin-top: 14px; }
+  .dil-card .news, .dil-card .ragots { margin: 10px 0 0; }
+  .council-card .dil-left p { font-size: 17px; }
+
+  /* visages cités dans une fenêtre */
+  .faces { display: flex; gap: 12px; flex-wrap: wrap; }
+  .face { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; background: rgba(255,255,255,.3); border: 1px solid var(--parch4); border-left: 4px solid var(--hc); border-radius: 2px; padding: 6px 12px 6px 6px; cursor: zoom-in; flex: 1 1 200px; max-width: 320px; }
+  .face .portrait { grid-row: 1 / 3; width: 84px; height: 98px; }
+  .face-n { font-family: var(--caps); font-variant-caps: all-small-caps; font-weight: 600; font-size: 19px; letter-spacing: .04em; align-self: end; }
+  .face-r { font-size: 14.5px; font-style: italic; color: var(--ink2); align-self: start; }
+
+  /* fiche d'un personnage : le portrait en grand */
+  .person-card { width: min(1180px, 100%); display: grid; grid-template-columns: minmax(280px, 40%) 1fr; gap: 30px; padding: 26px 30px; }
+  .pc-portrait .portrait { width: 100%; height: auto; max-height: calc(100vh - 110px); display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+  .pc-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .pc-body .card-kicker { display: flex; align-items: center; gap: 8px; }
+  .pc-body h2 { font-size: 52px; margin: 0; }
+  .pc-role { font-size: 19px !important; margin: 0 !important; color: var(--ink2); }
+  .pc-body .fam-flavor { font-size: 19px; margin: 6px 0; }
+  .pc-body .fam-trait { font-size: 17px; }
+  .pc-spouse { display: flex; align-items: center; gap: 12px; }
+  .pc-spouse .ph { margin: 0; }
+
+  /* fiche d'une maison : toute la famille en grands visages */
+  .house-sheet, .chron-card { width: min(1720px, 100%); padding: 20px 26px; }
+  .hs-head { display: flex; align-items: center; gap: 18px; margin-bottom: 10px; }
+  .hs-head h2 { margin: 0; font-size: 40px; }
+  .hs-head .hm { font-style: italic; color: var(--ink2); }
+  .hs-kv { margin: 0; font-size: 17px; gap: 18px; }
+  .hs-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+  .ptiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+  .ptiles.small { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .ptile { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px 8px; background: rgba(255,255,255,.25); border: 1px solid var(--parch4); border-radius: 2px; cursor: zoom-in; text-align: center; min-width: 0; }
+  .ptile:hover { background: rgba(255,255,255,.5); }
+  .ptile .portrait { width: 104px; height: auto; }
+  .ptile.big { grid-row: span 2; justify-content: center; border-color: var(--gold); }
+  .ptile.big .portrait { width: 100%; max-width: 170px; }
+  .ptiles.small .portrait { width: 64px; }
+  .ptile.dead .portrait { opacity: .85; }
+  .pt-n { font-family: var(--caps); font-variant-caps: all-small-caps; font-weight: 600; font-size: 17px; letter-spacing: .03em; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pt-r { font-size: 13.5px; color: var(--ink2); font-style: italic; }
+  .pt-t { font-family: var(--caps); font-variant-caps: all-small-caps; font-size: 14px; letter-spacing: .04em; color: var(--ink3); }
+  .pt-t.good { color: #2F5233; } .pt-t.bad { color: var(--red); }
+  .ptiles.small .pt-n { font-size: 14px; } .ptiles.small .pt-r, .ptiles.small .pt-t { font-size: 12px; }
+  .hs-side .relrow { padding: 4px 8px; }
+
+  /* chronique : une manche par page, en colonnes */
+  .chron-card .log-filters { position: static; background: none; margin: 0; }
+  .chron-cols { columns: 3 320px; column-gap: 32px; min-height: 200px; }
+  .chron-cols .log-entry { break-inside: avoid; }
+  .chron-nav { margin-top: 12px; align-items: center; }
+  .chron-pos { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; padding: 0 16px; color: var(--ink2); }
+
+  /* fin de partie en onglets, règles en colonnes */
+  .end-card { width: min(1500px, 100%); }
+  .end-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+  .end-body { min-height: 300px; margin-bottom: 12px; }
+  .card.rules { width: min(1640px, 100%); columns: 3 380px; column-gap: 34px; }
+  .card.rules > * { break-inside: avoid; }
+  .card.rules h2, .card.rules .card-kicker { column-span: all; }
+
+  /* accueil et salon : en largeur */
+  .home-card { width: min(1120px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center; align-items: center; padding: 34px 44px; }
+  .home-r { text-align: left; }
+  .lobby-card { width: min(1240px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; padding: 30px 40px; }
+  .lobby-l { text-align: center; }
+  .lobby-card h3:first-child { margin-top: 0; }
+  .interlude { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; max-width: 1500px; align-items: center; text-align: left; }
+  .il-left { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+}
+
+/* télé en 720p ou fenêtre basse : on serre */
+@media (min-width: 901px) and (max-height: 820px) {
+  .topbar { min-height: 50px; padding: 3px 10px; }
+  .tb-title { font-size: 21px; }
+  .tb-hud .hud-track span { width: 18px; height: 18px; font-size: 9px; }
+  .tb-hud .hud-steps { font-size: 12.5px; }
+  .tb-hud .hud-res .term, .tb-hud .g-score { font-size: 14.5px; padding: 2px 6px; }
+  .icon-btn { width: 36px; height: 36px; }
+  .playersbar { --ph: clamp(56px, calc((100vh - 54px) / 4 - 84px), 168px); padding: 6px; gap: 6px; }
+  .hcard { padding: 4px 8px; }
+  .hcard .pc-name { font-size: 14.5px; } .hc-score { font-size: 20px; } .hcard .pc-stats { font-size: 12.5px; }
+  .hcard .racebar { display: none; }
+  .fm-n { font-size: 10.5px; } .fm:first-child .fm-n { font-size: 12px; }
+  .guide { padding: 8px 12px; } .guide .g-text { font-size: 15.5px; }
+  .guide .btn { min-height: 38px; font-size: 15px; }
+  .tab { padding: 8px 12px; }
+  .ptext { font-size: 15px; } .pbox { padding: 8px 10px; margin-bottom: 8px; }
+  .actbtn { min-height: 52px; padding: 6px 10px; }
+  .die { width: 48px; height: 48px; }
+  .card { padding: 16px 20px; }
+  .card h2 { font-size: 32px; margin: 2px 0 8px; }
+  .card p { font-size: 15.5px; margin-bottom: 8px; }
+  .dil-card { padding: 14px 18px; }
+  .dil-grid { gap: 18px; }
+  .dil-text { font-size: 16px !important; }
+  .choice { padding: 7px 8px 7px 28px; }
+  .choice b { font-size: 16px; } .choice > span:not(.fxline) { font-size: 14px; } .fxchip { font-size: 14.5px; }
+  .dil-btns { margin-top: 8px; } .dil-btns .btn { min-height: 40px; }
+  .face .portrait { width: 60px; height: 70px; } .face-n { font-size: 16px; } .face-r { font-size: 12.5px; }
+  .ragots p, .news p { font-size: 13.5px; }
+  .pc-body h2 { font-size: 40px; } .pc-body .fam-flavor { font-size: 16px; }
+  .hs-head h2 { font-size: 30px; }
+  .ptiles { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+  .ptile .portrait { width: 72px; } .ptiles.small .portrait { width: 46px; }
+  .pt-n { font-size: 14.5px; } .pt-r, .pt-t { font-size: 12px; }
+  .log-entry { font-size: 13.5px; padding: 5px 0; }
+  .home-card { padding: 22px 30px; gap: 26px; } .home-emblem { width: 96px; height: 96px; } .home-card h1 { font-size: 46px; }
+  .field { margin-bottom: 8px; } .btn { min-height: 40px; }
+  .lobby-card { padding: 20px 28px; } .lobby-card h3 { margin: 12px 0 6px; } .lobby-code { font-size: 36px; }
+}
+/* empoisonnement : on choisit un visage */
+.poison-pick .choice { display: grid; grid-template-columns: 56px 1fr; column-gap: 12px; align-items: center; padding-left: 10px; }
+.poison-pick .choice::before { display: none; }
+.poison-pick .choice .portrait { grid-row: 1 / 3; width: 56px; height: 65px; }
+.tb-hud .hud-track.prep span { width: auto; padding: 0 10px; border-radius: 11px; }
+@media (min-width: 901px) {
+  .tb-hud .g-score { background: transparent; }
+  /* 4 enfants au plus : une seule rangée de visages, plus grands */
+  .famstrip:not(:has(.fm:nth-child(6))) { grid-template-rows: minmax(0, 1fr); }
+  .famstrip:not(:has(.fm:nth-child(6))) .fm:not(:first-child) .portrait { max-height: calc(var(--ph) * .72); }
+  .ptiles { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .ptile .portrait { width: 128px; }
+  .ptile.big .portrait { max-width: 200px; }
+}
+@media (min-width: 901px) and (max-height: 820px) {
+  .ptiles { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
+  .ptile .portrait { width: 80px; } .ptile.big .portrait { max-width: 120px; }
+}
+@media (min-width: 901px) { .side { width: auto; min-width: 0; } .mapwrap { min-width: 0; } }
+@media (min-width: 901px) {
+  .intr-grid { grid-template-columns: 1fr; }
+  .intr-grid .actbtn { min-height: 0; padding: 7px 10px; }
+  .intr-grid .io { font-size: 13.5px; margin-top: 1px; }
+}
+@media (min-width: 901px) and (max-height: 820px) {
+  .home-sub { font-size: 15px; margin-bottom: 8px; } .or { margin: 5px 0; } .home-ad { margin: 2px 0 8px; } #screen-home { padding: 10px; }
+  .intr-grid .io { font-size: 12.5px; }
+}
+@media (min-width: 901px) {
+  .tab #btn-seal { display: none; } /* déjà dans « quoi faire » juste au-dessus */
+}
+@media (min-width: 901px) and (max-height: 820px) {
+  .board { grid-template-columns: clamp(240px, 20vw, 420px) minmax(0, 1fr) clamp(370px, 30vw, 470px); }
+  .tab .ragots, .tab .news, .treasury .hint, .hand-o { display: none; }
+  .side-tabs button { font-size: 14px; min-height: 36px; }
+  .side-tabs button[data-modal]::after { content: ""; }
+  .recap { padding: 6px 10px; } .orderlist li { padding: 5px 8px; margin-bottom: 4px; }
+  .treasury { margin-top: 6px; padding: 6px 8px; }
+  .dice-row { margin-bottom: 6px; } .steps { margin-bottom: 6px; }
+  .tab .ph { margin-bottom: 4px; }
+}
+/* révélation : le récit prend la place des maisons et se lit en deux colonnes */
+@media (min-width: 901px) {
+  body.rv-on .board { grid-template-columns: 0 minmax(0, 1fr) clamp(560px, 44vw, 880px); }
+  body.rv-on .playersbar { visibility: hidden; padding: 0; }
+  body.rv-on #tab-panel.active { display: flex; flex-direction: column; }
+  body.rv-on #tab-panel .rv-dock { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  body.rv-on .rv-content { flex: 1; min-height: 0; columns: 2 300px; column-gap: 26px; column-fill: auto; overflow: auto hidden; }
+  body.rv-on .rv-content > *, body.rv-on .rv-content .rv-item, body.rv-on .rv-content .rv-duel { break-inside: avoid; }
+  .rv-item.has-face { grid-template-columns: 54px 1fr; align-items: start; }
+  .rv-face .portrait { width: 54px; height: 63px; display: block; }
+}
+@media (min-width: 901px) and (max-height: 820px) {
+  .recap .warn, .tab .hand { display: none; }
+  .tab .prompt { padding: 6px 10px; font-size: 14.5px; margin-bottom: 6px; }
+  .rv-btns .btn { min-height: 42px; }
+}
+@media (min-width: 901px) and (min-height: 821px) {
+  .home-emblem { width: 190px; height: 190px; }
+  .home-card h1 { font-size: 70px; }
+  .ptiles { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+  .ptile .portrait { width: 146px; }
+}

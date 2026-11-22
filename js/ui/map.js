@@ -1,13 +1,13 @@
 // Carte SVG, zoom et déplacement
-import * as A from "../audio.js?v=1795368011";
-import { HOUSES } from "../content.js?v=1795368011";
-import { LEGEND } from "../help.js?v=1795368011";
-import { PROVINCES } from "../map.js?v=1795368011";
-import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795368011";
-import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795368011";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795368011";
-import { houseColor } from "./common.js?v=1795368011";
-import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795368011";
+import * as A from "../audio.js?v=1795371626";
+import { HOUSES } from "../content.js?v=1795371626";
+import { LEGEND } from "../help.js?v=1795371626";
+import { PROVINCES } from "../map.js?v=1795371626";
+import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795371626";
+import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795371626";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795371626";
+import { houseColor } from "./common.js?v=1795371626";
+import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795371626";
 
 export function buildMap() {
   const svg = $("#map");
@@ -123,7 +123,7 @@ $("#btn-legend").onclick = () => { const l = $("#legend"); l.innerHTML = `<p cla
     drag = { x: e.clientX, y: e.clientY, vx: VIEW.x, vy: VIEW.y, moved: false }; });
   window.addEventListener("pointermove", (e) => {
     if (!drag) return;
-    const r = svg.getBoundingClientRect(); const k = VIEW.w / r.width;
+    const r = svg.getBoundingClientRect(); const k = Math.max(VIEW.w / r.width, VIEW.h / r.height);
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 6) drag.moved = true;
     if (drag.moved) { VIEW.x = drag.vx - dx * k; VIEW.y = drag.vy - dy * k; applyView(); }

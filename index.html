@@ -34,17 +34,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Grenze+Gotisch:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1795368011">
+<link rel="stylesheet" href="css/style.css?v=1795371626">
 </head>
 <body>
 <div id="app">
   <section id="screen-home" class="screen">
     <div class="home-card">
+      <div class="home-l">
       <img class="home-emblem" src="icons/embleme.svg" width="128" height="128" alt="">
       <h1 class="gothic">Le <span class="r">S</span>iècle <span class="r">N</span>oir</h1>
       <div class="home-rule" aria-hidden="true">✠</div>
       <span class="home-ad">Anno Domini 1347</span>
       <p class="home-sub">France, 1347. La peste arrive. Les rois meurent. Les héritiers s'entretuent.<br>Dix manches (ou sept) pour régner sur les cendres.</p>
+      <p class="home-foot">De 2 à 4 joueurs · environ 30 minutes · à jouer sur la télé (Xbox), PC, tablette ou téléphone</p>
+      </div>
+      <div class="home-r">
       <div id="games" class="games hidden"></div>
       <label class="field"><span>Ton nom de seigneur</span><input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Ex. : Étienne"></label>
       <label class="field"><span>Nom de ta maison <i>(facultatif)</i></span><input id="in-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon (sinon un nom est donné)"></label>
@@ -64,12 +68,13 @@
         <button id="btn-solo-go" class="btn btn-red btn-block" style="margin-top:10px">Commencer la partie</button>
       </div>
       <p id="home-msg" class="msg" role="status"></p>
-      <p class="home-foot">De 2 à 4 joueurs · environ 30 minutes · à jouer sur PC, tablette ou téléphone</p>
+      </div>
     </div>
   </section>
 
   <section id="screen-lobby" class="screen hidden">
     <div class="lobby-card">
+      <div class="lobby-l">
       <h2 class="gothic">Le Conseil des Seigneurs</h2>
       <p class="lobby-code-label">Code de la partie</p>
       <div class="lobby-code" id="lobby-code">----</div>
@@ -77,6 +82,8 @@
       <h3>Choisis ta maison</h3>
       <div id="house-pick" class="house-pick"></div>
       <label class="field" style="margin-top:8px"><span>Nom de ta maison <i>(facultatif)</i></span><input id="lobby-hname" maxlength="18" autocomplete="off" placeholder="Ex. : Montfaucon"></label>
+      </div>
+      <div class="lobby-r">
       <h3>Seigneurs présents</h3>
       <ul id="lobby-members" class="lobby-members"></ul>
       <div id="lobby-ai" class="hidden"><button id="btn-add-ai" class="btn btn-small" style="margin-top:10px">Ajouter un seigneur joué par l'ordinateur</button></div>
@@ -92,12 +99,14 @@
         <p class="hint">Si tu décoches « Toujours 4 seigneurs » et que vous n'êtes que deux, la couronne d'Angleterre entre dans la partie.</p>
       </div>
       <p id="lobby-wait" class="hint hidden">En attente du lancement par l'hôte…</p>
+      </div>
     </div>
   </section>
 
   <section id="screen-game" class="screen hidden">
     <header class="topbar">
       <div class="tb-left"><span class="gothic tb-title">Le Siècle Noir</span><span id="tb-round" class="tb-round"></span></div>
+      <div class="tb-hud" id="tb-hud"></div>
       <div class="tb-phase" id="tb-phase"></div>
       <div class="tb-right">
         <span id="tb-timer" class="tb-timer"></span>
@@ -109,9 +118,8 @@
         <button id="btn-rules" class="icon-btn" aria-label="Règles du jeu" title="Règles"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.7M12 16.5v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div>
     </header>
-    <div id="playersbar" class="playersbar"></div>
-    <div id="guide" class="guide" role="status" aria-live="polite"></div>
     <div class="board">
+      <aside id="playersbar" class="playersbar" aria-label="Les maisons"></aside>
       <div class="mapwrap" id="mapwrap">
         <svg id="map" viewBox="0 0 840 780" role="img" aria-label="Carte de France"></svg>
         <div class="map-tools"><button class="icon-btn dark" id="zoom-in" aria-label="Zoomer">+</button><button class="icon-btn dark" id="zoom-out" aria-label="Dézoomer">−</button><button class="icon-btn dark" id="zoom-reset" aria-label="Revoir toute la carte">⟲</button><button class="btn btn-small" id="btn-legend">Légende</button></div>
@@ -120,11 +128,12 @@
         <div id="crown-banner" class="crown-banner hidden">Le Couronnement : chaque conquête rapporte 3 Prestige, et les scores sont cachés.</div>
       </div>
       <aside class="side">
+        <div id="guide" class="guide" role="status" aria-live="polite"></div>
         <nav class="side-tabs" id="side-tabs">
           <button data-tab="panel" class="active">Actions</button>
           <button data-tab="diplo" id="tab-diplo-btn">Diplomatie</button>
-          <button data-tab="house">Ma maison</button>
-          <button data-tab="log">Chronique</button>
+          <button data-tab="house" data-modal="1">Ma maison</button>
+          <button data-tab="log" data-modal="1">Chronique</button>
         </nav>
         <div id="tab-panel" class="tab"></div>
         <div id="tab-house" class="tab"></div>
@@ -141,6 +150,6 @@
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <div id="popover" class="popover hidden" role="dialog"></div>
 <noscript>Ce jeu a besoin de JavaScript.</noscript>
-<script type="module" src="js/main.js?v=1795368011"></script>
+<script type="module" src="js/main.js?v=1795371626"></script>
 </body>
 </html>

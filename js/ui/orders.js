@@ -1,14 +1,16 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { ICON, term } from "../help.js?v=1795368011";
-import { PROVINCES } from "../map.js?v=1795368011";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795368011";
-import { houseName, setInput } from "./common.js?v=1795368011";
-import { bindDiplomacy } from "./diplomacy.js?v=1795368011";
-import { dieSvg, shield } from "./draw.js?v=1795368011";
-import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795368011";
-import { render } from "./render.js?v=1795368011";
+import * as A from "../audio.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { ICON, term } from "../help.js?v=1795371626";
+import { PROVINCES } from "../map.js?v=1795371626";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795371626";
+import { houseName, setInput } from "./common.js?v=1795371626";
+import { bindDiplomacy } from "./diplomacy.js?v=1795371626";
+import { dieSvg, shield } from "./draw.js?v=1795371626";
+import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795371626";
+import { render } from "./render.js?v=1795371626";
+import { portraitSvg } from "./house.js?v=1795371626";
+import { HOUSES } from "../content.js?v=1795371626";
 
 // ---- ordres ----
 export function myDice() {
@@ -160,7 +162,7 @@ export function builderStep(b, steps) {
     if (b.kind === "poison" && !b.person) {
       const fam = st.families[b.target].members.filter((m) => m.alive && ["king", "queen", "child", "widow"].includes(m.role));
       const role = (m) => (m.role === "king" ? (m.sex === "f" ? "Reine régnante" : "Roi") : m.role === "queen" ? "Reine" : m.role === "widow" ? "Reine douairière" : E.heirs(st, b.target)[0] === m ? "Héritier" : "Enfant");
-      return `${steps(2)}<p class="ph">Qui empoisonner chez ${esc(houseName(b.target))} ?</p><p class="hint">Tuer l'héritier ou le roi peut déclencher une crise de ${term("succession")}.</p><div class="choices">${fam.map((m) => `<button class="choice" data-person="${m.id}"><b>${esc(E.personTitle(m))}</b><span>${role(m)}, ${m.age} ans · ${esc(m.trait)}${m.trait === "Paranoïaque" ? " (plus dur à empoisonner)" : ""}</span></button>`).join("")}</div>${nav}`;
+      return `${steps(2)}<p class="ph">Qui empoisonner chez ${esc(houseName(b.target))} ?</p><p class="hint">Tuer l'héritier ou le roi peut déclencher une crise de ${term("succession")}.</p><div class="choices poison-pick">${fam.map((m) => `<button class="choice" data-person="${m.id}">${portraitSvg(m, HOUSES[st.players[b.target].house].color)}<b>${esc(E.personTitle(m))}</b><span>${role(m)}, ${m.age} ans · ${esc(m.trait)}${m.trait === "Paranoïaque" ? " (plus dur à empoisonner)" : ""}</span></button>`).join("")}</div>${nav}`;
     }
     if (b.kind === "bribe" && !b.prov) {
       const cands = E.provincesOf(st, b.target).filter((id) => id !== st.players[b.target].capital && st.provinces[id].armies <= 3);

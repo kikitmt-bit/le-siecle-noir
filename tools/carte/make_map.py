@@ -149,8 +149,12 @@ def path_d(pts, close=True):
     return d + (" Z" if close else "")
 
 
-def clamp_pts(pts, m=60):
-    return [(min(W + m, max(-m, x)), min(H + m, max(-m, y))) for x, y in pts]
+# marges larges : sur un écran 16:9 la carte montre aussi les pays voisins, le décor doit les couvrir
+MX, MY = 440, 170
+
+
+def clamp_pts(pts, mx=MX, my=MY):
+    return [(min(W + mx, max(-mx, x)), min(H + my, max(-my, y))) for x, y in pts]
 
 
 # ---------------------------------------------------------------- données Natural Earth
@@ -622,13 +626,13 @@ LIMIT = ([(3.24, 50.17), (3.60, 50.10), (4.00, 50.00), (4.40, 49.90), (4.72, 49.
 
 def build_art():
     land = []
-    mp = [P(*p) for p in MAIN] + [P(11.5, 53.5), P(11.5, 42.7)]
+    mp = [P(*p) for p in MAIN] + [P(18, 53.5), P(18, 38), P(12.5, 38)]
     land.append(path_d(simplify(clamp_pts(mp), 0.5)))
     for r in FOREIGN_RINGS:
         pr = simplify(clamp_pts([P(*p) for p in r]), 0.5)
         if len(pr) > 2 and abs(area(pr)) > 1:
             xs, ys = [p[0] for p in pr], [p[1] for p in pr]
-            if max(xs) > -40 and min(xs) < W + 40 and max(ys) > -40 and min(ys) < H + 40:
+            if max(xs) > -MX and min(xs) < W + MX and max(ys) > -MY and min(ys) < H + MY:
                 land.append(path_d(pr))
     for pid, isl in ISLANDS.items():
         for pr in isl:
@@ -636,7 +640,7 @@ def build_art():
     LAND = " ".join(land)
     CORSE_D = path_d(RINGP["corse"])
 
-    back = [f'<rect width="{W}" height="{H}" fill="{VELIN}"/>']
+    back = [f'<rect x="{-MX - 200}" y="{-MY - 200}" width="{W + 2 * MX + 400}" height="{H + 2 * MY + 400}" fill="{VELIN}"/>']
     U = '<use href="#land"'
     # lignes d'eau parallèles à la côte, de la plus lointaine à la plus proche
     rings = [(19, "#CDBB92"), (14, "#C2AE84"), (9.5, "#B39E74"), (5.5, "#9F8963"), (2.5, "#8A7453")]

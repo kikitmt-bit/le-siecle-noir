@@ -1,7 +1,7 @@
 // Les noms des maisons et des personnages, toujours à la couleur de leur maison, avec une bulle « qui est-ce ? »
-import { HOUSES } from "../content.js?v=1795368011";
-import * as E from "../engine.js?v=1795368011";
-import { S, esc } from "../state.js?v=1795368011";
+import { HOUSES } from "../content.js?v=1795371626";
+import * as E from "../engine.js?v=1795371626";
+import { S, esc } from "../state.js?v=1795371626";
 
 let cache = { key: "", re: null, map: null };
 
@@ -29,7 +29,7 @@ function build(st) {
     for (const m of (st.families && st.families[pid] && st.families[pid].members) || []) {
       const title = E.personTitle(m);
       const born = m.bornOf && st.players[m.bornOf] ? ` (née ${st.players[m.bornOf].hname || HOUSES[st.players[m.bornOf].house].name})` : "";
-      ent.push({ t: title, pid, color, tip: `${title} : ${ROLE(m, st, pid)} de la maison ${hn}${born}, ${m.age} ans${m.alive ? "" : ", mort" + (m.sex === "f" ? "e" : "")}` });
+      ent.push({ t: title, pid, id: m.id, color, tip: `${title} : ${ROLE(m, st, pid)} de la maison ${hn}${born}, ${m.age} ans${m.alive ? "" : ", mort" + (m.sex === "f" ? "e" : "")}` });
     }
   }
   // les plus longs d'abord (« la maison de Valcourt » avant « Valcourt »), sans doublon
@@ -48,7 +48,7 @@ export function colorize(text) {
   if (!st || !st.order) return safe;
   const { re, map } = build(st);
   if (!re) return safe;
-  return safe.replace(re, (m) => { const e = map.get(m); return e ? `<b class="nm" style="--hc:${e.color}" title="${esc(e.tip)}">${m}</b>` : m; });
+  return safe.replace(re, (m) => { const e = map.get(m); return e ? `<b class="nm" style="--hc:${e.color}" title="${esc(e.tip)}"${e.id != null ? ` data-who="${esc(e.pid)}|${esc(e.id)}"` : ""}>${m}</b>` : m; });
 }
 
 // le nom d'une maison en pastille colorée
@@ -57,4 +57,19 @@ export function houseTag(pid) {
   const pl = st && st.players[pid];
   if (!pl) return `<b class="nm">la milice</b>`;
   return `<b class="nm" style="--hc:${(HOUSES[pl.house] || HOUSES.valcourt).color}">${esc(pl.hname || HOUSES[pl.house].name)}</b>`;
+}
+
+// les personnages cités dans un texte (pour montrer leur visage à côté) : du plus long nom au plus court, sans doublon
+export function peopleIn(text, max = 3) {
+  const st = S();
+  if (!st || !st.order || !text) return [];
+  const { re, map } = build(st);
+  if (!re) return [];
+  const out = [], seen = new Set();
+  for (const mt of esc(text).matchAll(re)) {
+    const e = map.get(mt[0]);
+    if (e && e.id != null && !seen.has(e.id)) { seen.add(e.id); out.push({ pid: e.pid, id: e.id }); }
+    if (out.length >= max) break;
+  }
+  return out;
 }
