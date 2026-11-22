@@ -1,12 +1,12 @@
 // Panneau des dilemmes
-import * as E from "../engine.js?v=1795378288";
-import { ICON, term } from "../help.js?v=1795378288";
-import { L, S, esc, me } from "../state.js?v=1795378288";
-import { houseName } from "./common.js?v=1795378288";
-import { dieSvg, shield } from "./draw.js?v=1795378288";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795378288";
-import { myDice } from "./orders.js?v=1795378288";
-import { render } from "./render.js?v=1795378288";
+import * as E from "../engine.js?v=1795380938";
+import { ICON, term } from "../help.js?v=1795380938";
+import { L, S, esc, me } from "../state.js?v=1795380938";
+import { houseName } from "./common.js?v=1795380938";
+import { dieSvg, shield } from "./draw.js?v=1795380938";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795380938";
+import { myDice } from "./orders.js?v=1795380938";
+import { render } from "./render.js?v=1795380938";
 
 export const DSLOTS = ["dilemma", "dilemma2", "council"];
 

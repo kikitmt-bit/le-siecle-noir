@@ -1,18 +1,18 @@
 // Révélation partagée : les mêmes grandes cartes pour tout le monde ; on passe à la suivante quand chacun a validé.
-import * as A from "../audio.js?v=1795378288";
-import { HOUSES, OBJECTIVES } from "../content.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { ICON } from "../help.js?v=1795378288";
-import { PROVINCES } from "../map.js?v=1795378288";
-import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795378288";
-import { speak } from "./announce.js?v=1795378288";
-import { houseColor, houseName, setInput } from "./common.js?v=1795378288";
-import { dieSvg, shield } from "./draw.js?v=1795378288";
-import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795378288";
-import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795378288";
-import { colorize, houseTag, peopleIn } from "./names.js?v=1795378288";
-import { battleQuip } from "./news.js?v=1795378288";
-import { openModal } from "./overlays.js?v=1795378288";
+import * as A from "../audio.js?v=1795380938";
+import { HOUSES, OBJECTIVES } from "../content.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { ICON } from "../help.js?v=1795380938";
+import { PROVINCES } from "../map.js?v=1795380938";
+import { $, L, MAP, RV, S, SPEED, esc, me, net } from "../state.js?v=1795380938";
+import { speak } from "./announce.js?v=1795380938";
+import { houseColor, houseName, setInput } from "./common.js?v=1795380938";
+import { dieSvg, shield } from "./draw.js?v=1795380938";
+import { entryHtml, findPerson, portraitSvg } from "./house.js?v=1795380938";
+import { drawArrows, fx, marchArmies, updateMap } from "./map.js?v=1795380938";
+import { colorize, houseTag, peopleIn } from "./names.js?v=1795380938";
+import { battleQuip } from "./news.js?v=1795380938";
+import { openModal } from "./overlays.js?v=1795380938";
 
 export const CARD_TITLES = {
   court: ["Les affaires des cours", "Ce que chaque maison a décidé. Les affaires privées des autres n'arrivent qu'en rumeur."],
@@ -77,8 +77,8 @@ function itemFace(s) {
   const f = r && findPerson(st, r.id);
   if (!f) return "";
   const color = HOUSES[st.players[f.pid].house].color;
-  // une mort : le visage est montré vivant, puis se fige en gris (animation) et une croix s'imprime
-  if (s.kind === "death" && !f.m.alive) return `<span class="rv-face dying" data-who="${esc(f.pid)}|${esc(f.m.id)}">${portraitSvg({ ...f.m, alive: true, health: 0 }, color)}<i class="rv-cross-s">✝</i></span>`;
+  // une mort : le visage est montré vivant, puis le portrait de deuil (encre sur rouge) s'imprime par-dessus
+  if (s.kind === "death" && !f.m.alive) return `<span class="rv-face dying" data-who="${esc(f.pid)}|${esc(f.m.id)}">${portraitSvg({ ...f.m, alive: true, health: 0 }, color)}<span class="rv-dead">${portraitSvg(f.m, color)}</span></span>`;
   return `<span class="rv-face" data-who="${esc(f.pid)}|${esc(f.m.id)}">${portraitSvg(f.m, color)}</span>`;
 }
 function itemIcon(s) {
@@ -141,15 +141,29 @@ function finalHtml(st) {
   return `<table class="rv-sum final"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Or</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table><p class="rv-winner">${houseTag(r.winner)} est couronnée à Reims.</p>`;
 }
 
+// Les affaires des cours, comme une page de gazette : le Conseil et les affaires entre maisons à la une,
+// les affaires privées des autres en brèves (une rumeur d'une ligne). Ma propre affaire privée n'est pas
+// répétée : je viens de la trancher, et elle reste dans « Ma maison ».
+function courtHtml(st, steps) {
+  const council = steps.filter((s) => s.kind === "council");
+  const rest = steps.filter((s) => s.kind !== "council");
+  const affairs = rest.filter((s) => s.title && !s.secret);
+  const rumors = rest.filter((s) => s.title && s.secret && s.pid !== me());
+  const other = rest.filter((s) => !s.title);
+  const mine = (s) => s.pid === me() || (s.choice || "").includes(houseName(me()));
+  const news = (s) => `<article class="rv-news ${mine(s) ? "me" : ""}" style="--hc:${s.pid && st.players[s.pid] ? houseColor(s.pid) : "#75603F"}"><span class="rv-kick">${s.pid && st.players[s.pid] ? shield(st.players[s.pid].house, 22) : ""}${esc(s.title)}</span><p class="rv-lead">${colorize(s.text)}</p></article>`;
+  const breve = (s) => `<p class="rv-breve" style="--hc:${s.pid && st.players[s.pid] ? houseColor(s.pid) : "#75603F"}">${s.pid && st.players[s.pid] ? shield(st.players[s.pid].house, 20) : `<span class="rv-ic">${ICON.scroll}</span>`}<span>${s.title ? "On raconte que… " : ""}${colorize(s.text)}</span></p>`;
+  const breves = [...rumors, ...other];
+  const out = council.map((s) => councilHtml(st, s)).join("") + affairs.sort((a, b) => mine(b) - mine(a)).map(news).join("")
+    + (breves.length ? `<div class="rv-breves"><p class="rv-sec">Brèves des autres cours</p>${breves.map(breve).join("")}</div>` : "");
+  return out || `<p class="rv-empty">Rien ne filtre des cours cette année.</p>`;
+}
+
 function cardBody(st, card, c) {
   const steps = card.ks.map((k) => st.reveal.steps[k]);
   switch (card.type) {
-    case "court": {
-      const council = steps.filter((s) => s.kind === "council");
-      const rest = steps.filter((s) => s.kind !== "council");
-      return council.map((s) => councilHtml(st, s)).join("") + byHouse(st, rest);
-    }
-    case "move": return byHouse(st, steps, (s) => `<div class="rv-item">${ICON.army}<div>${colorize(s.text.replace(/^[^:]+ : /, ""))}</div></div>`) + `<p class="hint">Sur la carte : flèches noires = déplacements, pastilles vertes = armées levées.</p>`;
+    case "court": return courtHtml(st, steps);
+    case "move": return byHouse(st, steps, (s) => (s.lines || s.text.replace(/^[^:]+ : /, "").replace(/\.$/, "").split(", ")).map((t) => `<div class="rv-item rv-mv">${ICON.army}<div>${colorize(t.charAt(0).toUpperCase() + t.slice(1))}.</div></div>`).join("")) + `<p class="hint">Sur la carte : flèches noires = déplacements, pastilles vertes = armées levées.</p>`;
     case "battle": {
       const other = steps.filter((s) => !(s.kind === "battle" && s.atk));
       const bs = battleKs(st, card).map((k) => st.reveal.steps[k]);
@@ -195,7 +209,7 @@ export function rvCardHtml(st) {
   if (fresh) setTimeout(() => { RVX.freshKey = fk; }, 2200);
   return `<div class="rv-dock card-${card.type} ${mourn ? "mourn" : ""} ${fresh ? "fresh" : ""}"><div class="rv-head"><span>${st.gameOver && st.round === st.maxRounds ? "Dernière manche" : `Manche ${st.round}`} · révélation</span>${tabs}</div>
     <h3 class="rv-title">${esc(title)}</h3><p class="rv-subt">${esc(sub)}</p>
-    ${c === 0 ? hiddenDiceHtml(st) : ""}<div class="rv-content">${cardBody(st, card, c)}</div>${ackBar(st, c)}</div>`;
+    ${c === 0 ? hiddenDiceHtml(st) : ""}<div class="rv-content ${card.ks.length && card.ks.length <= 2 && !["battle", "move"].includes(card.type) ? "few" : ""}">${cardBody(st, card, c)}</div>${ackBar(st, c)}</div>`;
 }
 
 // première carte : les dés cachés de chaque maison se retournent (une seule fois par manche)

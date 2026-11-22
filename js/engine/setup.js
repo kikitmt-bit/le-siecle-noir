@@ -1,8 +1,8 @@
 // Création de partie, choix des provinces (draft) et placement
-import { OBJECTIVES } from "../content.js?v=1795378288";
-import { PROVINCES, REGIONS } from "../map.js?v=1795378288";
-import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795378288";
-import { makeFamily } from "./people.js?v=1795378288";
+import { OBJ_CLASH, OBJECTIVES } from "../content.js?v=1795380938";
+import { PROVINCES, REGIONS } from "../map.js?v=1795380938";
+import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795380938";
+import { makeFamily } from "./people.js?v=1795380938";
 
 export function createGame({ players, tutorial = false, randomDraft = false, code = "", rounds = MAX_ROUNDS }, rng) {
   // players: [{pid, name, house, isBot}]
@@ -25,13 +25,21 @@ export function createGame({ players, tutorial = false, randomDraft = false, cod
     fam.queenRef = { pid: p.pid, id: fam.members[1].id };
     state.players[p.pid].stats.firstKing = fam.kingId;
     priv[p.pid] = { used: [], objOffer: [], objectives: [], dilemma: null, dilemma2: null, chains: [], grudges: [] };
-    if (!p.isBot || p.ai) priv[p.pid].objOffer = shuffle(rng, OBJECTIVES.map((o) => o.id)).slice(0, 3);
+    if (!p.isBot || p.ai) priv[p.pid].objOffer = drawObjectives(rng);
   }
   state.order = shuffle(rng, players.map((p) => p.pid));
   for (const id of PROV_IDS) state.provinces[id] = { owner: null, armies: 2, plague: 0 };
   return { state, priv };
 }
 
+
+// 3 objectifs compatibles entre eux (voir OBJ_CLASH)
+export function drawObjectives(rng, n = 3) {
+  const clash = (a, b) => OBJ_CLASH.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  const out = [];
+  for (const id of shuffle(rng, OBJECTIVES.map((o) => o.id))) if (out.length < n && !out.some((o) => clash(o, id))) out.push(id);
+  return out;
+}
 
 export function finishObjectives(state, priv, inputs) {
   for (const pid of Object.keys(priv)) {

@@ -20,8 +20,20 @@ const { BASE, OUT, sleep, launch, newPlayer, botStep, phaseInfo } = require("./l
     await pages[i].fill("#in-code", code);
     await pages[i].click("#btn-join");
     await pages[i].waitForSelector("#screen-lobby:not(.hidden)");
-    const houses = ["valcourt", "morlanges", "ravenel", "aubrac"];
-    await pages[i].click(`.house-opt[data-h="${houses[i]}"]`);
+  }
+  // l'hôte tire au sort l'ordre de choix, puis chacun prend une maison à son tour
+  await sleep(500);
+  await pages[0].click("#btn-draw");
+  for (let k = 0; k < 40; k++) {
+    let left = 0;
+    for (const pg of pages.slice(0, N)) {
+      const b = await pg.$(".house-opt:not([disabled]):not([aria-pressed='true'])");
+      const mine = await pg.$(".house-opt[aria-pressed='true']");
+      if (!mine) left++;
+      if (b && !mine && (await pg.textContent("#house-turn")).includes("À toi")) await b.click();
+    }
+    if (!left) break;
+    await sleep(250);
   }
   await sleep(500);
   await pages[0].screenshot({ path: `${OUT}/en-ligne_salon.png` });

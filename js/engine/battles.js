@@ -1,14 +1,14 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795378288";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795378288";
-import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795378288";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795378288";
-import { validateOrders } from "./dilemmas.js?v=1795378288";
-import { addEpithet } from "./effects.js?v=1795378288";
-import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795378288";
-import { passTime } from "./rounds.js?v=1795378288";
-import { prepareResult } from "./scoring.js?v=1795378288";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795378288";
+import { PROVINCES } from "../map.js?v=1795380938";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795380938";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795380938";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795380938";
+import { validateOrders } from "./dilemmas.js?v=1795380938";
+import { addEpithet } from "./effects.js?v=1795380938";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795380938";
+import { passTime } from "./rounds.js?v=1795380938";
+import { prepareResult } from "./scoring.js?v=1795380938";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795380938";
 
 export const FEAST_COST = 3;
 // La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)
@@ -151,7 +151,7 @@ export function resolveRound(state, priv, inputs, rng) {
       P[to].armies += n;
       parts.push(`lève ${n} armées ${PROVINCES[to].en}${merc ? " (dont des mercenaires payés " + mc + " or)" : ""}`); touched.push(to); lv.push({ to, n });
     }
-    if (parts.length) steps.push({ kind: "move", text: `${capitalize(maisonName(state, pid))} : ${parts.join(", ")}.`, pid, set: snap(...touched), provs: touched, mv, lv });
+    if (parts.length) steps.push({ kind: "move", text: `${capitalize(maisonName(state, pid))} : ${parts.join(", ")}.`, pid, set: snap(...touched), provs: touched, mv, lv, lines: parts });
   }
   mark("battle");
   // 3. batailles

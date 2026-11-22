@@ -2,15 +2,15 @@
 // on choisit sa province → un menu s'ouvre à côté (dé, Frapper, Marcher, Lever) → une flèche vise la cible,
 // aimantée sur la plus proche du curseur → une bulle confirme (armées, chances). Sur PC, on peut aussi glisser.
 // Le parcours classique par le panneau de droite reste possible.
-import * as A from "../audio.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { PROVINCES } from "../map.js?v=1795378288";
-import { $, L, MAP, S, VIEW, esc, me } from "../state.js?v=1795378288";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795378288";
-import { dieSvg } from "./draw.js?v=1795378288";
-import { avail, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795378288";
-import { applyView, zoomBy } from "./map.js?v=1795378288";
-import { render } from "./render.js?v=1795378288";
+import * as A from "../audio.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { PROVINCES } from "../map.js?v=1795380938";
+import { $, L, MAP, S, VIEW, esc, me } from "../state.js?v=1795380938";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795380938";
+import { dieSvg } from "./draw.js?v=1795380938";
+import { avail, goldPlanned, myDice, saveOrders } from "./orders.js?v=1795380938";
+import { applyView, zoomBy } from "./map.js?v=1795380938";
+import { render } from "./render.js?v=1795380938";
 
 // état propre à la carte (jamais envoyé aux autres joueurs)
 const MO = { menu: null, die: null, focus: null, padAt: 0, synth: false, drag: null, snap: null, lastSrc: "mouse" };

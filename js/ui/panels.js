@@ -1,15 +1,15 @@
 // Panneau par phase : objectifs, choix des provinces, placement
-import * as A from "../audio.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { PROVINCES, REGIONS } from "../map.js?v=1795378288";
-import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795378288";
-import { houseColor, houseName, setInput, toast } from "./common.js?v=1795378288";
-import { panelDilemma } from "./dilemmas.js?v=1795378288";
-import { entryHtml } from "./house.js?v=1795378288";
-import { updateMap } from "./map.js?v=1795378288";
-import { panelOrders } from "./orders.js?v=1795378288";
-import { render } from "./render.js?v=1795378288";
-import { interludeLines, panelReveal } from "./reveal.js?v=1795378288";
+import * as A from "../audio.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { PROVINCES, REGIONS } from "../map.js?v=1795380938";
+import { $, L, MAP, S, esc, me, net } from "../state.js?v=1795380938";
+import { houseColor, houseName, setInput, toast } from "./common.js?v=1795380938";
+import { panelDilemma } from "./dilemmas.js?v=1795380938";
+import { entryHtml } from "./house.js?v=1795380938";
+import { updateMap } from "./map.js?v=1795380938";
+import { panelOrders } from "./orders.js?v=1795380938";
+import { render } from "./render.js?v=1795380938";
+import { interludeLines, panelReveal } from "./reveal.js?v=1795380938";
 
 // ---------------------------------------------------------------------
 // PANNEAU PAR PHASE
@@ -67,13 +67,13 @@ export function panelDraft() {
   const seq = st.draft.seq.map((p, i) => `<span style="background:${houseColor(p)}" class="${i === st.draft.idx ? "cur" : i < st.draft.idx ? "done" : ""}" title="${esc(houseName(p))}"></span>`).join("");
   return { html: `<p class="ph ${mine ? "red" : ""}">${mine ? "À toi de choisir !" : `Au tour de ${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))})`}</p>
     <p class="ptext">${mine ? (first ? "Clique sur une province libre : <b>ce sera ta capitale</b>. Protège-la, la perdre coûte très cher." : "Clique sur une province libre. Regroupe tes terres et vise une région entière : elle rapporte des armées et du Prestige à chaque manche.") : "Chacun choisit une province à tour de rôle. L'ordre s'inverse à chaque tour."}</p><p class="hint">Chacun choisit ${E.provincesPerPlayer(st.order.length)} provinces. Ensuite, toutes les provinces restantes sont partagées automatiquement autour de vos terres.</p>
-    ${sel ? `<div class="recap"><p class="ph">Ton choix : ${esc(PROVINCES[sel].name)}</p><p class="ptext" style="font-size:15px">${first ? "Ce sera ta <b>capitale</b>. " : ""}Région ${esc(REGIONS[PROVINCES[sel].region].name)} · voisines : ${PROVINCES[sel].adj.map((a) => esc(PROVINCES[a].name)).join(", ")}.</p><button class="btn btn-red btn-block" id="draft-ok">Confirmer ${esc(PROVINCES[sel].art)}</button><p class="hint">Tu peux encore cliquer une autre province sur la carte pour changer.</p></div>` : ""}
+    ${sel ? `<div class="recap"><p class="ph">Ton choix : ${esc(PROVINCES[sel].name)}</p><p class="ptext" style="font-size:15px">${first ? "Ce sera ta <b>capitale</b>. " : ""}Région ${esc(REGIONS[PROVINCES[sel].region].name)} · voisines : ${PROVINCES[sel].adj.map((a) => esc(PROVINCES[a].name)).join(", ")}.</p></div>` : ""}
     <div class="draft-order">${seq}</div>
-    ${regionsHelp()}`, bind: () => { if ($("#draft-ok")) $("#draft-ok").onclick = confirmDraft; } };
+    ${regionsHelp()}`, bind: () => {} };
 }
 
 export function regionsHelp() {
-  return `<div class="pbox"><p class="ph">Régions (bonus par manche)</p>${Object.values(REGIONS).map((r) => `<div style="font-size:14px;margin-bottom:4px"><b style="font-family:var(--caps);font-variant-caps:all-small-caps;font-size:14.5px">${r.name}</b> : ${r.provs.map((p) => PROVINCES[p].name).join(", ")} <i>(+${r.provs.length - 1} armées, +1 prestige)</i></div>`).join("")}</div>`;
+  return `<div class="pbox"><p class="ph">Régions (bonus par manche)</p>${Object.values(REGIONS).map((r) => `<div style="font-size:14px;margin-bottom:4px;text-wrap:pretty"><b style="font-family:var(--caps);font-variant-caps:all-small-caps;font-size:14.5px">${r.name}</b> : ${r.provs.map((p) => PROVINCES[p].name).join(", ")} <i>(+${r.provs.length - 1} armées, +1 prestige)</i></div>`).join("")}</div>`;
 }
 
 export function panelPlacement() {

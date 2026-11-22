@@ -1,9 +1,9 @@
 // Arbitre : seul le navigateur de l'hôte exécute ce code
-import { HUMAN_HOUSES } from "./content.js?v=1795378288";
-import * as E from "./engine.js?v=1795378288";
-import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795378288";
-import { toast } from "./ui/common.js?v=1795378288";
-import { aiName } from "./ui/lobby.js?v=1795378288";
+import { HUMAN_HOUSES } from "./content.js?v=1795380938";
+import * as E from "./engine.js?v=1795380938";
+import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795380938";
+import { toast } from "./ui/common.js?v=1795380938";
+import { aiName, housePicked } from "./ui/lobby.js?v=1795380938";
 
 // Lit une donnée sur le serveur en réessayant si la connexion est mauvaise (ok = false : lecture impossible).
 async function readRetry(fn, tries = 4) {
@@ -94,13 +94,15 @@ export function hostStart(opts = {}) {
   const ais = Object.entries((L.meta && L.meta.ais) || {});
   const fill = opts.fill !== false;
   if (list.length + ais.length < 2 && !fill) return;
-  const used = new Set(ais.map(([, a]) => a.house));
-  const players = list.map(([u, m]) => {
-    let house = m.house && !used.has(m.house) ? m.house : HUMAN_HOUSES.find((h) => !used.has(h));
-    used.add(house);
-    return { pid: u, name: m.name, house, hname: m.hname };
-  });
-  for (const [k, a] of ais) if (players.length < 4) players.push({ pid: k, name: a.name, house: a.house, isBot: true, ai: a.ai });
+  // en ligne, seules les maisons choisies à son tour comptent (tirage au sort dans le salon) ; les autres
+  // humains, puis les ordinateurs, reçoivent au hasard les maisons restantes
+  const valid = (m) => SOLO ? !!m.house : housePicked(L.meta, m);
+  const used = new Set(list.filter(([, m]) => valid(m)).map(([, m]) => m.house));
+  if (SOLO) ais.forEach(([, a]) => a.house && used.add(a.house));
+  const leftover = () => { const free = HUMAN_HOUSES.filter((h) => !used.has(h)); const h = free[Math.floor(Math.random() * free.length)]; used.add(h); return h; };
+  const players = list.map(([u, m]) => ({ pid: u, name: m.name, house: valid(m) ? m.house : null, hname: m.hname }));
+  players.forEach((p) => { if (!p.house) p.house = leftover(); });
+  for (const [k, a] of ais) if (players.length < 4) players.push({ pid: k, name: a.name, house: SOLO && a.house ? a.house : leftover(), isBot: true, ai: a.ai });
   // on complète toujours à 4 seigneurs : plus d'alliances, plus de trahisons
   if (fill) {
     const usedP = players.filter((p) => p.ai).map((p) => p.ai);

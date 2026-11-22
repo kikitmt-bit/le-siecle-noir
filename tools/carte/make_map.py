@@ -414,7 +414,7 @@ LABEL_AT = {}  # étendards placés à la main, si besoin (px)
 # Corse : dans un encadré à demi-échelle, au large de la Provence, comme sur les cartes anciennes
 _cp = simplify([P(*p) for p in CORSE_LL], 0.35)
 _cb = (min(p[0] for p in _cp), min(p[1] for p in _cp), max(p[0] for p in _cp), max(p[1] for p in _cp))
-CORSE_BOX = (757, 664, 830, 772)  # x0, y0, x1, y1 : au large de la Provence, à échelle réduite
+CORSE_BOX = (757, 678, 830, 786)  # x0, y0, x1, y1 : au large de la Provence, à échelle réduite ; bas à ~10 du bord visible, comme à droite
 CS = 0.6
 _tf = lambda x, y: (CORSE_BOX[0] + (CORSE_BOX[2] - CORSE_BOX[0] - (_cb[2] - _cb[0]) * CS) / 2 + (x - _cb[0]) * CS, CORSE_BOX[1] + (CORSE_BOX[3] - CORSE_BOX[1] - (_cb[3] - _cb[1]) * CS) / 2 + 8 + (y - _cb[1]) * CS)
 RINGP["corse"] = [_tf(x, y) for x, y in _cp]

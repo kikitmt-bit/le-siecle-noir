@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795378288";
-import { HOUSES } from "../content.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { ICON } from "../help.js?v=1795378288";
-import { PROVINCES } from "../map.js?v=1795378288";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795378288";
-import { applyCoach } from "./aides.js?v=1795378288";
-import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795378288";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795378288";
-import { shield } from "./draw.js?v=1795378288";
-import { crownMark, portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795378288";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795378288";
-import { drawArrows, updateMap } from "./map.js?v=1795378288";
-import { myDice, saveOrders } from "./orders.js?v=1795378288";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795378288";
-import { afterRender } from "./maporders.js?v=1795378288";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795378288";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795378288";
+import * as A from "../audio.js?v=1795380938";
+import { HOUSES } from "../content.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { ICON } from "../help.js?v=1795380938";
+import { PROVINCES } from "../map.js?v=1795380938";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795380938";
+import { applyCoach } from "./aides.js?v=1795380938";
+import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795380938";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795380938";
+import { shield } from "./draw.js?v=1795380938";
+import { crownMark, portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795380938";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795380938";
+import { drawArrows, updateMap } from "./map.js?v=1795380938";
+import { myDice, saveOrders } from "./orders.js?v=1795380938";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795380938";
+import { afterRender } from "./maporders.js?v=1795380938";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795380938";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795380938";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -80,7 +80,7 @@ export function renderGuide() {
       step = prep(2, "CHOIX DES PROVINCES");
       if (cur === pid) {
         mine = true;
-        if (L.ui.draftSel) { text = `<b>À toi :</b> tu as sélectionné <b>${esc(PROVINCES[L.ui.draftSel.prov].name)}</b>. Confirme, ou clique une autre province pour changer.`; btn = `<button class="btn btn-red" data-guide="draftok">Confirmer</button>`; }
+        if (L.ui.draftSel) { text = `<b>À toi :</b> tu as sélectionné <b>${esc(PROVINCES[L.ui.draftSel.prov].name)}</b>. Confirme, ou clique une autre province pour changer.`; btn = `<button class="btn btn-red" data-guide="draftok">Confirmer ${esc(PROVINCES[L.ui.draftSel.prov].art)}</button>`; }
         else text = st.players[pid].capital ? "<b>À toi :</b> clique sur une province libre de la carte (encadrée en pointillés dorés). Prends-la à côté des tiennes." : "<b>À toi :</b> clique sur une province libre de la carte (encadrée en pointillés dorés). Ce sera ta <b>capitale</b>.";
       }
       else text = `${esc(st.players[cur]?.name || "")} (${esc(houseName(cur))}) choisit une province… Attends ton tour.`;
@@ -238,7 +238,7 @@ export function renderPlayers() {
       <span class="hc-score" title="Score visible (sans les objectifs secrets)">${hide ? "?" : pub(pid)}<small>pts</small></span></span>
       <span class="pc-stats">${H_ICON.prestige}${hide ? "?" : p.prestige} ${H_ICON.province}${nprov} ${H_ICON.gold}${p.gold}${showDice ? `<span class="minidice">${dice.map((v) => (v ? `<span>${v}</span>` : '<span class="q">?</span>')).join("")}</span>` : ""}${relBadges(st, meP, pid)}${!online ? ' <span class="off">absent</span>' : ""}${ready && ["objectives", "placement", "dilemma", "orders", "reveal", "interlude"].includes(st.phase) ? ` <span class="ready">${st.phase === "reveal" ? "a lu ✓" : "prêt ✓"}</span>` : ""}</span>
       ${st.round > 0 && !hide ? `<span class="racebar"><div style="width:${Math.max(4, (pub(pid) / top) * 100)}%;background:${HOUSES[p.house].color}"></div></span>` : ""}
-      ${st.families && st.families[pid] ? famStrip(st, pid) : ""}
+      ${st.families && st.families[pid] ? (["objectives", "draft"].includes(st.phase) ? `<span class="fam-veil"><span class="fv-g">${esc(pw.power || "")}</span><span class="fv-b">− ${esc(pw.weak || "")}</span><i>La famille se dévoile après le choix des provinces.</i></span>` : famStrip(st, pid)) : ""}
     </div>`;
   }).join("");
   // un clic sur un visage ouvre la fiche du personnage ; ailleurs sur la carte de maison, la fiche de la maison

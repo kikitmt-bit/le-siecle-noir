@@ -1,8 +1,8 @@
 // « Tes parties en cours » : la liste des parties de cet appareil, sur l'accueil (gardée dans le navigateur).
-import { HOUSES } from "../content.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { $, esc, net, store } from "../state.js?v=1795378288";
-import { shield } from "./draw.js?v=1795378288";
+import { HOUSES } from "../content.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { $, esc, net, store } from "../state.js?v=1795380938";
+import { shield } from "./draw.js?v=1795380938";
 
 const KEY = "sn_games";
 const MAX_GAMES = 8;

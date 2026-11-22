@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { ICON } from "../help.js?v=1795378288";
-import { $, L, S, esc, me } from "../state.js?v=1795378288";
-import { scoresHidden, houseName } from "./common.js?v=1795378288";
-import { shield } from "./draw.js?v=1795378288";
-import { colorize } from "./names.js?v=1795378288";
-import { openModal } from "./overlays.js?v=1795378288";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795378288";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { ICON } from "../help.js?v=1795380938";
+import { $, L, S, esc, me } from "../state.js?v=1795380938";
+import { scoresHidden, houseName } from "./common.js?v=1795380938";
+import { shield } from "./draw.js?v=1795380938";
+import { colorize } from "./names.js?v=1795380938";
+import { openModal } from "./overlays.js?v=1795380938";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795380938";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -109,13 +109,16 @@ export const TRAIT_FLAVOR = {
   "Cruel": ["Il fait couper la langue des bavards. La cour est devenue très silencieuse.", "Elle collectionne les ongles de ses servantes. On ne lui pose pas de questions."],
 };
 
+let CLIP_N = 0;
+const clipId = (m) => `pc-${String(m.id).replace(/[^\w-]/g, "")}-${++CLIP_N}`;
 function drawnPortrait(m, color) {
+  const cid = clipId(m);
   const f = m.sex === "f", baby = m.age < 6, old = m.age >= 55;
   const ink = "#1B130D";
   const headR = baby ? 15 : 19;
   const hy = baby ? 82 : 66;
-  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="pc-${m.id}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
-    <ellipse cx="60" cy="70" rx="56" ry="66" fill="${color}" opacity=".35"/><g clip-path="url(#pc-${m.id})">
+  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="${cid}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
+    <ellipse cx="60" cy="70" rx="56" ry="66" fill="${m.alive === false ? "#8E1B14" : color}" opacity="${m.alive === false ? 1 : 0.35}"/><g clip-path="url(#${cid})">
     <g opacity=".25" stroke="${ink}" stroke-width="1">${Array.from({ length: 12 }, (_, i) => `<path d="M0,${i * 12 + 4} H120"/>`).join("")}</g>`;
   if (baby) h += `<path d="M30,140 Q30,96 60,94 Q90,96 90,140 Z" fill="#ECDEBD" stroke="${ink}" stroke-width="2"/><path d="M36,112 Q60,124 84,112 M38,126 Q60,138 82,126" stroke="${ink}" stroke-width="1.4" fill="none"/>`;
   else h += `<path d="M14,140 Q16,100 60,${hy + 28} Q104,100 106,140 Z" fill="${ink}"/>`;
@@ -158,12 +161,14 @@ export function portraitSvg(m, color) {
   const ink = "#1B130D", gold = "#A9843A";
   const L = 46.5, R = 73.5, Y = 62;
   const sick = m.alive && m.health >= 3, dying = m.alive && m.health >= 4;
-  const filt = !m.alive ? "grayscale(1) sepia(.3) contrast(1.05)" : dying ? "grayscale(.6) brightness(1.06)" : sick ? "grayscale(.3)" : "";
-  const cid = `pc-${String(m.id).replace(/[^\w-]/g, "")}`;
-  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="${cid}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath></defs>
-    <ellipse cx="60" cy="70" rx="56" ry="66" fill="#ECDEBD"/><g clip-path="url(#${cid})">
-    <image href="img/portraits/${src}" x="${8 + (PORTRAIT_DX[src.replace(".webp", "")] || 0)}" y="10" width="104" height="124.8"${filt ? ` style="filter:${filt}"` : ""}/>
-    <ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${color}" stroke-width="10" opacity=".35"/>`;
+  // un mort : la gravure s'imprime à l'encre noire sur fond rouge sang (le papier se fond dans le rouge)
+  const dead = !m.alive;
+  const filt = dead ? "" : dying ? "grayscale(.6) brightness(1.06)" : sick ? "grayscale(.3)" : "";
+  const cid = clipId(m);
+  let h = `<svg viewBox="0 0 120 140" width="120" height="140" class="portrait" aria-hidden="true"><defs><clipPath id="${cid}"><ellipse cx="60" cy="70" rx="56" ry="66"/></clipPath>${dead ? `<filter id="${cid}-ink" color-interpolation-filters="sRGB"><feColorMatrix values="0 0 0 0 .07  0 0 0 0 .02  0 0 0 0 .01  -.75 -1.5 -.25 0 1.9"/></filter>` : ""}</defs>
+    <ellipse cx="60" cy="70" rx="56" ry="66" fill="${dead ? "#8E1B14" : "#ECDEBD"}"/><g clip-path="url(#${cid})">
+    <image href="img/portraits/${src}" x="${8 + (PORTRAIT_DX[src.replace(".webp", "")] || 0)}" y="10" width="104" height="124.8"${dead ? ` filter="url(#${cid}-ink)"` : filt ? ` style="filter:${filt}"` : ""}/>
+    ${dead ? "" : `<ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${color}" stroke-width="10" opacity=".35"/>`}`;
   if (sick) {
     // teint cireux, cernes, et pour un mourant les joues creusées
     h += `<rect width="120" height="140" fill="#ECDEBD" opacity="${dying ? 0.3 : 0.16}"/>
@@ -175,8 +180,11 @@ export function portraitSvg(m, color) {
     h += `<path d="M28,${Y - 13} Q50,${Y - 17} ${R - 5},${Y - 5} M${R + 6},${Y - 4} Q${R + 15},${Y - 2} ${R + 22},${Y + 4}" stroke="${ink}" stroke-width="2" fill="none"/>
       <path d="M${R - 7},${Y - 4} Q${R},${Y - 8} ${R + 7},${Y - 3} Q${R + 8},${Y + 4} ${R},${Y + 6} Q${R - 7},${Y + 4} ${R - 7},${Y - 4} Z" fill="${ink}"/><path d="M${R - 4},${Y - 2} Q${R},${Y - 4} ${R + 5},${Y - 1}" stroke="#5A4430" stroke-width=".8" fill="none"/>`;
   }
-  if (!m.alive) h += `<path d="M80,4 L118,42" stroke="${ink}" stroke-width="11"/>`; // crêpe de deuil
-  h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
+  // deuil : bord assombri, cadre noir épais, croix sur un médaillon noir en bas
+  if (dead) h += `<ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="#2A0705" stroke-width="14" opacity=".55"/>`;
+  h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="${dead ? 6 : 3}"/>`;
+  if (dead) h += `<circle cx="60" cy="128" r="11" fill="${ink}" stroke="#C9A35A" stroke-width="1.2"/><path d="M60,120 V137 M54,125.5 H66" stroke="#ECDEBD" stroke-width="2.6"/>`;
+  h += `</svg>`;
   return h;
 }
 

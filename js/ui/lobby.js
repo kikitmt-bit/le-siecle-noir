@@ -1,17 +1,17 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795378288";
-import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795378288";
-import * as E from "../engine.js?v=1795378288";
-import { hostStart, stopHost } from "../host.js?v=1795378288";
-import * as local from "../localnet.js?v=1795378288";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795378288";
-import { show, toast } from "./common.js?v=1795378288";
-import { shield } from "./draw.js?v=1795378288";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795378288";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795378288";
-import { palmaresHtml } from "./overlays.js?v=1795378288";
-import { render } from "./render.js?v=1795378288";
-import { qrSvg } from "./qr.js?v=1795378288";
+import * as A from "../audio.js?v=1795380938";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795380938";
+import * as E from "../engine.js?v=1795380938";
+import { hostStart, stopHost } from "../host.js?v=1795380938";
+import * as local from "../localnet.js?v=1795380938";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795380938";
+import { show, toast } from "./common.js?v=1795380938";
+import { shield } from "./draw.js?v=1795380938";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795380938";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795380938";
+import { palmaresHtml } from "./overlays.js?v=1795380938";
+import { render } from "./render.js?v=1795380938";
+import { qrSvg } from "./qr.js?v=1795380938";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
@@ -64,7 +64,7 @@ export async function createGame() {
   const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   let code = "";
   for (let i = 0; i < 10; i++) { code = Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join(""); if (!(await net.roomExists(code))) break; }
-  try { await net.createRoom(code, { name, house: "valcourt", hname: store.get("sn_hname") || "", joined: Date.now() }); enterRoom(code); }
+  try { await net.createRoom(code, { name, house: null, hname: store.get("sn_hname") || "", joined: Date.now() }); enterRoom(code); }
   catch (e) { console.error(e); $("#home-msg").textContent = "Impossible de créer la partie (connexion ?)."; }
 }
 
@@ -127,6 +127,19 @@ export function badFormat(prob, st) {
     : `Cette partie a été créée avec une ancienne version du jeu (format ${v}) : elle n'est plus compatible avec la version actuelle (format ${E.FORMAT_VERSION}). Crée une nouvelle partie pour jouer.`;
 }
 
+// ---- choix des maisons à tour de rôle, dans un ordre tiré au sort par l'hôte ----
+// meta.pickDraw = { id, order: [uid…] } ; un membre a choisi quand son « pick » porte l'id du tirage.
+export function housePicked(meta, m) { const d = meta && meta.pickDraw; return !!(d && m && m.house && m.pick === d.id); }
+export function pickTurn(meta, members) {
+  const d = meta && meta.pickDraw;
+  if (!d) return null;
+  const online = (u) => members[u] && members[u].online !== false;
+  const next = (d.order || []).find((u) => online(u) && !housePicked(meta, members[u]));
+  if (next) return next;
+  // les retardataires choisissent ensuite, dans l'ordre d'arrivée
+  return Object.entries(members).filter(([u, m]) => online(u) && !housePicked(meta, m)).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0)).map(([u]) => u)[0] || null;
+}
+
 export function renderLobby() {
   if (L.state && L.state.phase && L.state.phase !== "lobby") return;
   show("lobby");
@@ -135,24 +148,37 @@ export function renderLobby() {
   const inv = inviteUrl();
   if ($("#lobby-qr").dataset.url !== inv) { $("#lobby-qr").dataset.url = inv; $("#lobby-qr").innerHTML = qrSvg(inv, { size: 196 }); }
   const mine = L.members[net.uid] || {};
-  const taken = [...Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false).map(([, m]) => m.house), ...Object.values((L.meta && L.meta.ais) || {}).map((a) => a.house)];
-  $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${mine.house === h}" ${taken.includes(h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small><span class="hp-t">${esc(HOUSE_POWERS[h].title)}</span><span class="hp-g">+ ${esc(HOUSE_POWERS[h].power)}</span><span class="hp-b">− ${esc(HOUSE_POWERS[h].weak)}</span></button>`).join("");
-  $("#house-pick").querySelectorAll("button").forEach((b) => (b.onclick = () => { A.play("click"); net.updateMember(L.code, { house: b.dataset.h }); }));
+  const meta = L.meta || {}, draw = meta.pickDraw;
+  const isHost0 = meta.host === net.uid;
+  const turn = SOLO ? net.uid : pickTurn(meta, L.members);
+  const myPick = SOLO ? mine.house : housePicked(meta, mine) ? mine.house : null;
+  const taken = SOLO ? [] : Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false && housePicked(meta, m)).map(([, m]) => m.house);
+  const canPick = SOLO || (draw && turn === net.uid);
+  const nm = (u) => esc((L.members[u] && L.members[u].name) || "?");
+  $("#house-turn").innerHTML = SOLO ? "" : !draw
+    ? (isHost0 ? `<button id="btn-draw" class="btn btn-red">Tirer au sort l'ordre de choix des maisons</button><p class="hint">Quand tout le monde est là. Chacun choisira sa maison à son tour.</p>` : `<p class="ptext">L'hôte va tirer au sort l'ordre de choix des maisons…</p>`)
+    : `<ol class="pick-order">${(draw.order || []).filter((u) => L.members[u]).map((u) => { const m = L.members[u]; const done = housePicked(meta, m); return `<li class="${u === turn ? "cur" : ""} ${done ? "done" : ""}">${done ? shield(m.house, 20) : ""}<span>${nm(u)}${u === net.uid ? " (toi)" : ""}</span>${u === turn ? "<i>choisit…</i>" : ""}</li>`; }).join("")}</ol>
+       <p class="ptext">${turn === net.uid ? "<b>À toi de choisir ta maison !</b>" : turn ? `Au tour de <b>${nm(turn)}</b>.` : "Toutes les maisons sont choisies. Les places libres iront à l'ordinateur."}</p>`;
+  if ($("#btn-draw")) $("#btn-draw").onclick = () => {
+    const order = Object.entries(L.members).filter(([, m]) => m.online !== false).map(([u]) => u).sort(() => Math.random() - 0.5);
+    A.play("drum"); net.updateMeta(L.code, { pickDraw: { id: Math.random().toString(36).slice(2, 8), order } });
+  };
+  $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${myPick === h}" ${taken.includes(h) || (!canPick && myPick !== h) || (!SOLO && myPick && myPick !== h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small><span class="hp-t">${esc(HOUSE_POWERS[h].title)}</span><span class="hp-g">${esc(HOUSE_POWERS[h].power)}</span><span class="hp-b">− ${esc(HOUSE_POWERS[h].weak)}</span></button>`).join("");
+  $("#house-pick").querySelectorAll("button").forEach((b) => (b.onclick = () => { if (!canPick || myPick) return; A.play("seal"); net.updateMember(L.code, { house: b.dataset.h, pick: draw ? draw.id : null }); }));
   if (document.activeElement !== $("#lobby-hname")) $("#lobby-hname").value = mine.hname || "";
   $("#lobby-hname").onchange = () => { const v = E.cleanHouseName($("#lobby-hname").value) || ""; store.set("sn_hname", v); $("#lobby-hname").value = v; net.updateMember(L.code, { hname: v }); };
   const list = Object.entries(L.members).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0));
   const ais = (L.meta && L.meta.ais) || {};
   const isHost = L.meta && L.meta.host === net.uid;
-  $("#lobby-members").innerHTML = list.map(([u, m]) => `<li>${m.house ? shield(m.house, 24) : ""}<span>${esc(m.name || "?")}${m.hname ? ` <i>· maison ${esc(m.hname)}</i>` : ""}</span><span class="tag">${u === (L.meta && L.meta.host) ? "hôte" : ""}${m.online === false ? " · hors ligne" : ""}</span></li>`).join("")
-    + Object.entries(ais).map(([k, a]) => `<li>${shield(a.house, 24)}<span>${esc(a.name)}</span><span class="tag">ordinateur${isHost ? ` <button class="btn btn-small" data-rmai="${k}" style="min-height:30px">Retirer</button>` : ""}</span></li>`).join("");
+  $("#lobby-members").innerHTML = list.map(([u, m]) => `<li>${(SOLO ? m.house : housePicked(meta, m)) ? shield(m.house, 24) : ""}<span>${esc(m.name || "?")}${m.hname ? ` <i>· maison ${esc(m.hname)}</i>` : ""}</span><span class="tag">${u === (L.meta && L.meta.host) ? "hôte" : ""}${m.online === false ? " · hors ligne" : ""}</span></li>`).join("")
+    + Object.entries(ais).map(([k, a]) => `<li>${SOLO && a.house ? shield(a.house, 24) : ""}<span>${esc(a.name)}</span><span class="tag">ordinateur · maison restante${isHost ? ` <button class="btn btn-small" data-rmai="${k}" style="min-height:30px">Retirer</button>` : ""}</span></li>`).join("");
   document.querySelectorAll("[data-rmai]").forEach((b) => (b.onclick = () => { const a = { ...ais }; delete a[b.dataset.rmai]; net.updateMeta(L.code, { ais: a }); }));
   $("#lobby-ai").classList.toggle("hidden", !isHost || list.filter(([, m]) => m.online !== false).length + Object.keys(ais).length >= 4);
   $("#btn-add-ai").onclick = () => {
-    const usedH = new Set([...Object.values(L.members).map((m) => m.house), ...Object.values(ais).map((a) => a.house)]);
-    const h = HUMAN_HOUSES.find((x) => !usedH.has(x)); if (!h) return;
     const usedP = Object.values(ais).map((a) => a.ai);
     const pers = ["conquerant", "intrigant", "prudent"].find((x) => !usedP.includes(x)) || "intrigant";
-    net.updateMeta(L.code, { ais: { ...ais, [`ia-${h}`]: { name: aiName(pers), house: h, ai: pers } } });
+    const k = ["ia-1", "ia-2", "ia-3"].find((x) => !ais[x]); if (!k) return;
+    net.updateMeta(L.code, { ais: { ...ais, [k]: { name: aiName(pers), house: null, ai: pers } } });
   };
   $("#lobby-host").classList.toggle("hidden", !isHost);
   $("#lobby-wait").classList.toggle("hidden", isHost);

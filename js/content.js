@@ -2,12 +2,12 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795378288";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795378288";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795378288";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795378288";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795378288";
-import { DIL_SOMBRES } from "./dil_sombres.js?v=1795378288";
+import { DIL_COUR } from "./dil_cour.js?v=1795380938";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795380938";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795380938";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795380938";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795380938";
+import { DIL_SOMBRES } from "./dil_sombres.js?v=1795380938";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E2A22", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
@@ -418,6 +418,13 @@ export const OBJECTIVES = [
   { id: "invaincu", pts: 8, text: "Attaquer au moins 3 fois sans jamais perdre une bataille" },
   { id: "genereux", pts: 6, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
   { id: "pacifique", pts: 10, text: "N'attaquer personne de toute la partie" },
+];
+// Objectifs qui se contrarient : on ne les propose jamais ensemble (les 3 cartes tirées doivent pouvoir se combiner)
+export const OBJ_CLASH = [
+  ["pacifique", "invaincu"], ["pacifique", "conquerant"], ["pacifique", "traitre"], ["pacifique", "capitale_rivale"], ["pacifique", "huit"], ["pacifique", "dix"],
+  ["vieux_roi", "trois_rois"], ["colere_basse", "peur_haute"], ["riche", "genereux"], ["huit", "dix"],
+  // une seule région imposée à la fois : deux régions précises aux deux bouts du royaume sont presque impossibles
+  ...["reg_nord", "reg_ouest", "reg_est", "reg_centre", "reg_sudouest", "reg_sudest"].flatMap((a, i, r) => r.slice(i + 1).map((b) => [a, b])),
 ];
 DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES, ...DIL_FAMILLES, ...DIL_SOMBRES);
 // vérification des identifiants uniques

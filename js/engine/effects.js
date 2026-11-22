@@ -1,9 +1,9 @@
 // Effets des dilemmes
-import { PROVINCES } from "../map.js?v=1795378288";
-import { chron, provincesOf } from "./calc.js?v=1795378288";
-import { PROV_IDS, capitalize, clamp, maisonName, pick, shuffle } from "./core.js?v=1795378288";
-import { deName, heirs, king, kingLabel, newPerson, personTitle, queen, takenNames } from "./people.js?v=1795378288";
-import { addTreaty, killPerson, marry, sowBastard } from "./succession.js?v=1795378288";
+import { PROVINCES } from "../map.js?v=1795380938";
+import { chron, provincesOf } from "./calc.js?v=1795380938";
+import { PROV_IDS, capitalize, clamp, maisonName, pick, shuffle } from "./core.js?v=1795380938";
+import { deName, heirs, king, kingLabel, newPerson, personTitle, queen, takenNames } from "./people.js?v=1795380938";
+import { addTreaty, killPerson, marry, sowBastard } from "./succession.js?v=1795380938";
 
 // ---------- effets des dilemmes ----------
 export function provForWhere(state, pid, where, rng) {

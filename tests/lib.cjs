@@ -55,7 +55,7 @@ async function botStep(p) {
       if ($("#ov-close") && document.querySelector("#tb-phase").textContent === "Fin de partie") return;
       // tirage des provinces
       const sel = $$("#map .prov.sel");
-      if (document.querySelector("#draft-ok")) { click(document.querySelector("#draft-ok")); return; }
+      if (document.querySelector("[data-guide='draftok']")) { click(document.querySelector("[data-guide='draftok']")); return; }
       if (document.querySelector("#tb-phase").textContent === "Choix des provinces" && sel.length) { click(pick(sel)); return; }
       if ($("#pl-ok") && $("#pl-ok").textContent === "Valider") { click($("#pl-ok")); return; }
       // ordres
