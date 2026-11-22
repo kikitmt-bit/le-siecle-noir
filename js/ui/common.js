@@ -1,6 +1,6 @@
 // Petits outils d'interface : affichage, toasts, bulles d'aide
-import { HOUSES } from "../content.js?v=1795376900";
-import { $, L, S, esc, net, store } from "../state.js?v=1795376900";
+import { HOUSES } from "../content.js?v=1795378288";
+import { $, L, S, esc, net, store } from "../state.js?v=1795378288";
 
 // ---------------------------------------------------------------------
 // utilitaires d'interface

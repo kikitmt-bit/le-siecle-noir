@@ -1,14 +1,14 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795376900";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795376900";
-import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795376900";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795376900";
-import { validateOrders } from "./dilemmas.js?v=1795376900";
-import { addEpithet } from "./effects.js?v=1795376900";
-import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795376900";
-import { passTime } from "./rounds.js?v=1795376900";
-import { prepareResult } from "./scoring.js?v=1795376900";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795376900";
+import { PROVINCES } from "../map.js?v=1795378288";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795378288";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795378288";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795378288";
+import { validateOrders } from "./dilemmas.js?v=1795378288";
+import { addEpithet } from "./effects.js?v=1795378288";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795378288";
+import { passTime } from "./rounds.js?v=1795378288";
+import { prepareResult } from "./scoring.js?v=1795378288";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795378288";
 
 export const FEAST_COST = 3;
 // La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)

@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795376900";
-import * as E from "../engine.js?v=1795376900";
-import { ICON } from "../help.js?v=1795376900";
-import { $, L, S, esc, me } from "../state.js?v=1795376900";
-import { scoresHidden, houseName } from "./common.js?v=1795376900";
-import { shield } from "./draw.js?v=1795376900";
-import { colorize } from "./names.js?v=1795376900";
-import { openModal } from "./overlays.js?v=1795376900";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795376900";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795378288";
+import * as E from "../engine.js?v=1795378288";
+import { ICON } from "../help.js?v=1795378288";
+import { $, L, S, esc, me } from "../state.js?v=1795378288";
+import { scoresHidden, houseName } from "./common.js?v=1795378288";
+import { shield } from "./draw.js?v=1795378288";
+import { colorize } from "./names.js?v=1795378288";
+import { openModal } from "./overlays.js?v=1795378288";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795378288";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -143,6 +143,11 @@ export function portraitSrc(m) {
   return { src: `img/portraits/${name}.webp`, dx: PORTRAIT_DX[name] || 0 };
 }
 
+// petite couronne dorée devant le nom du roi et de la reine (♚ roi, ♛ reine), jamais sur le portrait
+export function crownMark(m) {
+  return m && m.alive && (m.role === "king" || m.role === "queen") ? `<i class="crown-mk" title="${m.sex === "f" ? "Reine" : "Roi"}">${m.sex === "f" ? "♛" : "♚"}︎</i>` : "";
+}
+
 export function portraitSvg(m, color) {
   // moins de 6 ans : le nourrisson dessiné ; 6–15 ans : visage d'enfant ; 16 ans et plus : visage adulte selon l'âge
   if (m.age < 6) return drawnPortrait(m, color);
@@ -169,12 +174,6 @@ export function portraitSvg(m, color) {
     // bandeau de cuir sur l'œil droit de l'image, lanière en travers du front
     h += `<path d="M28,${Y - 13} Q50,${Y - 17} ${R - 5},${Y - 5} M${R + 6},${Y - 4} Q${R + 15},${Y - 2} ${R + 22},${Y + 4}" stroke="${ink}" stroke-width="2" fill="none"/>
       <path d="M${R - 7},${Y - 4} Q${R},${Y - 8} ${R + 7},${Y - 3} Q${R + 8},${Y + 4} ${R},${Y + 6} Q${R - 7},${Y + 4} ${R - 7},${Y - 4} Z" fill="${ink}"/><path d="M${R - 4},${Y - 2} Q${R},${Y - 4} ${R + 5},${Y - 1}" stroke="#5A4430" stroke-width=".8" fill="none"/>`;
-  }
-  if (m.role === "king" || m.role === "queen") {
-    // couronne or terni posée sur la tête, sans fleur de lys
-    const f = m.sex === "f", w = f ? 16 : 19, base = f ? 30 : 28;
-    h += `<path d="M${60 - w},${base} L${60 - w - 2},${base - 11} L${60 - w / 2},${base - 5} L60,${base - 15} L${60 + w / 2},${base - 5} L${60 + w + 2},${base - 11} L${60 + w},${base} Z" fill="${gold}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M${60 - w},${base - 3} H${60 + w}" stroke="${ink}" stroke-width="1"/><circle cx="60" cy="${base - 15}" r="1.7" fill="${ink}"/><circle cx="${60 - w - 2}" cy="${base - 11}" r="1.3" fill="${ink}"/><circle cx="${60 + w + 2}" cy="${base - 11}" r="1.3" fill="${ink}"/>`;
   }
   if (!m.alive) h += `<path d="M80,4 L118,42" stroke="${ink}" stroke-width="11"/>`; // crêpe de deuil
   h += `</g><ellipse cx="60" cy="70" rx="56" ry="66" fill="none" stroke="${ink}" stroke-width="3"/></svg>`;
@@ -271,7 +270,7 @@ export function roleLabel(st, pid, m) {
 export function personTile(st, pid, m, extra = "") {
   const color = HOUSES[st.players[pid].house].color;
   const tr = TRAITS[m.trait];
-  return `<button class="ptile ${m.alive ? "" : "dead"} ${extra}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}<span class="pt-n">${esc(E.personTitle(m))}</span><span class="pt-r">${roleLabel(st, pid, m)} · ${m.age} ans</span>${m.alive && m.trait ? `<span class="pt-t ${tr && tr.good ? "good" : "bad"}">${esc(m.trait)}</span>` : m.alive ? "" : `<span class="pt-t">✝ ${esc(m.cause || "mort")}</span>`}</button>`;
+  return `<button class="ptile ${m.alive ? "" : "dead"} ${extra}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}<span class="pt-n">${crownMark(m)}${esc(E.personTitle(m))}</span><span class="pt-r">${roleLabel(st, pid, m)} · ${m.age} ans</span>${m.alive && m.trait ? `<span class="pt-t ${tr && tr.good ? "good" : "bad"}">${esc(m.trait)}</span>` : m.alive ? "" : `<span class="pt-t">✝ ${esc(m.cause || "mort")}</span>`}</button>`;
 }
 
 export function personHtml(ref) {
@@ -289,7 +288,7 @@ export function personHtml(ref) {
     <div class="pc-portrait">${portraitSvg(m, color)}</div>
     <div class="pc-body">
       <span class="card-kicker">${shield(st.players[pid].house, 22)} Maison ${esc(houseName(pid))}</span>
-      <h2>${esc(E.personTitle(m))}</h2>
+      <h2>${crownMark(m)}${esc(E.personTitle(m))}</h2>
       <p class="pc-role">${roleLabel(st, pid, m)} · ${m.age} ans${m.alive && (["king", "queen", "widow"].includes(m.role) || m.health >= 2) ? ` · ${HEALTH[m.health]}` : ""}${hIdx > 0 ? ` · ${hIdx + 1}<sup>e</sup> dans l'ordre de succession` : ""}${!m.alive ? ` · ✝ ${esc(m.cause || "mort")}` : ""}</p>
       ${fl && m.alive ? `<p class="fam-flavor">${esc(fl)}</p>` : ""}
       ${tr ? `<div class="fam-trait ${tr.good ? "good" : "bad"}"><b>${esc(m.trait)}</b> : ${esc(tr.desc)}${isKing ? "" : " (compte surtout quand il ou elle règne)"}</div>` : ""}

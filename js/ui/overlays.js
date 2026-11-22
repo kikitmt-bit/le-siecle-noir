@@ -1,24 +1,24 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795376900";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795376900";
-import * as E from "../engine.js?v=1795376900";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795376900";
-import { hostReplay } from "../host.js?v=1795376900";
-import { PROVINCES } from "../map.js?v=1795376900";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795376900";
-import { introHtml, nextModal } from "./aides.js?v=1795376900";
-import { houseColor, houseName, sealBreakHtml, sealStamp, setInput, toast, tuto } from "./common.js?v=1795376900";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795376900";
-import { shield, woodcut } from "./draw.js?v=1795376900";
-import { GRAVURES } from "../gravures.js?v=1795376900";
-import { chronicleHtml, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795376900";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795376900";
-import { colorize, peopleIn } from "./names.js?v=1795376900";
-import { bindLivre, livreHtml } from "./livre.js?v=1795376900";
-import { dropGame } from "./games.js?v=1795376900";
-import { render } from "./render.js?v=1795376900";
-import { interludeLines } from "./reveal.js?v=1795376900";
-import { openPadTest } from "./maporders.js?v=1795376900";
+import * as A from "../audio.js?v=1795378288";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795378288";
+import * as E from "../engine.js?v=1795378288";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795378288";
+import { hostReplay } from "../host.js?v=1795378288";
+import { PROVINCES } from "../map.js?v=1795378288";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795378288";
+import { introHtml, nextModal } from "./aides.js?v=1795378288";
+import { houseColor, houseName, sealBreakHtml, sealStamp, setInput, toast, tuto } from "./common.js?v=1795378288";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795378288";
+import { shield, woodcut } from "./draw.js?v=1795378288";
+import { GRAVURES } from "../gravures.js?v=1795378288";
+import { chronicleHtml, crownMark, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795378288";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795378288";
+import { colorize, peopleIn } from "./names.js?v=1795378288";
+import { bindLivre, livreHtml } from "./livre.js?v=1795378288";
+import { dropGame } from "./games.js?v=1795378288";
+import { render } from "./render.js?v=1795378288";
+import { interludeLines } from "./reveal.js?v=1795378288";
+import { openPadTest } from "./maporders.js?v=1795378288";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -122,7 +122,7 @@ export function dilemmaCard() {
 // les visages cités : portrait, nom, rôle (clic = fiche du personnage)
 export function facesHtml(list) {
   const st = S();
-  const items = list.map((r) => { const f = findPerson(st, r.id); if (!f) return ""; const { m, pid } = f; return `<button class="face" data-who="${esc(pid)}|${esc(m.id)}" style="--hc:${houseColor(pid)}">${portraitSvg(m, houseColor(pid))}<span class="face-n">${esc(E.personTitle(m))}</span><span class="face-r">${roleLabel(st, pid, m)} · ${esc(houseName(pid))}</span></button>`; }).join("");
+  const items = list.map((r) => { const f = findPerson(st, r.id); if (!f) return ""; const { m, pid } = f; return `<button class="face" data-who="${esc(pid)}|${esc(m.id)}" style="--hc:${houseColor(pid)}">${portraitSvg(m, houseColor(pid))}<span class="face-n">${crownMark(m)}${esc(E.personTitle(m))}</span><span class="face-r">${roleLabel(st, pid, m)} · ${esc(houseName(pid))}</span></button>`; }).join("");
   return items ? `<div class="faces">${items}</div>` : "";
 }
 

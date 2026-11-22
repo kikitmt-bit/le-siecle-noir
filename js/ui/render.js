@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795376900";
-import { HOUSES } from "../content.js?v=1795376900";
-import * as E from "../engine.js?v=1795376900";
-import { ICON } from "../help.js?v=1795376900";
-import { PROVINCES } from "../map.js?v=1795376900";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795376900";
-import { applyCoach } from "./aides.js?v=1795376900";
-import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795376900";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795376900";
-import { shield } from "./draw.js?v=1795376900";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795376900";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795376900";
-import { drawArrows, updateMap } from "./map.js?v=1795376900";
-import { myDice, saveOrders } from "./orders.js?v=1795376900";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795376900";
-import { afterRender } from "./maporders.js?v=1795376900";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795376900";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795376900";
+import * as A from "../audio.js?v=1795378288";
+import { HOUSES } from "../content.js?v=1795378288";
+import * as E from "../engine.js?v=1795378288";
+import { ICON } from "../help.js?v=1795378288";
+import { PROVINCES } from "../map.js?v=1795378288";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795378288";
+import { applyCoach } from "./aides.js?v=1795378288";
+import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795378288";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795378288";
+import { shield } from "./draw.js?v=1795378288";
+import { crownMark, portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795378288";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795378288";
+import { drawArrows, updateMap } from "./map.js?v=1795378288";
+import { myDice, saveOrders } from "./orders.js?v=1795378288";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795378288";
+import { afterRender } from "./maporders.js?v=1795378288";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795378288";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795378288";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -199,7 +199,7 @@ function famStrip(st, pid) {
     const tr = m.trait ? ` · ${m.trait}` : "";
     const tip = `${E.personTitle(m)} — ${roleOf(m)}, ${m.age} ans${tr}${sp ? ` · marié${m.sex === "f" ? "e" : ""} à ${E.personTitle(sp)} (${spH ? spH.hname || HOUSES[spH.house].name : "?"})` : ""}${m.bastardOf && m.bastardOf !== pid && st.players[m.bastardOf] ? " · on murmure qu'il est le bâtard d'une autre maison" : ""}${isDead ? ` · ✝ ${m.cause || "mort"}` : ""}`;
     const born = !isDead && start.length && !start.includes(m.id);
-    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n">${esc(m.name)}</span></span>`;
+    return `<span class="fm ${isDead ? "dead" : ""} ${k && m.id === k.id ? "ruler" : ""}" title="${esc(tip)}" data-who="${esc(pid)}|${esc(m.id)}">${portraitSvg(m, color)}${spH ? `<i class="ring" style="--rc:${HOUSES[spH.house].color}">⚭</i>` : ""}${born ? '<i class="new">nouveau</i>' : ""}${isDead ? '<i class="cross">✝</i>' : ""}<span class="fm-n">${crownMark(m)}${esc(m.name)}</span></span>`;
   };
   const shown = order.slice(0, 7);
   return `<span class="famstrip">${shown.map((m) => one(m, false)).join("")}${order.length > 7 ? `<span class="fm more">+${order.length - 7}</span>` : ""}${dead.slice(0, 2).map((m) => one(m, true)).join("")}${!order.length ? '<span class="fm-none">Plus aucun héritier !</span>' : ""}</span>`;

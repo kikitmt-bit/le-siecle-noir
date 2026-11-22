@@ -1,11 +1,11 @@
 // « Le livre de la soirée » : une page de chronique dessinée en image (1080×1350), à partager ou enregistrer.
 // Le vainqueur couronné, le classement avec le visage des souverains, les moments forts et le registre des morts.
-import { HOUSES } from "../content.js?v=1795376900";
-import * as E from "../engine.js?v=1795376900";
-import { $, S } from "../state.js?v=1795376900";
-import { houseName, toast } from "./common.js?v=1795376900";
-import { portraitSrc } from "./house.js?v=1795376900";
-import { momentsForts } from "./overlays.js?v=1795376900";
+import { HOUSES } from "../content.js?v=1795378288";
+import * as E from "../engine.js?v=1795378288";
+import { $, S } from "../state.js?v=1795378288";
+import { houseName, toast } from "./common.js?v=1795378288";
+import { portraitSrc } from "./house.js?v=1795378288";
+import { momentsForts } from "./overlays.js?v=1795378288";
 
 const W = 1080, H = 1350;
 const C = { parch: "#F0E4C7", parch2: "#E6D5AF", ink: "#241811", ink2: "#5A4430", ink3: "#75603F", red: "#A3221A", gold: "#A9843A" };
@@ -33,14 +33,6 @@ async function face(ctx, m, color, x, y, w, crown) {
   if (im) { ctx.filter = m.alive ? "none" : "grayscale(1)"; ctx.drawImage(im, x + (8 + ps.dx) * k, y + 10 * k, 104 * k, 124.8 * k); ctx.filter = "none"; }
   else { ctx.fillStyle = color; ctx.globalAlpha = 0.35; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1; }
   ctx.lineWidth = 10 * k; ctx.strokeStyle = color; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
-  if (crown) {
-    // couronne d'or terni posée sur la tête, comme dans le jeu
-    const f = m.sex === "f", cw = (f ? 16 : 19) * k, base = y + (f ? 30 : 28) * k, mx = cx;
-    ctx.beginPath();
-    ctx.moveTo(mx - cw, base); ctx.lineTo(mx - cw - 2 * k, base - 11 * k); ctx.lineTo(mx - cw / 2, base - 5 * k); ctx.lineTo(mx, base - 15 * k);
-    ctx.lineTo(mx + cw / 2, base - 5 * k); ctx.lineTo(mx + cw + 2 * k, base - 11 * k); ctx.lineTo(mx + cw, base); ctx.closePath();
-    ctx.fillStyle = C.gold; ctx.fill(); ctx.lineWidth = 1.5 * k; ctx.strokeStyle = C.ink; ctx.stroke();
-  }
   ctx.restore();
   ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.lineWidth = Math.max(2, 3 * k); ctx.strokeStyle = C.ink; ctx.stroke();
 }
