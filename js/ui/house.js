@@ -1,13 +1,14 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795389300";
-import * as E from "../engine.js?v=1795389300";
-import { ICON } from "../help.js?v=1795389300";
-import { $, L, S, esc, me } from "../state.js?v=1795389300";
-import { scoresHidden, houseName } from "./common.js?v=1795389300";
-import { shield } from "./draw.js?v=1795389300";
-import { colorize } from "./names.js?v=1795389300";
-import { openModal } from "./overlays.js?v=1795389300";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795389300";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795389807";
+import * as E from "../engine.js?v=1795389807";
+import { ICON } from "../help.js?v=1795389807";
+import { $, L, S, esc, me } from "../state.js?v=1795389807";
+import { scoresHidden, houseName } from "./common.js?v=1795389807";
+import { shield } from "./draw.js?v=1795389807";
+import { colorize } from "./names.js?v=1795389807";
+import { openModal } from "./overlays.js?v=1795389807";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795389807";
+import { nicknameLine } from "./surnoms.js?v=1795389807";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -234,7 +235,7 @@ export function familyHtml(i) {
     <div class="fam-hero">${portraitSvg(m, color)}<div><div class="fam-role">${esc(role)}</div><h2 style="margin:2px 0 4px">${esc(E.personTitle(m))}</h2><div class="fam-age">${m.age} ans${["king", "queen"].includes(m.role) || m.health >= 2 ? ` · ${HEALTH[m.health]}` : ""}${hIdx > 0 ? ` · ${hIdx + 1}e dans l'ordre de succession` : ""}</div></div></div>
     <p class="fam-flavor">${esc(fl)}</p>
     ${tr ? `<div class="fam-trait ${tr.good ? "good" : "bad"}"><b>${esc(m.trait)}</b> : ${esc(effect)}</div>` : ""}
-    ${m.infirm ? `<p class="hint">Son surnom, « ${esc(m.infirm)} », la cour le lui a donné. Personne n'ose le dire devant ${m.sex === "f" ? "elle" : "lui"}.</p>` : ""}
+    ${nicknameLine(m) ? `<p class="hint">${esc(nicknameLine(m))}</p>` : ""}
     ${nav(i)}</div>`;
 }
 
@@ -312,7 +313,7 @@ export function personHtml(ref) {
       <p class="pc-role">${roleLabel(st, pid, m)} · ${m.age} ans${m.alive && (["king", "queen", "widow"].includes(m.role) || m.health >= 2) ? ` · ${HEALTH[m.health]}` : ""}${hIdx > 0 ? ` · ${hIdx + 1}<sup>e</sup> dans l'ordre de succession` : ""}${!m.alive ? ` · ✝ ${esc(m.cause || "mort")}` : ""}</p>
       ${fl && m.alive ? `<p class="fam-flavor">${esc(fl)}</p>` : ""}
       ${tr ? `<div class="fam-trait ${tr.good ? "good" : "bad"}"><b>${esc(m.trait)}</b> : ${esc(tr.desc)}${isKing ? "" : " (compte surtout quand il ou elle règne)"}</div>` : ""}
-      ${m.infirm ? `<p class="hint">Son surnom, « ${esc(m.infirm)} », la cour le lui a donné. Personne n'ose le dire devant ${m.sex === "f" ? "elle" : "lui"}.</p>` : ""}
+      ${nicknameLine(m) ? `<p class="hint">${esc(nicknameLine(m))}</p>` : ""}
       ${m.bastard && m.legit ? `<p class="hint">Bâtard légitimé : il peut hériter.</p>` : ""}
       ${sp ? `<div class="pc-spouse"><span class="ph">Marié${m.sex === "f" ? "e" : ""} à</span>${personTile(st, m.spouse.pid, sp)}</div>` : ""}
       <div class="row" style="margin-top:auto"><button class="btn grow" data-house="${esc(pid)}">Toute la maison</button><button class="btn btn-red grow" id="md-close">Fermer</button></div>

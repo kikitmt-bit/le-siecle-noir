@@ -1,13 +1,13 @@
 // Carte SVG, zoom et déplacement
-import * as A from "../audio.js?v=1795389300";
-import { HOUSES } from "../content.js?v=1795389300";
-import { LEGEND } from "../help.js?v=1795389300";
-import { PROVINCES } from "../map.js?v=1795389300";
-import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795389300";
-import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795389300";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795389300";
-import { houseColor } from "./common.js?v=1795389300";
-import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795389300";
+import * as A from "../audio.js?v=1795389807";
+import { HOUSES } from "../content.js?v=1795389807";
+import { LEGEND } from "../help.js?v=1795389807";
+import { PROVINCES } from "../map.js?v=1795389807";
+import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795389807";
+import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795389807";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795389807";
+import { houseColor } from "./common.js?v=1795389807";
+import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795389807";
 
 export function buildMap() {
   const svg = $("#map");

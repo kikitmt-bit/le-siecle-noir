@@ -1,11 +1,11 @@
 // « Le livre de la soirée » : une page de chronique dessinée en image (1080×1350), à partager ou enregistrer.
 // Le vainqueur couronné, le classement avec le visage des souverains, les moments forts et le registre des morts.
-import { HOUSES } from "../content.js?v=1795389300";
-import * as E from "../engine.js?v=1795389300";
-import { $, S } from "../state.js?v=1795389300";
-import { houseName, toast } from "./common.js?v=1795389300";
-import { portraitSrc } from "./house.js?v=1795389300";
-import { momentsForts } from "./overlays.js?v=1795389300";
+import { HOUSES } from "../content.js?v=1795389807";
+import * as E from "../engine.js?v=1795389807";
+import { $, S } from "../state.js?v=1795389807";
+import { houseName, toast } from "./common.js?v=1795389807";
+import { portraitSrc } from "./house.js?v=1795389807";
+import { momentsForts } from "./overlays.js?v=1795389807";
 
 const W = 1080, H = 1350;
 const C = { parch: "#F0E4C7", parch2: "#E6D5AF", ink: "#241811", ink2: "#5A4430", ink3: "#75603F", red: "#A3221A", gold: "#A9843A" };
