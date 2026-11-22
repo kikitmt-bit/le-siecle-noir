@@ -1,17 +1,17 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795381958";
-import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795381958";
-import * as E from "../engine.js?v=1795381958";
-import { hostStart, stopHost } from "../host.js?v=1795381958";
-import * as local from "../localnet.js?v=1795381958";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795381958";
-import { show, toast } from "./common.js?v=1795381958";
-import { shield } from "./draw.js?v=1795381958";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795381958";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795381958";
-import { palmaresHtml } from "./overlays.js?v=1795381958";
-import { render } from "./render.js?v=1795381958";
-import { qrSvg } from "./qr.js?v=1795381958";
+import * as A from "../audio.js?v=1795388227";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795388227";
+import * as E from "../engine.js?v=1795388227";
+import { hostStart, stopHost } from "../host.js?v=1795388227";
+import * as local from "../localnet.js?v=1795388227";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795388227";
+import { show, toast } from "./common.js?v=1795388227";
+import { shield } from "./draw.js?v=1795388227";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795388227";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795388227";
+import { palmaresHtml } from "./overlays.js?v=1795388227";
+import { render } from "./render.js?v=1795388227";
+import { qrSvg } from "./qr.js?v=1795388227";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON

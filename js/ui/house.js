@@ -1,13 +1,13 @@
 // Onglets Maison et Chronique, présentation de la famille
-import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795381958";
-import * as E from "../engine.js?v=1795381958";
-import { ICON } from "../help.js?v=1795381958";
-import { $, L, S, esc, me } from "../state.js?v=1795381958";
-import { scoresHidden, houseName } from "./common.js?v=1795381958";
-import { shield } from "./draw.js?v=1795381958";
-import { colorize } from "./names.js?v=1795381958";
-import { openModal } from "./overlays.js?v=1795381958";
-import { PORTRAIT_DX } from "./portrait-dx.js?v=1795381958";
+import { HEALTH, HOUSES, OBJECTIVES, TRAITS } from "../content.js?v=1795388227";
+import * as E from "../engine.js?v=1795388227";
+import { ICON } from "../help.js?v=1795388227";
+import { $, L, S, esc, me } from "../state.js?v=1795388227";
+import { scoresHidden, houseName } from "./common.js?v=1795388227";
+import { shield } from "./draw.js?v=1795388227";
+import { colorize } from "./names.js?v=1795388227";
+import { openModal } from "./overlays.js?v=1795388227";
+import { PORTRAIT_DX } from "./portrait-dx.js?v=1795388227";
 
 // ---- entrées de chronique (les dilemmes avec leur contexte) ----
 export function entryHtml(e, plain = false) {
@@ -143,12 +143,20 @@ function ageCode(m, face) {
   if (/Chauve/.test(m.infirm || "") && E.faceTags(face).includes("chauve")) return "v";
   return m.age < 30 ? "j" : m.age < 50 ? "m" : "v";
 }
+// nom du fichier gravé selon l'âge : nourrisson (0–2), petit (3–5), enfant (6–15), adulte (j/m/v).
+// Les tout-petits n'ont pas de visage attribué au moteur : on le tire de l'identifiant, avec les cheveux du visage adulte.
+function faceFile(m) {
+  if (m.age < 6) {
+    const stage = m.age < 3 ? "baby" : "small";
+    return E.pickFace(m.id, m.sex, null, { kid: stage, hair: E.faceHair(m.kid || m.face) });
+  }
+  if (m.age < 16) return m.kid || E.pickFace(m.id, m.sex, null, { kid: true });
+  const face = m.face || E.pickFace(m.id, m.sex);
+  return face && `${face}${ageCode(m, face)}`;
+}
 export function portraitSrc(m) {
-  if (m.age < 6) return null;
-  const child = m.age < 16;
-  const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
-  if (!face) return null;
-  const name = child ? face : `${face}${ageCode(m, face)}`;
+  const name = faceFile(m);
+  if (!name) return null;
   return { src: `img/portraits/${name}.webp`, dx: PORTRAIT_DX[name] || 0 };
 }
 
@@ -158,12 +166,10 @@ export function crownMark(m) {
 }
 
 export function portraitSvg(m, color) {
-  // moins de 6 ans : le nourrisson dessiné ; 6–15 ans : visage d'enfant ; 16 ans et plus : visage adulte selon l'âge
-  if (m.age < 6) return drawnPortrait(m, color);
-  const child = m.age < 16;
-  const face = child ? m.kid || E.pickFace(m.id, m.sex, null, { kid: true }) : m.face || E.pickFace(m.id, m.sex);
-  if (!face) return drawnPortrait(m, color);
-  const src = child ? `${face}.webp` : `${face}${ageCode(m, face)}.webp`;
+  // gravure selon l'âge (voir faceFile) ; le dessin vectoriel ne sert plus que s'il manque une image
+  const file = faceFile(m);
+  if (!file) return drawnPortrait(m, color);
+  const src = `${file}.webp`;
   const ink = "#1B130D", gold = "#A9843A";
   const L = 46.5, R = 73.5, Y = 62;
   const sick = m.alive && m.health >= 3, dying = m.alive && m.health >= 4;

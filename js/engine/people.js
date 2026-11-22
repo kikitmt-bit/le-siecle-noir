@@ -1,6 +1,6 @@
 // Famille : accesseurs et création des personnages
-import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795381958";
-import { pick, uid } from "./core.js?v=1795381958";
+import { HOUSES, INFIRMITIES, NAMES, PORTRAITS, TRAIT_POOL } from "../content.js?v=1795388227";
+import { pick, uid } from "./core.js?v=1795388227";
 
 // ---------- famille ----------
 export function family(state, pid) { return state.families[pid]; }
@@ -79,8 +79,9 @@ export function faceTags(key) {
   return [];
 }
 export function faceHair(key) { return faceTags(key).find((t) => ["brun", "noir", "roux", "blond", "chatain"].includes(t)) || null; }
+// kid : true (6–15 ans), "small" (3–5 ans) ou "baby" (0–2 ans) ; faux pour un adulte
 export function pickFace(id, sex, taken = null, { infirm = null, trait = null, hair = null, kid = false } = {}) {
-  const pool = PORTRAITS[(kid ? "kid_" : "") + sex] || [];
+  const pool = PORTRAITS[(kid === true ? "kid_" : kid ? kid + "_" : "") + sex] || [];
   if (!pool.length) return null;
   const want = (INFIRM_TAG.find(([re]) => re.test(infirm || "")) || [])[1] || null;
   const score = ([, t]) => {
@@ -96,7 +97,7 @@ export function pickFace(id, sex, taken = null, { infirm = null, trait = null, h
   const from = free.length ? free : pool;
   const best = Math.max(...from.map(score));
   const top = from.filter((e) => score(e) === best);
-  const face = top[hashStr(String(id) + (kid ? "k" : "")) % top.length][0];
+  const face = top[hashStr(String(id) + (kid === true ? "k" : kid || "")) % top.length][0];
   if (taken) taken.add(`face:${face}`);
   return face;
 }

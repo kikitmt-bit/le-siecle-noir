@@ -1,6 +1,6 @@
 // État partagé de l'application (un seul exemplaire, importé par tous les modules)
-import { ICON } from "./help.js?v=1795381958";
-import * as remote from "./net.js?v=1795381958";
+import { ICON } from "./help.js?v=1795388227";
+import * as remote from "./net.js?v=1795388227";
 
 export const H_ICON = ICON;
 

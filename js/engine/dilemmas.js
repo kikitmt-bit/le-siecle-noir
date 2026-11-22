@@ -1,13 +1,13 @@
 // Distribution des dilemmes et fin de la phase dilemme, validation des ordres
-import { COUNCIL, DILEMMAS, TRAITS } from "../content.js?v=1795381958";
-import { PROVINCES } from "../map.js?v=1795381958";
-import { aiCouncil, aiDilemma } from "./ai.js?v=1795381958";
-import { allied, chron, ctxFor, noteRel, provincesOf, situationOf } from "./calc.js?v=1795381958";
-import { capitalize, clamp, fill, maisonName, pick, shuffle } from "./core.js?v=1795381958";
-import { applyFx, seedPlague } from "./effects.js?v=1795381958";
-import { consort, heirs, king, queen } from "./people.js?v=1795381958";
-import { realDice } from "./rounds.js?v=1795381958";
-import { marriageable } from "./succession.js?v=1795381958";
+import { COUNCIL, DILEMMAS, TRAITS } from "../content.js?v=1795388227";
+import { PROVINCES } from "../map.js?v=1795388227";
+import { aiCouncil, aiDilemma } from "./ai.js?v=1795388227";
+import { allied, chron, ctxFor, noteRel, provincesOf, situationOf } from "./calc.js?v=1795388227";
+import { capitalize, clamp, fill, maisonName, pick, shuffle } from "./core.js?v=1795388227";
+import { applyFx, seedPlague } from "./effects.js?v=1795388227";
+import { consort, heirs, king, queen } from "./people.js?v=1795388227";
+import { realDice } from "./rounds.js?v=1795388227";
+import { marriageable } from "./succession.js?v=1795388227";
 
 // ---------- distribution des dilemmes ----------
 export function reqOk(state, pid, req, pair) {
