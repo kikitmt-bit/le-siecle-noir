@@ -1259,3 +1259,46 @@ select { border: 1.5px solid var(--ink); border-radius: 2px; background: var(--c
 }
 @media (min-width: 901px) { .home-pad { text-align: center; border-top: 0; padding-top: 0; margin-top: 8px; } }
 @media (max-width: 900px) { .end-card .dil-tabs { flex-wrap: wrap; } .end-card .dil-tab { flex: 1 1 40%; font-size: 14px; } }
+
+/* ===================== 3.13 : ANIMATIONS ===================== */
+.march-n { font-family: var(--caps); font-weight: 700; font-size: 9px; fill: #F5EBD3; font-variant-numeric: lining-nums; }
+.march { filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+/* dés : ils roulent, puis se posent ; le dé caché se retourne à la révélation */
+.die.rolling { animation: dietoss .8s cubic-bezier(.3,.7,.4,1) both; }
+.die.rolling svg { animation: none; }
+.die.landed { animation: dieland .25s ease-out; }
+@keyframes dietoss { 0% { transform: translate(-30px, -26px) rotate(-200deg) scale(.7); opacity: 0; } 60% { transform: translate(4px, 3px) rotate(14deg) scale(1.05); opacity: 1; } 80% { transform: translate(-2px, -2px) rotate(-6deg); } 100% { transform: none; } }
+@keyframes dieland { 50% { transform: scale(1.08); } }
+.rv-hidden { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 10px; padding: 6px 10px; border: 1px dashed rgba(201,163,90,.5); border-radius: 2px; }
+.rv-hl { font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; color: var(--gold); font-size: 15px; width: 100%; }
+.rv-hd { display: inline-flex; align-items: center; gap: 5px; }
+.die-flip { display: inline-flex; perspective: 300px; }
+.die-flip.go { animation: dieflip .7s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes dieflip { 0% { transform: rotateY(180deg) scale(.6); filter: brightness(.2); } 50% { filter: brightness(.2); } 51% { filter: none; } 100% { transform: none; } }
+/* cartes : le dilemme arrive face cachée et se retourne, son sceau se brise ; sceller imprime un sceau */
+.card.still { animation: none; }
+.dil-card.arrive { position: relative; animation: cardflip .65s cubic-bezier(.25,.8,.35,1) both; transform-origin: 50% 50%; }
+@keyframes cardflip { 0% { transform: perspective(1800px) rotateY(-92deg); filter: brightness(.55); } 55% { filter: brightness(.9); } 100% { transform: none; filter: none; } }
+.seal-break { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; pointer-events: none; z-index: 5; }
+.seal-break span { position: absolute; inset: 0; animation: .9s .45s cubic-bezier(.5,0,.7,1) both; }
+.seal-break svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+.seal-break .sb-l { clip-path: polygon(0 0, 55% 0, 45% 40%, 55% 62%, 42% 100%, 0 100%); animation-name: sealL; }
+.seal-break .sb-r { clip-path: polygon(55% 0, 100% 0, 100% 100%, 42% 100%, 55% 62%, 45% 40%); animation-name: sealR; }
+@keyframes sealL { 0% { opacity: 1; } 100% { transform: translate(-70px, 60px) rotate(-35deg); opacity: 0; } }
+@keyframes sealR { 0% { opacity: 1; } 100% { transform: translate(70px, 70px) rotate(30deg); opacity: 0; } }
+.seal-press { position: fixed; left: 50%; top: 50%; width: 160px; height: 160px; margin: -80px 0 0 -80px; z-index: 96; pointer-events: none; animation: sealpress .95s cubic-bezier(.2,1.5,.4,1) both; }
+.seal-press svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
+@keyframes sealpress { 0% { transform: scale(2.6) rotate(-20deg); opacity: 0; } 30% { transform: scale(1) rotate(0); opacity: 1; } 75% { opacity: 1; } 100% { transform: scale(.96); opacity: 0; } }
+/* une mort mémorable : le visage se fige en gris, une croix s'imprime, le nom s'inscrit au registre */
+.rv-face { position: relative; display: inline-block; }
+.rv-face.dying image { filter: grayscale(1) sepia(.3) contrast(1.05); }
+.rv-cross-s { position: absolute; right: -4px; top: -6px; font-style: normal; font-size: 20px; color: #CFC4AE; text-shadow: 0 0 3px #000; }
+.rv-reg { display: block; margin-top: 3px; font-family: var(--caps); font-variant-caps: all-small-caps; letter-spacing: .06em; font-size: 14px; color: #CFC4AE; }
+.rv-dock.fresh .rv-face.dying image { animation: togray 1.3s .5s both; }
+@keyframes togray { from { filter: none; } to { filter: grayscale(1) sepia(.3) contrast(1.05); } }
+.rv-dock.fresh .rv-cross-s { animation: stamp .5s 1.4s cubic-bezier(.2,1.6,.4,1) both; }
+.rv-dock.fresh .rv-reg { animation: inkwrite 1s 1.6s steps(24) both; }
+@keyframes inkwrite { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.rv-dock.fresh .rv-item.k-death { animation: mournin .8s both; }
+@keyframes mournin { from { background: rgba(0,0,0,.6); } }
+.icon-btn.off { opacity: .45; }

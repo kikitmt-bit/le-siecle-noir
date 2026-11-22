@@ -1,13 +1,13 @@
 // Carte SVG, zoom et déplacement
-import * as A from "../audio.js?v=1795374146";
-import { HOUSES } from "../content.js?v=1795374146";
-import { LEGEND } from "../help.js?v=1795374146";
-import { PROVINCES } from "../map.js?v=1795374146";
-import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795374146";
-import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795374146";
-import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795374146";
-import { houseColor } from "./common.js?v=1795374146";
-import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795374146";
+import * as A from "../audio.js?v=1795376900";
+import { HOUSES } from "../content.js?v=1795376900";
+import { LEGEND } from "../help.js?v=1795376900";
+import { PROVINCES } from "../map.js?v=1795376900";
+import { ART_BACK, ART_DEFS, ART_FRONT } from "../map-art.js?v=1795376900";
+import { $, L, MAP, S, VIEW, esc } from "../state.js?v=1795376900";
+import { hidePopover, provinceCard, showPopover } from "./aides.js?v=1795376900";
+import { houseColor } from "./common.js?v=1795376900";
+import { bindMapOrders, closeMenu, magnetPick } from "./maporders.js?v=1795376900";
 
 export function buildMap() {
   const svg = $("#map");
@@ -86,6 +86,30 @@ export function drawArrows(list) {
     const mx = (f.cx + t.cx) / 2 + (t.cy - f.cy) * 0.15, my = (f.cy + t.cy) / 2 - (t.cx - f.cx) * 0.15;
     return `<path class="order-arrow" d="M${f.cx},${f.cy} Q${mx},${my} ${t.cx},${t.cy}" stroke="${a.color}" ${a.dashed ? 'stroke-dasharray="6 6"' : ""} marker-end="url(#${a.color === "#241811" ? "ah-ink" : "ah-red"})" opacity="0.9"/>`;
   }).join("");
+}
+
+// courbe d'une flèche d'ordre (même tracé que drawArrows)
+export function arrowPath(from, to) {
+  const f = PROVINCES[from], t = PROVINCES[to];
+  const mx = (f.cx + t.cx) / 2 + (t.cy - f.cy) * 0.15, my = (f.cy + t.cy) / 2 - (t.cx - f.cx) * 0.15;
+  return `M${f.cx},${f.cy} Q${mx},${my} ${t.cx},${t.cy}`;
+}
+
+// les armées marchent le long des flèches : un étendard aux couleurs de la maison, avec son nombre d'armées.
+// Moins d'une seconde ; rien si l'utilisateur a demandé moins d'animations.
+export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+export function marchArmies(list, dur = 0.9) {
+  if (reducedMotion() || !list.length) return;
+  const g = $("#m-fx");
+  for (const a of list) {
+    if (!PROVINCES[a.from] || !PROVINCES[a.to]) continue;
+    const wrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    wrap.setAttribute("pointer-events", "none");
+    wrap.innerHTML = `<g class="march"><g transform="translate(0,-6) scale(1.6)"><path d="M0,10 V-20" stroke="#241811" stroke-width="2"/><path d="M1,-20 H19 L15,-13 L19,-6 H1 Z" fill="${a.color}" stroke="#241811" stroke-width="1.2"/>${a.n ? `<text x="9" y="-9.5" text-anchor="middle" class="march-n">${a.n}</text>` : ""}<ellipse cx="0" cy="11" rx="9" ry="3" fill="#241811" opacity=".35"/><circle cx="-5" cy="6" r="3.2" fill="#241811"/><circle cx="4" cy="7" r="3.2" fill="#241811"/><path d="M-9,6 l-3,-9 M8,7 l3,-10" stroke="#241811" stroke-width="1.6" stroke-linecap="round"/></g>
+      <animateMotion dur="${dur}s" fill="freeze" path="${arrowPath(a.from, a.to)}" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines=".45 0 .3 1"/></g>`;
+    g.appendChild(wrap);
+    setTimeout(() => wrap.remove(), dur * 1000 + 450);
+  }
 }
 
 export function fx(kind, prov, color) {

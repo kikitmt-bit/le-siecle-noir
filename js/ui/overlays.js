@@ -1,24 +1,24 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795374146";
-import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795374146";
-import * as E from "../engine.js?v=1795374146";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795374146";
-import { hostReplay } from "../host.js?v=1795374146";
-import { PROVINCES } from "../map.js?v=1795374146";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795374146";
-import { introHtml, nextModal } from "./aides.js?v=1795374146";
-import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795374146";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795374146";
-import { shield, woodcut } from "./draw.js?v=1795374146";
-import { GRAVURES } from "../gravures.js?v=1795374146";
-import { chronicleHtml, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795374146";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795374146";
-import { colorize, peopleIn } from "./names.js?v=1795374146";
-import { bindLivre, livreHtml } from "./livre.js?v=1795374146";
-import { dropGame } from "./games.js?v=1795374146";
-import { render } from "./render.js?v=1795374146";
-import { interludeLines } from "./reveal.js?v=1795374146";
-import { openPadTest } from "./maporders.js?v=1795374146";
+import * as A from "../audio.js?v=1795376900";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795376900";
+import * as E from "../engine.js?v=1795376900";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795376900";
+import { hostReplay } from "../host.js?v=1795376900";
+import { PROVINCES } from "../map.js?v=1795376900";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795376900";
+import { introHtml, nextModal } from "./aides.js?v=1795376900";
+import { houseColor, houseName, sealBreakHtml, sealStamp, setInput, toast, tuto } from "./common.js?v=1795376900";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795376900";
+import { shield, woodcut } from "./draw.js?v=1795376900";
+import { GRAVURES } from "../gravures.js?v=1795376900";
+import { chronicleHtml, entryHtml, familyHtml, findPerson, houseSheetHtml, personHtml, portraitSvg, roleLabel, setLogFilter } from "./house.js?v=1795376900";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795376900";
+import { colorize, peopleIn } from "./names.js?v=1795376900";
+import { bindLivre, livreHtml } from "./livre.js?v=1795376900";
+import { dropGame } from "./games.js?v=1795376900";
+import { render } from "./render.js?v=1795376900";
+import { interludeLines } from "./reveal.js?v=1795376900";
+import { openPadTest } from "./maporders.js?v=1795376900";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -34,6 +34,13 @@ export function renderOverlays() {
   if (L.ovKey === html) return; // rien n'a changé : on ne relance pas les animations
   L.ovKey = html;
   ov.innerHTML = html; ov.classList.remove("hidden");
+  // une carte qui arrive s'anime une fois ; un simple clic sur un choix ne la refait pas apparaître
+  const card = ov.querySelector(".card");
+  const k = st.phase === "dilemma" ? `d${st.round}:${dilCurrent()}` : `${st.phase}${st.round}`;
+  if (card) {
+    if (L.ovAnim === k) card.classList.add("still");
+    else { L.ovAnim = k; if (st.phase === "dilemma") { card.classList.add("arrive"); card.insertAdjacentHTML("beforeend", sealBreakHtml()); A.play("card"); } }
+  }
   bindOverlay();
 }
 
@@ -274,7 +281,7 @@ export function bindOverlay() {
     const slot = dilCurrent();
     const cur = L.ui.dChoice ?? L.myInput[slot]?.choice;
     setInput(slot, { round: st.round, choice: cur, target: L.ui.dTarget ?? L.myInput[slot]?.target ?? null });
-    A.play("seal"); L.ui.dChoice = null; L.ui.dTarget = null;
+    A.play("seal"); sealStamp(); L.ui.dChoice = null; L.ui.dTarget = null;
     const next = dilSlots().find((k) => k !== slot && !dilSealed(k));
     if (next) { L.ui.dSlot = next; L.ovKey = ""; toast(`${ICON.scroll}Choix scellé. Passe à l'affaire suivante.`, "#A9843A", 2200); }
     else { L.ui.dSlot = null; L.dilemmaClosed = true; }
@@ -308,6 +315,7 @@ export function openModal(kind, data) {
     <h3>Jauges</h3><p>Colère à 80 en fin de manche : une province (pas la capitale) se révolte et devient neutre, puis la Colère retombe à 50. Peur : +1 en défense tous les 25 points, mais à 50 plus aucun mariage.</p>
     <h3>Le favori</h3><p>Le joueur au meilleur score visible porte la couronne : battre ses armées rapporte +2 Prestige. La maison la plus en retard reçoit chaque manche +2 armées et +2 or. Dernière manche : conquêtes à 3 Prestige, scores cachés, puis le Couronnement révèle les objectifs secrets.</p>
     <h3>À la manette</h3><ul><li><b>Croix</b> : passer d'une province à l'autre (ou d'un bouton à l'autre dans un menu). <b>A</b> : choisir. <b>B</b> : revenir ou fermer.</li><li><b>LT / RT</b> : changer de dé dans le menu d'une province, sinon zoomer la carte. <b>Stick droit</b> : déplacer la carte zoomée.</li><li><b>Y</b> : fiche de la province. <b>X</b> : onglet suivant du panneau. <b>Menu</b> : sceller tes ordres.</li></ul>
+    <p class="hint">Bruitages : Kenney (CC0) et Wikimedia Commons, <a href="sons/CREDITS.md" target="_blank" rel="noopener">voir les auteurs</a>.</p>
     <button class="btn btn-block" id="md-close">Fermer</button></div>`;
   m.innerHTML = html; m.classList.remove("hidden");
   const close = () => { m.classList.add("hidden"); setTimeout(nextModal, 50); };

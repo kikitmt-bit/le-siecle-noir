@@ -1,7 +1,7 @@
 // Ragots de taverne et nouvelles
-import * as E from "../engine.js?v=1795374146";
-import { ICON } from "../help.js?v=1795374146";
-import { S, esc } from "../state.js?v=1795374146";
+import * as E from "../engine.js?v=1795376900";
+import { ICON } from "../help.js?v=1795376900";
+import { S, esc } from "../state.js?v=1795376900";
 
 // ---- ragots de taverne : les mêmes pour tout le monde, tirés de la situation réelle ----
 export function seeded(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }

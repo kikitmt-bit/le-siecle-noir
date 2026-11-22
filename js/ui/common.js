@@ -1,6 +1,6 @@
 // Petits outils d'interface : affichage, toasts, bulles d'aide
-import { HOUSES } from "../content.js?v=1795374146";
-import { $, L, S, esc, net, store } from "../state.js?v=1795374146";
+import { HOUSES } from "../content.js?v=1795376900";
+import { $, L, S, esc, net, store } from "../state.js?v=1795376900";
 
 // ---------------------------------------------------------------------
 // utilitaires d'interface
@@ -46,3 +46,16 @@ export function scoresHidden(st) {
   if (st.phase === "reveal" && st.reveal && st.reveal.cards) { const c = st.reveal.cards[st.revCard || 0]; if (c && (c.type === "objectives" || c.type === "final")) return false; }
   return true;
 }
+
+// le sceau de cire : il s'imprime au centre de l'écran quand on scelle un choix ou ses ordres (moins d'une seconde)
+export const SEAL_SVG = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5c2 0 2.6 1.6 4.4 2.2 1.8.6 3.4-.4 4.8.9 1.3 1.3.4 3 1 4.8.6 1.8 2.3 2.5 2.3 4.6s-1.7 2.7-2.3 4.5c-.6 1.8.3 3.5-1 4.8-1.3 1.3-3 .3-4.8.9-1.8.6-2.4 2.3-4.4 2.3s-2.6-1.7-4.4-2.3c-1.8-.6-3.5.4-4.8-.9-1.3-1.3-.3-3-.9-4.8C3.3 17.7 1.7 17 1.7 15s1.6-2.8 2.2-4.6c.6-1.8-.3-3.5 1-4.8 1.3-1.3 3-.3 4.7-.9C11.4 4.1 14 2.5 16 2.5z" fill="#7E1712"/><circle cx="16" cy="15.5" r="8" fill="none" stroke="#C2493E" stroke-width="1.2"/><path d="M16 10.5l1.5 3.2 3.4.3-2.6 2.3.8 3.4-3.1-1.8-3.1 1.8.8-3.4-2.6-2.3 3.4-.3z" fill="#C2493E"/></svg>`;
+export function sealStamp() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.querySelectorAll(".seal-press").forEach((x) => x.remove());
+  const el = document.createElement("div");
+  el.className = "seal-press"; el.innerHTML = SEAL_SVG;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+// le même sceau, qui se brise en deux quand une carte s'ouvre
+export function sealBreakHtml() { return `<div class="seal-break" aria-hidden="true"><span class="sb-l">${SEAL_SVG}</span><span class="sb-r">${SEAL_SVG}</span></div>`; }

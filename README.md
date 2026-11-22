@@ -20,7 +20,7 @@ Hébergé sur GitHub Pages, synchronisé en temps réel avec Firebase (Realtime 
 - `js/state.js` : l'état partagé de l'application (partie, carte, arbitre…)
 - `js/main.js` : démarrage et boutons globaux ; `js/ui/*.js` : l'interface, un fichier par sujet (accueil, carte, ordres, diplomatie, révélation…) ; `js/host.js` : l'arbitre
 - `js/net.js`, `js/firebase-config.js` : la synchronisation Firebase ; `js/localnet.js` : le même réseau en mémoire pour le mode solo
-- `js/audio.js` : les sons, générés dans le navigateur
+- `js/audio.js` : les sons. Les bruitages enregistrés sont dans `sons/` (auteurs et licences dans `sons/CREDITS.md`), fabriqués par `python -I tools/make_sounds.py <sources>` à partir des packs CC0 de Kenney et de fichiers de Wikimedia Commons gardés hors du dépôt ; ce script écrit aussi `js/sons.js`, la liste des sons présents. Les sons absents sont fabriqués dans le navigateur
 - `manifest.webmanifest`, `sw.js`, `icons/`, `og.jpg` : appli installable, icônes, logo et image de partage. L'emblème est dessiné à la main dans `icons/embleme.svg` ; tout le reste en découle avec `python tools/make_assets.py` (Playwright + Chrome, Pillow)
 - `tests/` : les tests (voir `tests/README.md`)
 

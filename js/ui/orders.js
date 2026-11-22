@@ -1,16 +1,16 @@
 // Ordres secrets
-import * as A from "../audio.js?v=1795374146";
-import * as E from "../engine.js?v=1795374146";
-import { ICON, term } from "../help.js?v=1795374146";
-import { PROVINCES } from "../map.js?v=1795374146";
-import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795374146";
-import { houseName, setInput } from "./common.js?v=1795374146";
-import { bindDiplomacy } from "./diplomacy.js?v=1795374146";
-import { dieSvg, shield } from "./draw.js?v=1795374146";
-import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795374146";
-import { render } from "./render.js?v=1795374146";
-import { portraitSvg } from "./house.js?v=1795374146";
-import { HOUSES } from "../content.js?v=1795374146";
+import * as A from "../audio.js?v=1795376900";
+import * as E from "../engine.js?v=1795376900";
+import { ICON, term } from "../help.js?v=1795376900";
+import { PROVINCES } from "../map.js?v=1795376900";
+import { $, L, MAP, S, esc, me, rollDiceAnim, setRollDiceAnim } from "../state.js?v=1795376900";
+import { houseName, sealStamp, setInput } from "./common.js?v=1795376900";
+import { bindDiplomacy } from "./diplomacy.js?v=1795376900";
+import { dieSvg, shield } from "./draw.js?v=1795376900";
+import { confirmHook, idleHook, targetHook } from "./maporders.js?v=1795376900";
+import { render } from "./render.js?v=1795376900";
+import { portraitSvg } from "./house.js?v=1795376900";
+import { HOUSES } from "../content.js?v=1795376900";
 
 // ---- ordres ----
 export function myDice() {
@@ -57,13 +57,15 @@ export function panelOrders() {
   const tag = { strike: "FRAPPER", march: "MARCHER", levy: "LEVER", intrigue: "INTRIGUE" };
   const freeDice = dv.map((v, i) => i).filter((i) => dv[i] && !L.ui.orders.some((o) => o.die === i));
   const rerolling = L.ui.rerollPick && pl.rerolled !== st.round;
-  const diceHtml = `<div class="dice-row">${dv.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); const hid = i === pl.hiddenIdx; const f = dieForce(v); return `<button class="die f-${f[0]} ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === dv.length - 1 ? "extra" : ""} ${hid ? "hidden-die" : ""} ${rollDiceAnim ? "rolling" : ""} ${rerolling ? "reroll-pick" : ""}" data-die="${i}" ${sealed || !v ? "disabled" : ""} title="${esc(dieTip(st, pid, v))}" aria-label="Dé ${v}${hid ? ", caché aux autres" : ""}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${hid ? '<span class="die-eye">CACHÉ</span>' : ""}${o ? `<span class="die-tag">${tag[o.type]}</span>` : `<span class="die-force">${f[1]}</span>`}</button>`; }).join("")}</div>`;
+  // le lancer dure un peu moins d'une seconde, même si le panneau se redessine entre-temps
+  if (rollDiceAnim) { setRollDiceAnim(false); A.play("dice"); L.rollUntil = Date.now() + 850; }
+  const rolling = Date.now() < (L.rollUntil || 0);
+  const diceHtml = `<div class="dice-row">${dv.map((v, i) => { const o = L.ui.orders.find((x) => x.die === i); const hid = i === pl.hiddenIdx; const f = dieForce(v); return `<button class="die f-${f[0]} ${o ? "used" : ""} ${b && b.die === i ? "selected" : ""} ${pl.extraDie && i === dv.length - 1 ? "extra" : ""} ${hid ? "hidden-die" : ""} ${rolling ? "rolling" : ""} ${rerolling ? "reroll-pick" : ""}" data-die="${i}" ${sealed || !v ? "disabled" : ""} title="${esc(dieTip(st, pid, v))}" aria-label="Dé ${v}${hid ? ", caché aux autres" : ""}${o ? ", déjà utilisé" : ""}">${dieSvg(v)}${hid ? '<span class="die-eye">CACHÉ</span>' : ""}${o ? `<span class="die-tag">${tag[o.type]}</span>` : `<span class="die-force">${f[1]}</span>`}</button>`; }).join("")}</div>`;
   // ta main comparée à celle des autres (dés visibles)
   const sum = (a) => a.reduce((x, y) => x + (y || 0), 0);
   const mine = sum(dv);
   const others = st.order.filter((p) => p !== pid && st.players[p].dice).map((p) => ({ p, v: sum(st.players[p].dice), hid: st.players[p].dice.some((x) => !x) }));
   const handHtml = `<div class="hand"><span>Ta main : <b>${mine}</b> (${dv.length} dés, moyenne attendue ${(dv.length * 3.5).toFixed(0)})</span><span class="hand-o">${others.map((o) => `${esc(houseName(o.p))} ${o.v}${o.hid ? "+?" : ""}`).join(" · ")}</span></div>`;
-  if (rollDiceAnim) { setRollDiceAnim(false); A.play("dice"); }
   const steps = (cur) => `<div class="steps">${["Dé", "Action", "Cible", "Valider"].map((s, i) => `<span class="${i < cur ? "done" : i === cur ? "cur" : ""}">${i + 1}. ${s}</span>`).join("")}</div>`;
   let builder = "";
   if (sealed) {
@@ -176,7 +178,23 @@ export function builderStep(b, steps) {
   return nav;
 }
 
+// le lancer de la manche : les dés roulent (faces au hasard) puis se posent sur leur vraie valeur
+function tumbleDice() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.querySelectorAll(".die.rolling").forEach((el, k) => {
+    const svg = el.querySelector("svg"); if (!svg) return;
+    const real = svg.outerHTML; let n = 0;
+    const iv = setInterval(() => {
+      const cur = el.querySelector("svg");
+      if (!el.isConnected || !cur) { clearInterval(iv); return; }
+      if (++n > 9 + k * 2) { clearInterval(iv); cur.outerHTML = real; el.classList.add("landed"); return; }
+      cur.outerHTML = dieSvg(1 + Math.floor(Math.random() * 6));
+    }, 65);
+  });
+}
+
 export function bindOrders(b, sealed) {
+  tumbleDice();
   if ($("#merc-toggle")) $("#merc-toggle").onclick = () => { if (L.ui.build) { L.ui.build.merc = !L.ui.build.merc; A.play("coins"); render(); } };
   document.querySelectorAll("[data-die]").forEach((el) => (el.onclick = () => {
     const i = +el.dataset.die;
@@ -212,7 +230,7 @@ export function bindOrders(b, sealed) {
     if ($("#b-pct")) { const st = S(); $("#b-pct").textContent = Math.round(E.winProb(b.n + myDice()[b.die] + E.attackMod(st, me()), E.defenseOf(st, b.to)) * 100) + " %"; }
   };
   if ($("#b-ok")) $("#b-ok").onclick = () => { L.ui.orders.push({ die: b.die, type: b.type, from: b.from, to: b.to, n: b.n }); L.ui.build = null; saveOrders(); A.play("click"); render(); };
-  if ($("#btn-seal")) $("#btn-seal").onclick = () => { L.ui.build = null; saveOrders(true); A.play("seal"); render(); };
+  if ($("#btn-seal")) $("#btn-seal").onclick = () => { L.ui.build = null; saveOrders(true); A.play("seal"); sealStamp(); render(); };
   if ($("#btn-reroll")) $("#btn-reroll").onclick = () => { L.ui.rerollPick = !L.ui.rerollPick; A.play("click"); render(); };
   if ($("#btn-feast")) $("#btn-feast").onclick = () => { L.ui.feast = !L.ui.feast; saveOrders(false); A.play(L.ui.feast ? "coins" : "click"); render(); };
   if ($("#btn-unseal")) $("#btn-unseal").onclick = () => { saveOrders(false); render(); };

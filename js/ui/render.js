@@ -1,22 +1,22 @@
 // Rendu principal : jauges, bandeau d'aide, haut d'écran, joueurs
-import * as A from "../audio.js?v=1795374146";
-import { HOUSES } from "../content.js?v=1795374146";
-import * as E from "../engine.js?v=1795374146";
-import { ICON } from "../help.js?v=1795374146";
-import { PROVINCES } from "../map.js?v=1795374146";
-import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795374146";
-import { applyCoach } from "./aides.js?v=1795374146";
-import { scoresHidden, houseName, setInput, toast } from "./common.js?v=1795374146";
-import { dilLeft, dilSlots } from "./dilemmas.js?v=1795374146";
-import { shield } from "./draw.js?v=1795374146";
-import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795374146";
-import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795374146";
-import { drawArrows, updateMap } from "./map.js?v=1795374146";
-import { myDice, saveOrders } from "./orders.js?v=1795374146";
-import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795374146";
-import { afterRender } from "./maporders.js?v=1795374146";
-import { confirmDraft, renderPanel } from "./panels.js?v=1795374146";
-import { revealProvinces, rvFocus } from "./reveal.js?v=1795374146";
+import * as A from "../audio.js?v=1795376900";
+import { HOUSES } from "../content.js?v=1795376900";
+import * as E from "../engine.js?v=1795376900";
+import { ICON } from "../help.js?v=1795376900";
+import { PROVINCES } from "../map.js?v=1795376900";
+import { $, H, H_ICON, L, MAP, S, esc, me } from "../state.js?v=1795376900";
+import { applyCoach } from "./aides.js?v=1795376900";
+import { scoresHidden, houseName, sealStamp, setInput, toast } from "./common.js?v=1795376900";
+import { dilLeft, dilSlots } from "./dilemmas.js?v=1795376900";
+import { shield } from "./draw.js?v=1795376900";
+import { portraitSvg, renderHouseTab, renderLog } from "./house.js?v=1795376900";
+import { renderDiplo, updateMsgBadge } from "./inbox.js?v=1795376900";
+import { drawArrows, updateMap } from "./map.js?v=1795376900";
+import { myDice, saveOrders } from "./orders.js?v=1795376900";
+import { openModal, phaseTutos, renderOverlays } from "./overlays.js?v=1795376900";
+import { afterRender } from "./maporders.js?v=1795376900";
+import { confirmDraft, renderPanel } from "./panels.js?v=1795376900";
+import { revealProvinces, rvFocus } from "./reveal.js?v=1795376900";
 
 // ---------------------------------------------------------------------
 // RENDU PRINCIPAL
@@ -25,6 +25,7 @@ export function render() {
   const st = S();
   if (!st || st.phase === "lobby") return;
   renderTop(); renderPlayers(); renderGuide();
+  A.wantAmbience(true);
   MAP.sel = new Set(); MAP.hl = new Set(); MAP.hlRed = new Set(); MAP.onPick = null; MAP.badges = []; MAP.mode = null; MAP.magnet = null; MAP.canDrag = null;
   let arrows = [];
   const panel = renderPanel();
@@ -160,7 +161,7 @@ export function renderGuide() {
     if (g === "plauto") { setInput("placement", { ok: true }); A.play("seal"); render(); }
     if (g === "plok") { const mineP = E.provincesOf(st, pid); const alloc = { ok: true }; mineP.forEach((id) => (alloc[id] = (L.ui.placement || {})[id] || 1)); setInput("placement", alloc); A.play("seal"); render(); }
     if (g === "actions") { L.ui.tab = "panel"; render(); if (innerWidth <= 900) document.querySelector(".side").scrollIntoView({ behavior: "smooth" }); }
-    if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); render(); }
+    if (g === "seal") { L.ui.build = null; saveOrders(true); A.play("seal"); sealStamp(); render(); }
     if (g === "draftok") confirmDraft();
     if (g === "next") { setInput("next", { round: st.round }); A.play("click"); L.ovKey = ""; render(); }
     if (g === "force") { H.force = true; toast("La partie avance sans attendre les retardataires (leur intendant choisit pour eux).", "#A9843A"); }
@@ -174,6 +175,7 @@ export function renderTop() {
   const st = S();
   $("#tb-round").innerHTML = st.round > 0 ? `<span class="long">ANNO DOMINI ${E.yearOf(st.round)} · MANCHE ${st.round} SUR ${st.maxRounds}</span><span class="short">${E.yearOf(st.round)} · ${st.round}/${st.maxRounds}</span>` : `<span class="long">ANNO DOMINI 1347 · PRÉPARATIFS</span><span class="short">1347</span>`;
   $("#tb-phase").textContent = PHASE_LABEL[st.phase] || "";
+  $("#btn-amb").classList.toggle("off", !A.isAmbience()); $("#btn-amb").setAttribute("aria-pressed", String(A.isAmbience()));
   $("#btn-mute").innerHTML = A.isMuted()
     ? '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2"/></svg>'
     : '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>';

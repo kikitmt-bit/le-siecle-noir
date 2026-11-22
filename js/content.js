@@ -2,12 +2,12 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795374146";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795374146";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795374146";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795374146";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795374146";
-import { DIL_SOMBRES } from "./dil_sombres.js?v=1795374146";
+import { DIL_COUR } from "./dil_cour.js?v=1795376900";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795376900";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795376900";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795376900";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795376900";
+import { DIL_SOMBRES } from "./dil_sombres.js?v=1795376900";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E2A22", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },

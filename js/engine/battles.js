@@ -1,14 +1,14 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795374146";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795374146";
-import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795374146";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795374146";
-import { validateOrders } from "./dilemmas.js?v=1795374146";
-import { addEpithet } from "./effects.js?v=1795374146";
-import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795374146";
-import { passTime } from "./rounds.js?v=1795374146";
-import { prepareResult } from "./scoring.js?v=1795374146";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795374146";
+import { PROVINCES } from "../map.js?v=1795376900";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795376900";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795376900";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795376900";
+import { validateOrders } from "./dilemmas.js?v=1795376900";
+import { addEpithet } from "./effects.js?v=1795376900";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795376900";
+import { passTime } from "./rounds.js?v=1795376900";
+import { prepareResult } from "./scoring.js?v=1795376900";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795376900";
 
 export const FEAST_COST = 3;
 // La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)
@@ -325,6 +325,11 @@ export function resolveRound(state, priv, inputs, rng) {
   state.history = state.history || [];
   state.history.push({ round: state.round, s: Object.fromEntries(state.order.map((pid) => [pid, publicScore(state, pid)])) });
   if (state.gameOver) prepareResult(state, priv);
+  // le bluff est fini : les dés cachés se retournent pour tout le monde
+  for (const pid of state.order) {
+    const pl = state.players[pid], h = priv[pid] && priv[pid].hidden;
+    if (pl && pl.dice && h && h.round === state.round && pl.hiddenIdx === h.idx && h.idx < pl.dice.length) pl.dice[h.idx] = h.v;
+  }
   state.reveal = { round: state.round, steps, cards: revealCards(steps, state.gameOver) };
   state.revCard = 0;
   state.phase = "reveal";

@@ -1,5 +1,6 @@
 // =====================================================================
-//  Sons générés à la volée (Web Audio) : aucun fichier à télécharger
+//  Sons : de vrais bruitages enregistrés (sons/*.wav, voir sons/CREDITS.md), chargés au premier geste ;
+//  tant qu'ils ne sont pas là (ou s'ils manquent), des sons fabriqués à la volée (Web Audio) les remplacent.
 // =====================================================================
 let ctx = null, master = null;
 let muted = false;
@@ -13,6 +14,7 @@ export function unlock() {
     if (!AC) return;
     ctx = new AC();
     master = ctx.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ctx.destination);
+    loadSamples();
   }
   if (ctx.state === "suspended") ctx.resume();
 }
@@ -37,6 +39,7 @@ const SOUNDS = {
   knell: (t) => { bell(147, t, 4, 0.45); bell(147, t + 1.6, 4, 0.35); },
   drum: (t) => { for (let i = 0; i < 4; i++) { osc("sine", 70, t + i * 0.22, 0.005, 0.3, 0.7); noise(t + i * 0.22, 0.12, 0.25, "lowpass", 400); } },
   battle: (t) => { SOUNDS.drum(t); for (let i = 0; i < 3; i++) { noise(t + 0.5 + i * 0.18, 0.15, 0.35, "highpass", 3000); osc("triangle", 1800 + Math.random() * 600, t + 0.5 + i * 0.18, 0.002, 0.35, 0.12); } },
+  march: (t) => { for (let i = 0; i < 6; i++) { noise(t + i * 0.14, 0.08, 0.18, "lowpass", 260); osc("sine", 60, t + i * 0.14, 0.004, 0.12, 0.25); } },
   seal: (t) => { osc("sine", 110, t, 0.005, 0.25, 0.8); noise(t, 0.08, 0.3, "lowpass", 600); },
   dice: (t) => { for (let i = 0; i < 7; i++) noise(t + i * 0.06 + Math.random() * 0.03, 0.03, 0.4, "bandpass", 2500 + Math.random() * 1500, 4); },
   horn: (t) => { [0, 0.25, 0.5].forEach((dt, i) => { const o = osc("sawtooth", [262, 330, 392][i], t + dt, 0.04, 0.5, 0.12); }); },
@@ -55,8 +58,50 @@ const SOUNDS = {
   revolt: (t) => { for (let i = 0; i < 6; i++) noise(t + i * 0.1, 0.12, 0.2, "bandpass", 500 + Math.random() * 400, 2); },
 };
 
+// ---- les enregistrements ----
+import { SONS } from "./sons.js?v=1795376900";
+const SAMPLES = { dice: 0.9, coins: 0.7, seal: 0.9, page: 0.6, card: 0.6, march: 0.55, battle: 0.8, bell: 0.55, bells: 0.5, knell: 0.75, crows: 0.5, ambience: 1 };
+const buf = {};
+function loadSamples() {
+  for (const n of Object.keys(SAMPLES).filter((x) => SONS.includes(x))) {
+    fetch(`sons/${n}.wav`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(r.status))).then((a) => ctx.decodeAudioData(a)).then((b) => { buf[n] = b; if (n === "ambience") ambience(); }).catch(() => {});
+  }
+}
+function sample(n, t, gain = SAMPLES[n]) {
+  const s = ctx.createBufferSource(); s.buffer = buf[n];
+  const g = ctx.createGain(); g.gain.value = gain; s.connect(g); g.connect(master); s.start(t);
+  return s;
+}
+// quelques sons mêlent un enregistrement et un son fabriqué
+const MIXED = {
+  plague: (t) => { sample("crows", t, 0.45); osc("sine", 55, t, 0.3, 1.5, 0.2); },
+};
+
 export function play(name) {
-  if (muted || !ctx || !SOUNDS[name]) return;
-  try { SOUNDS[name](ctx.currentTime + 0.02); } catch {}
+  if (muted || !ctx) return;
+  const t = ctx.currentTime + 0.02;
+  try {
+    if (buf[name] && name !== "ambience") sample(name, t);
+    else if (MIXED[name] && buf.crows) MIXED[name](t);
+    else if (SOUNDS[name]) SOUNDS[name](t);
+  } catch {}
+}
+
+// ---- l'ambiance : un feu de cheminée très discret, en boucle, pendant la partie (on peut la couper) ----
+let ambOn = true, ambWanted = false, ambSrc = null, ambGain = null;
+try { ambOn = localStorage.getItem("sn_ambience") !== "0"; } catch {}
+export function isAmbience() { return ambOn; }
+export function setAmbience(on) { ambOn = on; try { localStorage.setItem("sn_ambience", on ? "1" : "0"); } catch {} ambience(); }
+export function wantAmbience(on) { if (ambWanted !== on) { ambWanted = on; ambience(); } }
+function ambience() {
+  if (!ctx) return;
+  const should = ambOn && ambWanted && buf.ambience;
+  if (should && !ambSrc) {
+    ambGain = ctx.createGain(); ambGain.gain.setValueAtTime(0.0001, ctx.currentTime); ambGain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 2.5); ambGain.connect(master);
+    ambSrc = ctx.createBufferSource(); ambSrc.buffer = buf.ambience; ambSrc.loop = true; ambSrc.connect(ambGain); ambSrc.start();
+  } else if (!should && ambSrc) {
+    const s = ambSrc, g = ambGain; ambSrc = null; ambGain = null;
+    try { g.gain.setValueAtTime(g.gain.value, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8); s.stop(ctx.currentTime + 0.9); } catch {}
+  }
 }
 export function vibrate(pattern) { try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(pattern); } catch {} }

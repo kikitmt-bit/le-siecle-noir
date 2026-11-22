@@ -1,20 +1,21 @@
 // LE SIÈCLE NOIR — application : branche les boutons et démarre
-import * as A from "./audio.js?v=1795374146";
-import { TAUNTS } from "./content.js?v=1795374146";
-import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795374146";
-import { narratorIcon, speak } from "./ui/announce.js?v=1795374146";
-import { show, toast } from "./ui/common.js?v=1795374146";
-import { refreshGames } from "./ui/games.js?v=1795374146";
-import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795374146";
-import { openModal } from "./ui/overlays.js?v=1795374146";
-import { render, renderTop } from "./ui/render.js?v=1795374146";
-import "./ui/clock.js?v=1795374146"; // boucle de temps (effets au chargement)
-import { uiBack } from "./ui/maporders.js?v=1795374146";
+import * as A from "./audio.js?v=1795376900";
+import { TAUNTS } from "./content.js?v=1795376900";
+import { $, L, esc, me, narrator, net, setNarrator, store } from "./state.js?v=1795376900";
+import { narratorIcon, speak } from "./ui/announce.js?v=1795376900";
+import { show, toast } from "./ui/common.js?v=1795376900";
+import { refreshGames } from "./ui/games.js?v=1795376900";
+import { enterRoom, initHome, quitGame, resumeGame } from "./ui/lobby.js?v=1795376900";
+import { openModal } from "./ui/overlays.js?v=1795376900";
+import { render, renderTop } from "./ui/render.js?v=1795376900";
+import "./ui/clock.js?v=1795376900"; // boucle de temps (effets au chargement)
+import { uiBack } from "./ui/maporders.js?v=1795376900";
 
 // ---------------------------------------------------------------------
 // boutons globaux et démarrage
 // ---------------------------------------------------------------------
 $("#btn-mute").onclick = () => { A.unlock(); A.setMuted(!A.isMuted()); renderTop(); };
+$("#btn-amb").onclick = () => { A.unlock(); A.setAmbience(!A.isAmbience()); renderTop(); toast(A.isAmbience() ? "Ambiance : le feu crépite dans la cheminée." : "Ambiance coupée.", "#75603F", 2000); };
 
 $("#btn-rules").onclick = () => openModal("rules");
 
