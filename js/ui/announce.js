@@ -1,7 +1,7 @@
 // Écrans d'annonce animés, compte à rebours, narrateur vocal
-import * as A from "../audio.js?v=1795298173";
-import * as E from "../engine.js?v=1795298173";
-import { $, L, S, me, narrator } from "../state.js?v=1795298173";
+import * as A from "../audio.js?v=1795309716";
+import * as E from "../engine.js?v=1795309716";
+import { $, L, S, me, narrator } from "../state.js?v=1795309716";
 
 // ---- écrans d'annonce animés ----
 export function splash(st) {
@@ -65,7 +65,7 @@ export function playNewsSounds(st) {
 
 export function restoreOrders() {
   const o = L.myInput.orders;
-  if (o && o.round === S().round && !L.ui.orders.length) L.ui.orders = o.actions || [];
+  if (o && o.round === S().round && !L.ui.orders.length) { L.ui.orders = o.actions || []; L.ui.feast = !!o.feast; }
 }
 
 export function narratorIcon() { $("#btn-narr").innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h6" stroke="currentColor" stroke-width="2"/>${narrator ? "" : '<path d="M3 21L21 3" stroke="#D94A3A" stroke-width="2.4"/>'}</svg>`; $("#btn-narr").title = narrator ? "Narrateur activé (lit la révélation à voix haute)" : "Narrateur coupé"; }

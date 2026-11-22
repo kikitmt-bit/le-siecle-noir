@@ -1,9 +1,9 @@
 // Objectifs, score final, fin de partie
-import { OBJECTIVES } from "../content.js?v=1795298173";
-import { PROVINCES, REGIONS } from "../map.js?v=1795298173";
-import { chron, provincesOf, regionsOf } from "./calc.js?v=1795298173";
-import { capitalize, maisonName, yearOf } from "./core.js?v=1795298173";
-import { deName, king, kingLabel } from "./people.js?v=1795298173";
+import { OBJECTIVES } from "../content.js?v=1795309716";
+import { PROVINCES, REGIONS } from "../map.js?v=1795309716";
+import { GOLD_PER_PT, PTS_PROVINCE, PTS_REGION, chron, provincesOf, regionsOf } from "./calc.js?v=1795309716";
+import { capitalize, maisonName, yearOf } from "./core.js?v=1795309716";
+import { deName, king, kingLabel } from "./people.js?v=1795309716";
 
 // ---------- score final ----------
 export function objectiveDone(state, pid, oid) {
@@ -56,15 +56,22 @@ export function finalScore(state, priv) {
     const alive = fam.members.filter((m) => m.alive && ["king", "queen", "child", "widow"].includes(m.role)).length;
     const objs = (priv[pid] && priv[pid].objectives || []).map((oid) => { const o = OBJECTIVES.find((x) => x.id === oid); return { id: oid, text: o.text, pts: o.pts, done: objectiveDone(state, pid, oid) }; });
     const objPts = objs.filter((o) => o.done).reduce((s, o) => s + o.pts, 0);
-    const total = pl.prestige + mine.length + regs.length * 3 + objPts + alive;
-    rows.push({ pid, prestige: pl.prestige, provinces: mine.length, regions: regs.length, objectives: objs, objPts, family: alive, total });
+    const goldPts = Math.floor(Math.max(0, pl.gold) / GOLD_PER_PT);
+    const total = pl.prestige + mine.length * PTS_PROVINCE + regs.length * PTS_REGION + objPts + alive + goldPts;
+    rows.push({ pid, prestige: pl.prestige, provinces: mine.length, provPts: mine.length * PTS_PROVINCE, regions: regs.length, regPts: regs.length * PTS_REGION, objectives: objs, objPts, family: alive, gold: pl.gold, goldPts, total });
   }
   rows.sort((a, b) => b.total - a.total || b.provinces - a.provinces);
   if (state.instantWinner) { const i = rows.findIndex((r) => r.pid === state.instantWinner); const [w] = rows.splice(i, 1); rows.unshift(w); }
   return rows;
 }
 
+// résultat calculé dès la fin de la dernière manche (pour la cérémonie de la révélation), puis l'écran de fin
 export function finishGame(state, priv) {
+  if (!state.result) prepareResult(state, priv);
+  state.phase = "end";
+}
+
+export function prepareResult(state, priv) {
   const rows = finalScore(state, priv);
   // titres
   const titles = [];
@@ -84,7 +91,6 @@ export function finishGame(state, priv) {
     ? `${capitalize(kingLabel(state, w))}, ${deName(state, w)}, tient quinze provinces et se fait sacrer à Reims, sur les cendres des autres.`
     : `En l'an ${yearOf(state.round)}, après trente années de peste et de sang, ${maisonName(state, w)} l'emporte. ${capitalize(kingLabel(state, w))} est couronné${(king(state, w) || {}).sex === "f" ? "e" : ""} à Reims.`;
   chron(state, t, "end");
-  state.phase = "end";
 }
 
 export function estimateScore(state, priv, pid) {
@@ -94,5 +100,6 @@ export function estimateScore(state, priv, pid) {
   const fam = state.families[pid];
   const alive = fam.members.filter((m) => m.alive && ["king", "queen", "child", "widow"].includes(m.role)).length;
   const objs = ((priv && priv[pid] && priv[pid].objectives) || []).reduce((s, oid) => { const o = OBJECTIVES.find((x) => x.id === oid); return s + (o && objectiveDone(state, pid, oid) ? o.pts : 0); }, 0);
-  return { total: pl.prestige + mine.length + regs.length * 3 + objs + alive, prestige: pl.prestige, provinces: mine.length, regions: regs.length * 3, objectives: objs, family: alive };
+  const goldPts = Math.floor(Math.max(0, pl.gold) / GOLD_PER_PT);
+  return { total: pl.prestige + mine.length * PTS_PROVINCE + regs.length * PTS_REGION + objs + alive + goldPts, prestige: pl.prestige, provinces: mine.length * PTS_PROVINCE, provCount: mine.length, regions: regs.length * PTS_REGION, objectives: objs, family: alive, gold: goldPts };
 }

@@ -1,13 +1,13 @@
 // Distribution des dilemmes et fin de la phase dilemme, validation des ordres
-import { DILEMMAS, TRAITS } from "../content.js?v=1795298173";
-import { PROVINCES } from "../map.js?v=1795298173";
-import { aiDilemma } from "./ai.js?v=1795298173";
-import { allied, ctxFor, provincesOf, situationOf } from "./calc.js?v=1795298173";
-import { capitalize, fill, maisonName, pick, shuffle } from "./core.js?v=1795298173";
-import { applyFx } from "./effects.js?v=1795298173";
-import { consort, heirs, king, queen } from "./people.js?v=1795298173";
-import { realDice } from "./rounds.js?v=1795298173";
-import { marriageable } from "./succession.js?v=1795298173";
+import { COUNCIL, DILEMMAS, TRAITS } from "../content.js?v=1795309716";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { aiCouncil, aiDilemma } from "./ai.js?v=1795309716";
+import { allied, chron, ctxFor, noteRel, provincesOf, situationOf } from "./calc.js?v=1795309716";
+import { capitalize, clamp, fill, maisonName, pick, shuffle } from "./core.js?v=1795309716";
+import { applyFx, seedPlague } from "./effects.js?v=1795309716";
+import { consort, heirs, king, queen } from "./people.js?v=1795309716";
+import { realDice } from "./rounds.js?v=1795309716";
+import { marriageable } from "./succession.js?v=1795309716";
 
 // ---------- distribution des dilemmes ----------
 export function reqOk(state, pid, req, pair) {
@@ -61,10 +61,24 @@ export function reqOk(state, pid, req, pair) {
   }
 }
 
+// Le Conseil du Roi siège aux manches 3, 6 et 9 (jamais à la dernière)
+export const councilRound = (state) => state.round % 3 === 0 && state.round < state.maxRounds;
+
 export function dealDilemmas(state, priv, rng) {
   // deux cartes par manche : une affaire personnelle (slot « dilemma ») et une affaire qui implique un rival (slot « dilemma2 »)
   const players = state.order.filter((p) => !state.players[p].isBot || state.players[p].ai);
-  for (const pid of players) { priv[pid].dilemma = null; priv[pid].dilemma2 = null; }
+  for (const pid of players) { priv[pid].dilemma = null; priv[pid].dilemma2 = null; priv[pid].council = null; }
+  // le Conseil du Roi : un vote public, même motion pour tous
+  state.council = null;
+  if (councilRound(state) && players.length >= 3) {
+    state.councilsUsed = state.councilsUsed || [];
+    let pool = COUNCIL.filter((c) => !state.councilsUsed.includes(c.id));
+    if (!pool.length) pool = COUNCIL;
+    const m = pick(rng, pool);
+    state.councilsUsed.push(m.id);
+    state.council = { id: m.id, round: state.round };
+    for (const pid of players) priv[pid].council = { id: m.id, round: state.round, type: "council" };
+  }
   const usedOk = (pid, d) => !priv[pid].used.includes(d.id);
   // suites en chaîne dues cette manche
   for (const pid of shuffle(rng, players)) {
@@ -174,6 +188,42 @@ export function finishDilemmas(state, priv, inputs, rng) {
       done.add(pid);
     }
   }
+  }
+  // le Conseil du Roi : dépouillement public
+  if (state.council && state.council.round === state.round) {
+    const m = COUNCIL.find((c) => c.id === state.council.id);
+    const voters = state.order.filter((p) => priv[p] && priv[p].council && priv[p].council.round === state.round);
+    const votes = [];
+    for (const p of voters) {
+      const pl = state.players[p];
+      let to = pl.isBot && pl.ai ? aiCouncil(state, priv, p, m, rng) : inputs[p] && inputs[p].council && inputs[p].council.round === state.round ? inputs[p].council.choice : null;
+      if (!to || to === p || !state.players[to] || state.players[to].house === "anglais") to = null;
+      votes.push({ from: p, to });
+      if (to && !m.good) noteRel(state, "vote", p, to);
+    }
+    const tally = {};
+    votes.forEach((v) => { if (v.to) tally[v.to] = (tally[v.to] || 0) + 1; });
+    const max = Math.max(0, ...Object.values(tally));
+    const top = Object.keys(tally).filter((k) => tally[k] === max);
+    const winner = max > 0 && top.length === 1 ? top[0] : null;
+    let t;
+    if (winner) {
+      const w = state.players[winner];
+      const cap = w.capital && state.provinces[w.capital] && state.provinces[w.capital].owner === winner ? w.capital : provincesOf(state, winner)[0];
+      const name = maisonName(state, winner);
+      switch (m.id) {
+        case "connetable": if (cap) state.provinces[cap].armies += 3; w.prestige += 2; t = `${capitalize(name)} reçoit l'épée de Connétable de France (+3 armées, +2 Prestige).`; break;
+        case "impot": { const n = Math.min(8, w.gold); w.gold -= n; const others = state.order.filter((p) => p !== winner && state.players[p].house !== "anglais"); const share = Math.floor(n / Math.max(1, others.length)); others.forEach((p) => (state.players[p].gold += share)); t = `${capitalize(name)} doit payer l'impôt de guerre : ${n} or, partagés entre les autres maisons (${share} chacune).`; break; }
+        case "excommunication": w.colere = clamp(w.colere + 20, 0, 100); w.prestige -= 3; t = `${capitalize(name)} est excommuniée. Les églises ferment, les cloches se taisent (+20 Colère, −3 Prestige).`; break;
+        case "main": w.diceMod = (w.diceMod || 0) + 1; w.prestige += 2; t = `${capitalize(name)} devient la Main du Roi (+1 dé à la prochaine manche, +2 Prestige).`; break;
+        case "bouc": if (cap) { state.provinces[cap].armies = Math.max(1, state.provinces[cap].armies - 3); seedPlague(state, cap); } w.colere = clamp(w.colere + 10, 0, 100); t = `${capitalize(name)} est désignée comme coupable de la peste. La foule brûle ses greniers et la maladie frappe sa capitale (−3 armées, +10 Colère).`; break;
+        case "princesse": w.prestige += 4; w.gold += 6; t = `${capitalize(name)} épouse la princesse de France. Elle est laide, mais sa dot est superbe (+4 Prestige, +6 or).`; break;
+        case "tribunal": { w.prestige -= 4; const cand = provincesOf(state, winner).filter((id) => id !== w.capital); if (cand.length) { const id = pick(rng, cand); state.provinces[id].owner = null; state.provinces[id].armies = 2; out.push({ kind: "revolt", text: `Condamnée par les pairs, ${name} perd ${PROVINCES[id].art}, qui se soulève et devient neutre.`, prov: id, set: { [id]: { ...state.provinces[id] } } }); } t = `Le tribunal des pairs condamne ${name} (−4 Prestige).`; break; }
+      }
+    } else t = max > 0 ? "Égalité : le Conseil se sépare dans les cris, sans rien décider." : "Personne n'a voté : le Conseil ne décide rien.";
+    const voteTxt = votes.map((v) => `${capitalize(maisonName(state, v.from))} → ${v.to ? maisonName(state, v.to) : "abstention"}`).join(" · ");
+    lines.unshift({ kind: "council", text: t, pid: winner, title: `Conseil du Roi : ${m.title}`, situation: m.text, choice: voteTxt, votes, winner, motion: m.id });
+    chron(state, `Conseil du Roi (${m.title}) : ${t}`, "council");
   }
   state.pendingDilemma = { lines, out };
   state.phase = "orders";

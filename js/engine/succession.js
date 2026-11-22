@@ -1,8 +1,8 @@
 // Mort, succession, guerre civile, mariages, traités
-import { PROVINCES } from "../map.js?v=1795298173";
-import { allied, chron, provincesOf } from "./calc.js?v=1795298173";
-import { capitalize, maisonName, shuffle, yearOf } from "./core.js?v=1795298173";
-import { deName, heirs, mother, newPerson, ownerOf, personTitle, queen } from "./people.js?v=1795298173";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { allied, chron, provincesOf } from "./calc.js?v=1795309716";
+import { capitalize, maisonName, shuffle, yearOf } from "./core.js?v=1795309716";
+import { deName, heirs, mother, newPerson, ownerOf, personTitle, queen, takenNames } from "./people.js?v=1795309716";
 
 // ---------- mort et succession ----------
 export function killPerson(state, pid, person, cause, killer = null, out = []) {
@@ -68,8 +68,8 @@ export function civilWar(state, pid, out, rng) {
   lost.forEach((id, i) => { state.provinces[id].owner = i === 0 && allyPid ? allyPid : null; set[id] = { ...state.provinces[id] }; });
   pl.prestige -= 5;
   pl.stats.kings = (pl.stats.kings || 1) + 1;
-  const cousin = newPerson(rng, { sex: "m", age: 30 + Math.floor(rng() * 10), house: pl.house, role: "king" });
-  const wife = newPerson(rng, { sex: "f", age: 20 + Math.floor(rng() * 8), house: pl.house, role: "queen" });
+  const cousin = newPerson(rng, { sex: "m", age: 30 + Math.floor(rng() * 10), house: pl.house, role: "king", taken: takenNames(state) });
+  const wife = newPerson(rng, { sex: "f", age: 20 + Math.floor(rng() * 8), house: pl.house, role: "queen", taken: takenNames(state) });
   fam.members.push(cousin, wife); fam.kingId = cousin.id; fam.queenRef = { pid, id: wife.id };
   let txt = `Il n'y a plus d'héritier chez ${maisonName(state, pid)}. Guerre civile : les barons se partagent ${lost.length} province${lost.length > 1 ? "s" : ""}, et un lointain cousin, ${personTitle(cousin)}, ramasse la couronne dans la boue.`;
   if (allyPid && lost.length) txt += ` La belle-famille, ${maisonName(state, allyPid)}, en profite pour prendre ${PROVINCES[lost[0]].art}.`;
@@ -80,7 +80,7 @@ export function civilWar(state, pid, out, rng) {
 export function sowBastard(state, from, to, rng, out) {
   const q = mother(state, to);
   if (!q) return false;
-  const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: state.players[to].house, role: "child", bastardOf: from });
+  const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: state.players[to].house, role: "child", bastardOf: from, taken: takenNames(state) });
   state.families[to].members.push(c);
   state.players[to].stats.bastardsReceived++;
   state.players[from].stats.bastardsSown = (state.players[from].stats.bastardsSown || 0) + 1;

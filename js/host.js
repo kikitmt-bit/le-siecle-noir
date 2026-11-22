@@ -1,9 +1,9 @@
 // Arbitre : seul le navigateur de l'hôte exécute ce code
-import { HUMAN_HOUSES } from "./content.js?v=1795298173";
-import * as E from "./engine.js?v=1795298173";
-import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795298173";
-import { toast } from "./ui/common.js?v=1795298173";
-import { aiName } from "./ui/lobby.js?v=1795298173";
+import { HUMAN_HOUSES } from "./content.js?v=1795309716";
+import * as E from "./engine.js?v=1795309716";
+import { H, L, SOLO, SPEED, esc, hostGoneSince, net, setHostGoneSince, setWakeLock, wakeLock } from "./state.js?v=1795309716";
+import { toast } from "./ui/common.js?v=1795309716";
+import { aiName } from "./ui/lobby.js?v=1795309716";
 
 // Lit une donnée sur le serveur en réessayant si la connexion est mauvaise (ok = false : lecture impossible).
 async function readRetry(fn, tries = 4) {
@@ -167,8 +167,9 @@ export function hostTick() {
     const i = I[p] || {};
     if (st.phase === "objectives") ready[p] = (i.objPick || []).length === 2;
     if (st.phase === "placement") ready[p] = !!(i.placement && i.placement.ok);
-    if (st.phase === "dilemma") ready[p] = ["dilemma", "dilemma2"].every((k) => !H.priv[p][k] || (i[k] && i[k].round === st.round));
-    if (st.phase === "reveal") ready[p] = !!(i.revdone && i.revdone.round === st.round);
+    if (st.phase === "dilemma") ready[p] = ["dilemma", "dilemma2", "council"].every((k) => !H.priv[p][k] || H.priv[p][k].round !== st.round || (i[k] && i[k].round === st.round));
+    // révélation partagée : chacun valide la carte en cours, on passe à la suivante quand tout le monde a validé
+    if (st.phase === "reveal") ready[p] = !!(i.revack && i.revack.round === st.round && i.revack.card >= (st.revCard || 0));
     if (st.phase === "orders") ready[p] = !!(i.orders && i.orders.round === st.round && i.orders.sealed);
     if (st.phase === "interlude") ready[p] = !!(i.next && i.next.round === st.round);
   }
@@ -185,6 +186,13 @@ export function hostTick() {
         const key = `${it.kind}:${p}__${it.to}`;
         if (!st.proposals[key] && E.canPropose(st, p, it.to, it.kind)) { st.proposals[key] = { kind: it.kind, from: p, to: it.to }; changed = true; }
       }
+    }
+  }
+  // relance d'un dé contre de l'or (pendant les ordres)
+  if (st.phase === "orders") {
+    for (const p of humans) {
+      const rr = I[p] && I[p].reroll;
+      if (rr && rr.round === st.round && st.players[p].rerolled !== st.round && E.rerollDie(st, H.priv, p, rr.die, Math.random) !== null) { changed = true; privChanged = true; }
     }
   }
   const late = () => H.force || (!noClock && now > st.deadline);
@@ -236,14 +244,23 @@ export function hostTick() {
         if (allReady || late()) {
           E.resolveRound(st, H.priv, I, Math.random);
           st.revealStart = now + 2700;
-          // chacun suit la révélation à son rythme ; sans chrono on attend que tout le monde ait fini
-          st.deadline = now + 2700 + st.reveal.steps.length * 9000 * SPEED + 30000 * SPEED;
-          st.ready = {}; H.lastReady = "";
+          st.revCard = 0;
+          st.deadline = now + 2700 + 60000 * m;
+          st.ready = {}; H.lastReady = ""; H.force = false;
           hostWrite(true); return;
         }
         break;
       case "reveal":
-        if (allReady || H.force || (!noClock && now > st.deadline)) { H.force = false; st.phase = "interlude"; st.deadline = now + E.TIMES.interlude * 1000 * SPEED; st.ready = {}; H.lastReady = ""; hostWrite(); return; }
+        if (now < (st.revealStart || 0)) break;
+        if (allReady || H.force || (!noClock && now > st.deadline)) {
+          H.force = false;
+          const cards = (st.reveal && st.reveal.cards) || [];
+          st.revCard = (st.revCard || 0) + 1;
+          st.ready = {}; H.lastReady = "";
+          if (st.revCard < cards.length) { st.deadline = now + 60000 * m; hostWrite(); return; }
+          if (st.gameOver) { E.finishGame(st, H.priv); st.deadline = 0; hostWrite(true); return; }
+          st.phase = "interlude"; st.deadline = now + E.TIMES.interlude * 1000 * SPEED; hostWrite(); return;
+        }
         break;
       case "interlude":
         if (allReady || H.force || now > st.deadline) {

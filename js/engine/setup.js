@@ -1,8 +1,8 @@
 // Création de partie, choix des provinces (draft) et placement
-import { OBJECTIVES } from "../content.js?v=1795298173";
-import { PROVINCES, REGIONS } from "../map.js?v=1795298173";
-import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795298173";
-import { makeFamily } from "./people.js?v=1795298173";
+import { OBJECTIVES } from "../content.js?v=1795309716";
+import { PROVINCES, REGIONS } from "../map.js?v=1795309716";
+import { FORMAT_VERSION, MAX_ROUNDS, PROV_IDS, START_ARMIES, cleanHouseName, shuffle } from "./core.js?v=1795309716";
+import { makeFamily } from "./people.js?v=1795309716";
 
 export function createGame({ players, tutorial = false, randomDraft = false, code = "", rounds = MAX_ROUNDS }, rng) {
   // players: [{pid, name, house, isBot}]
@@ -12,6 +12,7 @@ export function createGame({ players, tutorial = false, randomDraft = false, cod
     chronicle: [], news: [], reveal: null, proposals: {}, treaties: [], unsolved: [], leader: null, draft: null, result: null, seq: 0,
   };
   const priv = {};
+  const takenAll = new Set();
   for (const p of players) {
     state.players[p.pid] = {
       pid: p.pid, name: p.name, house: p.house, hname: cleanHouseName(p.hname), isBot: !!p.isBot, gold: 10, colere: 10, peur: 10, prestige: 10,
@@ -19,7 +20,7 @@ export function createGame({ players, tutorial = false, randomDraft = false, cod
       ai: p.ai || (p.house === "anglais" ? null : null), flags: {}, diceMod: 0, hiddenIdx: -1,
       stats: { armiesKilled: 0, betrayals: 0, murders: 0, familyDeaths: 0, bastardsReceived: 0, conquests: 0, capitalLost: false, married: 0, treaties: 0, accusationsOk: 0, bastardsSown: 0, goldGiven: 0, attacks: 0, attackLost: 0, kings: 1, firstKing: null },
     };
-    const fam = makeFamily(rng, p.house);
+    const fam = makeFamily(rng, p.house, takenAll);
     state.families[p.pid] = fam;
     fam.queenRef = { pid: p.pid, id: fam.members[1].id };
     state.players[p.pid].stats.firstKing = fam.kingId;

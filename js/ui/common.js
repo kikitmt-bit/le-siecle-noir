@@ -1,6 +1,6 @@
 // Petits outils d'interface : affichage, toasts, bulles d'aide
-import { HOUSES } from "../content.js?v=1795298173";
-import { $, L, S, esc, net, store } from "../state.js?v=1795298173";
+import { HOUSES } from "../content.js?v=1795309716";
+import { $, L, S, esc, net, store } from "../state.js?v=1795309716";
 
 // ---------------------------------------------------------------------
 // utilitaires d'interface
@@ -38,4 +38,11 @@ export function renderTuto() {
   el.innerHTML = `<h4>${esc(t.title)}</h4><p>${t.text}</p><button class="btn btn-small btn-dark" id="tuto-ok">Compris</button>`;
   el.classList.remove("hidden");
   $("#tuto-ok").onclick = () => { store.set(t.k, "1"); L.tutoQueue.shift(); renderTuto(); };
+}
+
+// dernière manche : les scores restent cachés jusqu'au Couronnement (cartes « ambitions secrètes » et « décompte »)
+export function scoresHidden(st) {
+  if (!st || st.round !== st.maxRounds || st.phase === "end") return false;
+  if (st.phase === "reveal" && st.reveal && st.reveal.cards) { const c = st.reveal.cards[st.revCard || 0]; if (c && (c.type === "objectives" || c.type === "final")) return false; }
+  return true;
 }

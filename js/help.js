@@ -26,7 +26,8 @@ export const ICON = {
 // ---------- définitions (au toucher) ----------
 export const GLOSSARY = {
   prestige: ["Prestige", "Ta gloire. C'est la base de ton score final. On en gagne en conquérant, en tenant des régions, en battant le favori ; on en perd en trahissant, en échouant une intrigue, ou par certains dilemmes."],
-  or: ["Or", "Ton trésor : 1 or par province à chaque manche. Il sert à engager des mercenaires (4 or = +2 armées quand tu lèves), à payer les intrigues (3 à 6 or) et à faire des cadeaux aux autres maisons. Si on prend ta capitale, on te vole un tiers de ton or."],
+  or: ["Or", "Ton trésor. À chaque fin de manche : +1 or par province (+1 par mariage), puis tu paies la solde de tes troupes (1 or pour 5 armées). Sans or pour payer, des soldats désertent. L'or sert aussi à : engager des mercenaires (+2 armées quand tu lèves), relancer un dé (2 or), offrir une fête au peuple (3 or, −15 Colère), intriguer, acheter des voix au Conseil. À la fin, 10 or = 1 point."],
+  conseil: ["Conseil du Roi", "Aux manches 3, 6 et 9, toutes les maisons votent en public sur une motion : un honneur (Connétable, Main du Roi, princesse de France) ou une punition (impôt, excommunication, tribunal). On ne vote jamais pour soi. Les votes sont affichés à tous : négociez !"],
   colere: ["Colère du peuple", "Monte avec la cruauté et les impôts. À 80, une de tes provinces se révolte et devient neutre. Elle baisse de 5 à chaque manche."],
   peur: ["Peur", "Ta réputation de cruauté. Tous les 25 points : +1 en défense partout. Mais à 50, plus personne n'accepte de marier ses enfants aux tiens."],
   armees: ["Armées", "Le chiffre sur la bannière de chaque province. Elles défendent la province et servent à attaquer les provinces voisines. Une province garde toujours au moins 1 armée."],
@@ -44,7 +45,7 @@ export const GLOSSARY = {
   favori: ["Le favori", "Le joueur en tête porte la couronne. Battre ses armées rapporte 2 Prestige : tout le monde a intérêt à se liguer contre lui."],
   couronnement: ["Le Couronnement", "La dernière manche. Chaque conquête rapporte 3 Prestige et les scores des autres sont cachés jusqu'à la fin."],
   objectifs: ["Objectifs secrets", "Deux ambitions que toi seul connais. Réussies à la fin, elles rapportent 5 à 10 points. Regarde-les dans « Ma maison »."],
-  score: ["Score final", "Prestige + 1 par province + 3 par région complète + tes objectifs secrets réussis + 1 par membre vivant de ta famille. Le plus haut score gagne. Tenir 15 provinces = victoire immédiate."],
+  score: ["Score final", "Prestige + 3 par province + 3 par région complète + tes objectifs secrets réussis + 1 par membre vivant de ta famille + 1 par tranche de 10 or. Le plus haut score gagne. Tenir 15 provinces = victoire immédiate."],
   peste: ["Peste", "Les points noirs sur une province. Elle tue une armée par manche et se propage aux voisines. Si ta capitale l'a, ta famille risque d'y passer."],
   dilemme: ["Dilemmes", "Deux cartes secrètes au début de chaque manche : une affaire de ta maison (les autres n'en apprennent qu'une rumeur) et une affaire avec une maison rivale (révélée à tous, parfois un pacte où vous choisissez tous les deux). Toutes les options coûtent quelque chose."],
   pacte: ["Pacte", "Un dilemme partagé avec un autre joueur. Vous choisissez en même temps, en secret, et le résultat dépend de vos deux choix. Faire confiance ou trahir ?"],
@@ -60,54 +61,69 @@ export function term(key, label) {
 
 // ---------- effets d'une option en icônes ----------
 const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
-export function effectChips(fx, depth = 0) {
+// Les conséquences d'une option, en pastilles lisibles : ce que TU gagnes ou perds, ce que subit la maison visée,
+// et les risques (« 60 % : … sinon : … »).
+const KILL = {
+  eldest: ["ton héritier meurt", "son héritier meurt"], son: ["ton fils aîné meurt", "son fils aîné meurt"], daughter: ["ta fille meurt", "sa fille meurt"],
+  youngest: ["ton plus jeune enfant meurt", "son plus jeune enfant meurt"], random_child: ["un de tes enfants meurt", "un de ses enfants meurt"], bastard: ["ton bâtard meurt", "son bâtard meurt"],
+  queen: ["ta reine meurt", "sa reine meurt"], king: ["ton souverain meurt", "son souverain meurt"],
+};
+export function effectChips(fx, who = 0) {
   const out = [];
+  const c = (k, t) => out.push(`<span class="fxchip ${who ? "tgt" : k}">${t}</span>`);
+  const T = (a, b) => (who ? b : a);
   for (const f of fx || []) {
-    if (f.gold) out.push([f.gold > 0 ? "good" : "bad", `${ICON.gold}${sign(f.gold)} or`]);
-    if (f.prestige) out.push([f.prestige > 0 ? "good" : "bad", `${ICON.prestige}${sign(f.prestige)} prestige`]);
-    if (f.armies) out.push([f.armies > 0 ? "good" : "bad", `${ICON.army}${sign(f.armies)} armée${Math.abs(f.armies) > 1 ? "s" : ""}`]);
-    if (f.colere) out.push([f.colere > 0 ? "bad" : "good", `${ICON.colere}${sign(f.colere)} colère`]);
-    if (f.peur) out.push(["neutral", `${ICON.peur}${sign(f.peur)} peur`]);
-    if (f.kill) out.push(["bad", `${ICON.death}un mort dans ta famille`]);
-    if (f.plague) out.push(["bad", `${ICON.plague}peste`]);
-    if (f.nextDice) out.push([f.nextDice > 0 ? "good" : "bad", `${sign(f.nextDice)} dé à la prochaine manche`]);
-    if (f.intrigueBonus) out.push(["good", `${ICON.intrigue}+${f.intrigueBonus} aux intrigues`]);
-    if (f.loseProvince) out.push(["bad", `${ICON.province}−1 province`]);
-    if (f.gainNeutral) out.push(["good", `${ICON.province}+1 province`]);
-    if (f.steal) out.push(["good", `${ICON.gold}+${f.steal} or pris à la cible`]);
-    if (f.treatyTarget || f.treatyPartner) out.push(["good", `trêve`]);
-    if (f.marryTarget || f.marryPartner) out.push(["good", `${ICON.ring}mariage`]);
-    if (f.epithet) out.push(["neutral", `surnom « ${f.epithet} »`]);
-    if (f.addChild) out.push(["good", `${ICON.family}+${f.addChild} enfant${f.addChild > 1 ? "s" : ""}${f.bastard ? " (bâtard)" : ""}`]);
-    if (f.addBastard) out.push(["neutral", `${ICON.family}un bâtard reconnu`]);
-    if (f.addChildDoubt) out.push(["neutral", `${ICON.family}un enfant… peut-être de toi`]);
-    if (f.newQueen) out.push(["good", `${ICON.ring}nouvelle reine`]);
-    if (f.legitimize) out.push(["neutral", "le bâtard entre dans la succession"]);
-    if (f.disinherit) out.push(["bad", "un héritier écarté"]);
-    if (f.removePerson) out.push(["bad", `${ICON.family}un enfant quitte la famille`]);
-    if (f.consanguin) out.push(["risk", "enfants consanguins"]);
-    if (f.seduceTarget) out.push(["good", "un bâtard chez l'ennemi"]);
-    if (f.spyObjectives) out.push(["good", "tu découvres ses objectifs secrets"]);
-    if (f.breakAlliance || f.breakAllAlliances) out.push(["bad", "alliance rompue"]);
-    if (f.chain) out.push(["neutral", `${ICON.scroll}une suite viendra plus tard`]);
-    if (f.health) out.push([f.health > 0 ? "bad" : "good", f.health > 0 ? "le roi s'affaiblit" : "le roi guérit"]);
-    if (f.target && depth === 0) out.push(["neutral", `${ICON.target}frappe la maison choisie`]);
-    if (f.chance !== undefined && depth === 0) out.push(["risk", `${ICON.risk}risque : ${Math.round(f.chance * 100)} %`]);
-    if (f.others) out.push(["neutral", "touche toutes les autres maisons"]);
+    if (f.gold) c(f.gold > 0 ? "good" : "bad", `${ICON.gold}${sign(f.gold)} or`);
+    if (f.prestige) c(f.prestige > 0 ? "good" : "bad", `${ICON.prestige}${sign(f.prestige)} prestige`);
+    if (f.armies) c(f.armies > 0 ? "good" : "bad", `${ICON.army}${sign(f.armies)} armée${Math.abs(f.armies) > 1 ? "s" : ""}`);
+    if (f.colere) c(f.colere > 0 ? "bad" : "good", `${ICON.colere}${sign(f.colere)} colère`);
+    if (f.peur) c("neutral", `${ICON.peur}${sign(f.peur)} peur`);
+    if (f.kill) c("bad", `${ICON.death}${(KILL[f.kill] || ["un mort dans ta famille", "un mort dans sa famille"])[who ? 1 : 0]}`);
+    if (f.plague) c("bad", `${ICON.plague}peste`);
+    if (f.nextDice) c(f.nextDice > 0 ? "good" : "bad", `${sign(f.nextDice)} dé à la prochaine manche`);
+    if (f.intrigueBonus) c("good", `${ICON.intrigue}+${f.intrigueBonus} aux intrigues`);
+    if (f.loseProvince) c("bad", `${ICON.province}${T("tu perds", "perd")} une province`);
+    if (f.gainNeutral) c("good", `${ICON.province}+1 province`);
+    if (f.steal) c("good", `${ICON.gold}+${f.steal} or pris à la maison visée`);
+    if (f.treatyTarget || f.treatyPartner) c("good", `trêve de ${f.treatyTarget || f.treatyPartner || 3} manches`);
+    if (f.marryTarget || f.marryPartner) c("good", `${ICON.ring}mariage = alliance`);
+    if (f.epithet) c("neutral", `surnom « ${f.epithet} »`);
+    if (f.addChild) c("good", `${ICON.family}+${f.addChild} enfant${f.addChild > 1 ? "s" : ""}${f.bastard ? " (bâtard)" : ""}`);
+    if (f.addBastard) c("neutral", `${ICON.family}un bâtard reconnu`);
+    if (f.addChildDoubt) c("neutral", `${ICON.family}un enfant… peut-être de toi`);
+    if (f.newQueen) c("good", `${ICON.ring}nouvelle reine`);
+    if (f.legitimize) c("neutral", "le bâtard entre dans la succession");
+    if (f.disinherit) c("bad", "un héritier écarté");
+    if (f.removePerson) c("bad", `${ICON.family}un enfant quitte la famille`);
+    if (f.consanguin) c("risk", "enfants consanguins");
+    if (f.seduceTarget) c("good", "un bâtard chez l'ennemi");
+    if (f.spyObjectives) c("good", "tu découvres ses objectifs secrets");
+    if (f.breakAlliance || f.breakAllAlliances) c("bad", "alliance rompue");
+    if (f.betrayal) c("bad", "trahison (surnom « le Traître »)");
+    if (f.murder) c("neutral", `${ICON.hidden}crime anonyme (on peut t'accuser)`);
+    if (f.chain) c("neutral", `${ICON.scroll}une suite viendra plus tard`);
+    if (f.health) c(f.health > 0 ? "bad" : "good", f.health > 0 ? T("ton souverain tombe malade", "son souverain tombe malade") : T("ton souverain guérit", "son souverain guérit"));
+    if (f.others) c("neutral", "touche toutes les autres maisons");
+    if (f.target) { const inner = effectChips(f.target, 1); if (inner.length) out.push(`<span class="fxgroup tgt">${ICON.target}<b>La maison visée :</b> ${inner.join("")}</span>`); }
+    if (f.chance !== undefined) {
+      const a = effectChips(f.then || [], who), b = effectChips(f.else || [], who);
+      out.push(`<span class="fxgroup risk">${ICON.risk}<b>${Math.round(f.chance * 100)} % de chances :</b> ${a.join("") || "rien"}${b.length ? ` <b>· sinon :</b> ${b.join("")}` : " <b>· sinon :</b> rien ne se passe"}</span>`);
+    }
   }
   return out;
 }
 export function chipsHtml(fx) {
   const c = effectChips(fx);
   if (!c.length) return `<span class="fxchip neutral">aucun effet immédiat</span>`;
-  return c.map(([k, t]) => `<span class="fxchip ${k}">${t}</span>`).join("");
+  return c.join("");
 }
 
 // ---------- introduction en 5 cartes ----------
 export const INTRO = [
-  { title: "Le but", icon: ICON.prestige, text: "France, 1347. Tu diriges une grande maison noble. Après la dernière manche (<b>10</b>, ou 7 en partie courte), celui qui a le plus gros score gagne : <b>Prestige + provinces + régions + objectifs secrets + famille vivante</b>. Tenir 15 provinces fait gagner immédiatement." },
-  { title: "Une manche", icon: ICON.scroll, text: "Chaque manche se déroule toujours pareil :<br><b>1. Les dilemmes</b> : deux décisions secrètes, une pour ta maison, une avec un rival.<br><b>2. Les ordres</b> : tu donnes un ordre à chacun de tes dés.<br><b>3. La révélation</b> : on découvre tout, chapitre par chapitre, à son rythme." },
-  { title: "Tes jauges", icon: ICON.gold, text: `${ICON.prestige} <b>Prestige</b> : tes points de victoire.<br>${ICON.gold} <b>Or</b> : engage des mercenaires (4 or = +2 armées), paie les intrigues et les cadeaux.<br>${ICON.colere} <b>Colère du peuple</b> : à 80, une province se révolte.<br>${ICON.peur} <b>Peur</b> : +1 en défense tous les 25 points, mais à 50 plus personne n'épouse tes enfants.<br>Tu les vois en haut à droite, sous ton score.` },
+  { title: "Le but", icon: ICON.prestige, text: "France, 1347. Tu diriges une grande maison noble. Après la dernière manche (<b>10</b>, ou 7 en partie courte), celui qui a le plus gros score gagne : <b>Prestige + 3 par province + régions + objectifs secrets + famille vivante + or</b>. Tenir 15 provinces fait gagner immédiatement." },
+  { title: "Ta maison", icon: ICON.family, text: "Chaque maison a un <b>pouvoir</b> et une <b>faiblesse</b> (les Bâtisseurs défendent mieux, les Marchands gagnent plus d'or, les Ombres intriguent mieux, la Lignée sacrée gagne du Prestige). En haut de l'écran, le bandeau montre toutes les familles : souverain couronné, héritiers, mariages (⚭), morts (✝)." },
+  { title: "Une manche", icon: ICON.scroll, text: "Chaque manche se déroule toujours pareil :<br><b>1. Les dilemmes</b> : deux décisions secrètes, une pour ta maison, une avec un rival.<br><b>2. Les ordres</b> : tu donnes un ordre à chacun de tes dés.<br><b>3. La révélation</b> : tout le monde voit les mêmes cartes en même temps (affaires des cours, batailles, trois ans qui passent, bilan). On passe à la suivante quand tous ont cliqué « Suivant » : le moment de commenter en vocal !<br>Aux manches 3, 6 et 9 : le <b>Conseil du Roi</b>, un vote public." },
+  { title: "Tes jauges", icon: ICON.gold, text: `${ICON.prestige} <b>Prestige</b> : tes points de victoire.<br>${ICON.gold} <b>Or</b> : paie la solde des troupes (1 or pour 5 armées), les mercenaires, les relances de dés, les fêtes et les intrigues. 10 or = 1 point à la fin.<br>${ICON.colere} <b>Colère du peuple</b> : à 80, une province se révolte.<br>${ICON.peur} <b>Peur</b> : +1 en défense tous les 25 points, mais à 50 plus personne n'épouse tes enfants.<br>Tu les vois en haut à droite, sous ton score.` },
   { title: "Les dés d'ordres", icon: ICON.frapper, text: "Chaque manche, tu lances 3 dés. Chaque dé = un ordre :<br>" + `${ICON.frapper} <b>Frapper</b> : attaquer une province voisine (le dé s'ajoute à ta force)<br>${ICON.marcher} <b>Marcher</b> : déplacer des armées<br>${ICON.lever} <b>Lever</b> : recruter des armées<br>${ICON.intrigue} <b>Intriguer</b> : poison, séduction, corruption` },
   { title: "Les batailles", icon: ICON.army, text: "Le chiffre sur chaque bannière = les armées de la province. Pour attaquer, il faut une province <b>voisine</b>. Ta force = armées envoyées + ton dé + un petit hasard. Le jeu t'affiche tes <b>chances de victoire</b> avant que tu valides." },
   { title: "La famille", icon: ICON.family, text: "Ton roi vieillit, a des enfants, meurt. L'aîné hérite. <b>Sans héritier, c'est la guerre civile.</b> Marie tes enfants pour t'allier, méfie-toi des poisons, et regarde ta famille dans l'onglet « Ma maison »." },

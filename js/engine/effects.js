@@ -1,9 +1,9 @@
 // Effets des dilemmes
-import { PROVINCES } from "../map.js?v=1795298173";
-import { chron, provincesOf } from "./calc.js?v=1795298173";
-import { PROV_IDS, capitalize, clamp, maisonName, pick, shuffle } from "./core.js?v=1795298173";
-import { deName, heirs, king, kingLabel, newPerson, personTitle, queen } from "./people.js?v=1795298173";
-import { addTreaty, killPerson, marry, sowBastard } from "./succession.js?v=1795298173";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { chron, provincesOf } from "./calc.js?v=1795309716";
+import { PROV_IDS, capitalize, clamp, maisonName, pick, shuffle } from "./core.js?v=1795309716";
+import { deName, heirs, king, kingLabel, newPerson, personTitle, queen, takenNames } from "./people.js?v=1795309716";
+import { addTreaty, killPerson, marry, sowBastard } from "./succession.js?v=1795309716";
 
 // ---------- effets des dilemmes ----------
 export function provForWhere(state, pid, where, rng) {
@@ -68,10 +68,10 @@ export function applyFx(state, pid, fxList, ctx, rng, out) {
     if (fx.intrigueBonus) pl.intrigueBonus = (pl.intrigueBonus || 0) + fx.intrigueBonus;
     if (fx.nextDice) pl.diceMod = (pl.diceMod || 0) + fx.nextDice;
     if (fx.flag) { pl.flags = pl.flags || {}; pl.flags[fx.flag] = state.round; }
-    if (fx.addBastard) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", bastard: true }));
-    if (fx.addChildDoubt) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child" }));
-    if (fx.addChild) for (let i = 0; i < fx.addChild; i++) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: fx.age || 0, house: pl.house, role: "child", bastard: !!fx.bastard, consanguin: fam.consanguin }));
-    if (fx.newQueen) { const q = newPerson(rng, { sex: "f", age: 18 + Math.floor(rng() * 8), house: pl.house, role: "queen" }); fam.members.push(q); fam.queenRef = { pid, id: q.id }; }
+    if (fx.addBastard) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", bastard: true, taken: takenNames(state) }));
+    if (fx.addChildDoubt) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", taken: takenNames(state) }));
+    if (fx.addChild) for (let i = 0; i < fx.addChild; i++) fam.members.push(newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: fx.age || 0, house: pl.house, role: "child", bastard: !!fx.bastard, consanguin: fam.consanguin, taken: takenNames(state) }));
+    if (fx.newQueen) { const q = newPerson(rng, { sex: "f", age: 18 + Math.floor(rng() * 8), house: pl.house, role: "queen", taken: takenNames(state) }); fam.members.push(q); fam.queenRef = { pid, id: q.id }; }
     if (fx.legitimize) { const b = findKid("bastard"); if (b) b.legit = true; }
     if (fx.removeBastardRecu || fx.killBastardRecu) {
       const b = fam.members.find((m) => m.alive && m.role === "child" && m.bastardOf && m.bastardOf !== pid);

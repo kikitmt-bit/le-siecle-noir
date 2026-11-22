@@ -20,9 +20,9 @@ const sfx = MOB ? "m" : "";
     const info = await phaseInfo(p);
     if (info.ph !== lastPhase) { console.log(((Date.now() - t0) / 1000).toFixed(0) + "s", info.ph); lastPhase = info.ph; }
     if (info.tuto) await p.click("#tuto-ok").catch(() => {});
-    for (const [key, re] of [["battle", /Bataille/], ["rumor", /Rumeur/], ["move", /Mouvements/], ["done", /FINREV/]]) {
+    for (const [key, re] of [["court", /card-court/], ["battle", /card-battle/], ["time", /card-time/], ["summary", /card-summary/], ["council", /council-card/], ["final", /card-final/], ["objectives", /card-objectives/]]) {
       if (shots.has(key)) continue;
-      const bt = await p.evaluate(() => { const b = document.querySelector("#banner:not(.hidden) b"); if (document.querySelector(".rv-dock.done")) return "FINREV"; return b ? b.textContent : ""; });
+      const bt = await p.evaluate(() => { const d = document.querySelector(".rv-dock, .council-card"); return d ? d.className : ""; });
       if (re.test(bt) && !(await p.evaluate(() => !!document.querySelector(".splash")))) { shots.add(key); await sleep(700); await p.screenshot({ path: `${OUT}/rv${sfx}_${key}.png` }); }
     }
     const shotKey = info.ph;

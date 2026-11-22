@@ -1,6 +1,6 @@
 // État partagé de l'application (un seul exemplaire, importé par tous les modules)
-import { ICON } from "./help.js?v=1795298173";
-import * as remote from "./net.js?v=1795298173";
+import { ICON } from "./help.js?v=1795309716";
+import * as remote from "./net.js?v=1795309716";
 
 export const H_ICON = ICON;
 
@@ -28,7 +28,7 @@ export const L = {
   ui: resetUi(), modalOpen: null, endClosed: false, dilemmaClosed: false, objClosed: false, tutoQueue: [],
 };
 
-export function resetUi() { return { tab: "panel", objPick: [], placement: null, dChoice: null, dTarget: null, dSlot: null, orders: [], build: null, offers: [], answers: {}, gifts: [], giftTo: null, giftAmt: 1, accuse: null, accuseCrime: null, msgTo: null, viewHouse: null }; }
+export function resetUi() { return { tab: "panel", objPick: [], placement: null, dChoice: null, dTarget: null, dSlot: null, orders: [], build: null, offers: [], answers: {}, gifts: [], giftTo: null, giftAmt: 1, accuse: null, accuseCrime: null, msgTo: null, viewHouse: null, feast: false, rerollPick: false }; }
 
 export const me = () => (L.state && L.state.seats && L.state.seats[net.uid]) || null;
 

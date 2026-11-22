@@ -43,9 +43,11 @@ async function botStep(p) {
       const md = document.querySelector("#modal:not(.hidden)");
       if (md) { const n = md.querySelector('[data-intro]:last-of-type'); const c = md.querySelector("#md-close"); if (c && (!n || n.textContent.includes("Précédent"))) click(c); else if (n) click(n); else if (c) click(c); return; }
       const nx = document.querySelector("#btn-next:not([disabled])"); if (nx) { click(nx); return; }
-      const rvok = document.querySelector('[data-rvc="ok"]:not([disabled])'); if (rvok) { click(rvok); return; }
-      const rvend = document.querySelector('[data-rvc="end"]'); if (rvend && Math.random() < 0.04) { click(rvend); return; }
-      const rvnext = document.querySelector('[data-rvc="next"]:not([disabled])'); if (rvnext) { click(rvnext); return; }
+      // révélation partagée : on regarde parfois une carte précédente, puis on valide
+      const rvprev = document.querySelector('[data-rvview]:not(.cur):not([disabled])'); if (rvprev && Math.random() < 0.03) { click(rvprev); return; }
+      const rvback = document.querySelector('[data-rvview="cur"]'); if (rvback) { click(rvback); return; }
+      const rvack = document.querySelector('[data-rvc="ack"]:not([disabled])'); if (rvack) { click(rvack); return; }
+      const bat = document.querySelector('[data-battle]'); if (bat && Math.random() < 0.05) { click(bat); }
       // objectifs
       if ($$("[data-obj]").length && !$("#obj-ok")?.textContent.includes("✓")) { const o = $$("[data-obj]"); click(o[0]); click($$("[data-obj]")[1]); click($("#obj-ok")); return; }
       // dilemme
@@ -72,6 +74,9 @@ async function botStep(p) {
         if ($$("[data-offer]").length && Math.random() < 0.1) { const of = $$("[data-offer]").filter((b) => !b.disabled); if (of.length) click(pick(of)); }
         if ($$("[data-acc]").length && Math.random() < 0.3) click(pick($$("[data-acc]")));
         if ($$("[data-giftto]").length && Math.random() < 0.05) { click(pick($$("[data-giftto]").filter((b)=>!b.disabled))); setTimeout(() => click(document.querySelector("#gift-ok")), 50); }
+        if ($("#btn-feast") && !$("#btn-feast").disabled && Math.random() < 0.05) { click($("#btn-feast")); return; }
+        if ($("#btn-reroll") && !$("#btn-reroll").disabled && !$(".die.reroll-pick") && Math.random() < 0.08) { click($("#btn-reroll")); return; }
+        if ($(".die.reroll-pick")) { click(pick($$(".die.reroll-pick"))); return; }
         if (freeDie && Math.random() < 0.9) { click(freeDie); return; }
         if ($("#btn-seal")) { click($("#btn-seal")); return; }
       }

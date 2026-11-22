@@ -1,11 +1,11 @@
 // Intelligence artificielle
-import { DILEMMAS } from "../content.js?v=1795298173";
-import { PROVINCES } from "../map.js?v=1795298173";
-import { attackMod, canPropose, defenseOf, provincesOf, winProb } from "./calc.js?v=1795298173";
-import { COSTS, MERC_COST, pick, unlocked } from "./core.js?v=1795298173";
-import { heirs, mother } from "./people.js?v=1795298173";
-import { realDice } from "./rounds.js?v=1795298173";
-import { bound } from "./succession.js?v=1795298173";
+import { DILEMMAS } from "../content.js?v=1795309716";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { attackMod, canPropose, defenseOf, provincesOf, winProb } from "./calc.js?v=1795309716";
+import { COSTS, MERC_COST, pick, unlocked } from "./core.js?v=1795309716";
+import { heirs, mother } from "./people.js?v=1795309716";
+import { realDice } from "./rounds.js?v=1795309716";
+import { bound } from "./succession.js?v=1795309716";
 
 // ---------- intelligence artificielle ----------
 export const PERSONAS = {
@@ -154,3 +154,17 @@ export function aiOrders(state, pid, rng, priv) {
 }
 
 export const botOrders = (state, pid, rng, priv) => aiOrders(state, pid, rng, priv);
+
+// vote de l'ordinateur au Conseil du Roi : honneurs à un allié ou au plus faible, punitions au favori ou à un ennemi juré
+export function aiCouncil(state, priv, pid, motion, rng) {
+  const others = state.order.filter((p) => p !== pid && state.players[p].house !== "anglais");
+  if (!others.length) return null;
+  const grudges = (priv[pid] && priv[pid].grudges) || [];
+  const allies = others.filter((p) => state.alliances.some((x) => (x.a === pid && x.b === p) || (x.b === pid && x.a === p)));
+  const score = (p) => state.players[p].prestige + provincesOf(state, p).length * 2;
+  if (motion.good) return allies[0] || others.slice().sort((a, b) => score(a) - score(b))[0];
+  const g = grudges.find((p) => others.includes(p));
+  if (g && rng() < 0.7) return g;
+  if (state.leader && state.leader !== pid) return state.leader;
+  return others.slice().sort((a, b) => score(b) - score(a))[0];
+}

@@ -1,20 +1,20 @@
 // Surcouches : objectifs, dilemme, interlude, fin de partie, règles
-import * as A from "../audio.js?v=1795298173";
-import { DILEMMAS, OBJECTIVES } from "../content.js?v=1795298173";
-import * as E from "../engine.js?v=1795298173";
-import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795298173";
-import { hostReplay } from "../host.js?v=1795298173";
-import { PROVINCES } from "../map.js?v=1795298173";
-import { $, L, S, esc, me, net, store } from "../state.js?v=1795298173";
-import { introHtml, nextModal } from "./aides.js?v=1795298173";
-import { houseName, setInput, toast, tuto } from "./common.js?v=1795298173";
-import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795298173";
-import { shield, woodcut } from "./draw.js?v=1795298173";
-import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795298173";
-import { newsHtml, ragotsHtml } from "./news.js?v=1795298173";
-import { dropGame } from "./games.js?v=1795298173";
-import { render } from "./render.js?v=1795298173";
-import { interludeLines } from "./reveal.js?v=1795298173";
+import * as A from "../audio.js?v=1795309716";
+import { COUNCIL, DILEMMAS, OBJECTIVES } from "../content.js?v=1795309716";
+import * as E from "../engine.js?v=1795309716";
+import { GLOSSARY, ICON, UNLOCK_INFO, chipsHtml, term } from "../help.js?v=1795309716";
+import { hostReplay } from "../host.js?v=1795309716";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { $, L, S, esc, me, net, store } from "../state.js?v=1795309716";
+import { introHtml, nextModal } from "./aides.js?v=1795309716";
+import { houseColor, houseName, setInput, toast, tuto } from "./common.js?v=1795309716";
+import { dilCurrent, dilSealed, dilSlots } from "./dilemmas.js?v=1795309716";
+import { shield, woodcut } from "./draw.js?v=1795309716";
+import { entryHtml, familyHtml, houseHtml } from "./house.js?v=1795309716";
+import { newsHtml, ragotsHtml } from "./news.js?v=1795309716";
+import { dropGame } from "./games.js?v=1795309716";
+import { render } from "./render.js?v=1795309716";
+import { interludeLines } from "./reveal.js?v=1795309716";
 
 // ---------------------------------------------------------------------
 // SURCOUCHES : objectifs, dilemme, interlude, fin, maison, règles
@@ -45,9 +45,29 @@ export function objectivesCard() {
     <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="obj-ok" ${pick.length === 2 ? "" : "disabled"}>${sent ? "Choix envoyé ✓" : "Valider ces 2 objectifs"}</button></div></div>`;
 }
 
+// Le Conseil du Roi : un vote public pour (ou contre) une autre maison
+function councilCard(slot) {
+  const st = S(), pid = me();
+  const d = L.priv[slot];
+  const m = COUNCIL.find((c) => c.id === d.id);
+  if (!m) return "";
+  const done = dilSealed(slot);
+  const cur = L.ui.dChoice ?? (done ? L.myInput[slot].choice : null);
+  const sl = dilSlots();
+  const tabs = sl.length > 1 ? `<div class="dil-tabs">${sl.map((k, i) => `<button class="dil-tab ${k === slot ? "cur" : ""}" data-dslot="${k}">${dilSealed(k) ? "✓ " : `${i + 1}. `}${k === "dilemma" ? "Ta maison" : k === "dilemma2" ? "Un rival" : "Le Conseil"}</button>`).join("")}</div>` : "";
+  const others = st.order.filter((p) => p !== pid && st.players[p].house !== "anglais");
+  const opts = others.map((p) => `<button class="choice council-opt" data-ch="${esc(p)}" aria-pressed="${cur === p}" style="--hc:${houseColor(p)}">${shield(st.players[p].house, 28)}<b>${esc(houseName(p))}</b><span>${esc(st.players[p].name)} · score visible ${E.publicScore(st, p)}</span></button>`).join("");
+  return `<div class="card council-card">${tabs}<div class="card-top"><span class="card-kicker">${sl.indexOf(slot) + 1} SUR ${sl.length} · LE CONSEIL DU ROI · VOTE PUBLIC</span>${cardTimer()}</div><h2>${esc(m.title)}</h2>
+    <p>${esc(m.text)}</p><div class="council-effect ${m.good ? "good" : "bad"}">${m.good ? "Un honneur" : "Une punition"} : ${esc(m.effect)}</div>
+    <p class="ptext" style="font-size:15px"><b>Pour qui votes-tu ?</b> Tu ne peux pas voter pour toi. La maison qui a le plus de voix l'emporte ; en cas d'égalité, rien n'est décidé. <b>Tous les votes seront affichés</b> à la révélation : négociez, achetez des voix avec de l'or, promettez…</p>
+    <div class="choices">${opts}</div>
+    <div class="row" style="margin-top:14px"><button class="btn grow" id="ov-close">Voir la carte</button><button class="btn btn-red grow" id="dil-ok" ${cur ? "" : "disabled"}>${done ? "Vote scellé ✓ (changer)" : cur ? `Voter pour ${esc(houseName(cur))}` : "Choisis une maison"}</button></div></div>`;
+}
+
 export function dilemmaCard() {
   const st = S(), pid = me();
   const slot = dilCurrent();
+  if (slot === "council") return councilCard(slot);
   const d = L.priv[slot];
   const card = DILEMMAS.find((c) => c.id === d.id);
   if (!card) return "";
@@ -56,7 +76,7 @@ export function dilemmaCard() {
   const cur = L.ui.dChoice ?? (done ? L.myInput[slot].choice : null);
   const curT = L.ui.dTarget ?? (done ? L.myInput[slot].target : null);
   const sl = dilSlots();
-  const tabs = sl.length > 1 ? `<div class="dil-tabs">${sl.map((k, i) => `<button class="dil-tab ${k === slot ? "cur" : ""}" data-dslot="${k}">${dilSealed(k) ? "✓ " : `${i + 1}. `}${k === "dilemma" ? "Ta maison" : "Un rival"}</button>`).join("")}</div>` : "";
+  const tabs = sl.length > 1 ? `<div class="dil-tabs">${sl.map((k, i) => `<button class="dil-tab ${k === slot ? "cur" : ""}" data-dslot="${k}">${dilSealed(k) ? "✓ " : `${i + 1}. `}${k === "dilemma" ? "Ta maison" : k === "dilemma2" ? "Un rival" : "Le Conseil"}</button>`).join("")}</div>` : "";
   const kicker = (sl.length > 1 ? `${sl.indexOf(slot) + 1} SUR ${sl.length} · ` : "") + (card.type === "pact" ? `PACTE AVEC ${esc(houseName(d.partner).toUpperCase())}` : card.type === "target" ? "AFFAIRE AVEC UNE MAISON RIVALE" : "AFFAIRE DE TA MAISON");
   let opts, extra = "";
   if (card.type === "pact") {
@@ -78,7 +98,7 @@ export function dilemmaCard() {
 
 // à quoi servent les jauges, en une ligne
 export function resLegend() {
-  return `<div class="res-legend"><span>${ICON.prestige}<b>Prestige</b> = tes points de victoire</span><span>${ICON.gold}<b>Or</b> = mercenaires (4 or), intrigues, cadeaux</span><span>${ICON.colere}<b>Colère</b> : à 80, une province se révolte</span><span>${ICON.peur}<b>Peur</b> : +1 en défense tous les 25 pts</span></div>`;
+  return `<div class="res-legend"><span>${ICON.prestige}<b>Prestige</b> = tes points de victoire</span><span>${ICON.gold}<b>Or</b> = solde des troupes, mercenaires, relances de dés, fêtes, intrigues</span><span>${ICON.colere}<b>Colère</b> : à 80, une province se révolte</span><span>${ICON.peur}<b>Peur</b> : +1 en défense tous les 25 pts</span></div>`;
 }
 
 export function summaryHtml() {
@@ -135,17 +155,59 @@ export function palmaresHtml() {
   return `<div class="palmares">${ICON.prestige}<b>Ton palmarès</b> : ${pal.games} partie${pal.games > 1 ? "s" : ""} · ${pal.wins || 0} victoire${(pal.wins || 0) > 1 ? "s" : ""} · meilleur score ${pal.best || 0} points</div>`;
 }
 
+// courbe des scores visibles, manche par manche (dessinée en SVG)
+function scoreChart(st) {
+  const h = (st.history || []).slice();
+  if (h.length < 2) return "";
+  const r = st.result;
+  const pids = st.order.filter((p) => st.players[p].house !== "anglais");
+  const W = 640, Hh = 220, L0 = 34, B = 26, T = 12, R0 = 110;
+  const pts = h.map((x) => ({ round: x.round, s: x.s }));
+  if (r) pts.push({ round: "Fin", s: Object.fromEntries(r.rows.map((x) => [x.pid, x.total])) });
+  const all = pts.flatMap((x) => pids.map((p) => x.s[p] || 0));
+  const max = Math.max(10, ...all), min = Math.min(0, ...all);
+  const X = (i) => L0 + (i * (W - L0 - R0)) / (pts.length - 1);
+  const Y = (v) => T + (Hh - T - B) * (1 - (v - min) / (max - min));
+  const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => { const v = min + (max - min) * f; return `<line x1="${L0}" x2="${W - R0}" y1="${Y(v)}" y2="${Y(v)}" stroke="#C9B48A" stroke-width="1"/><text x="${L0 - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#6B5638">${Math.round(v)}</text>`; }).join("");
+  // étiquettes de fin écartées pour ne pas se chevaucher
+  const lastY = {}; pids.map((p) => [p, Y(pts[pts.length - 1].s[p] || 0)]).sort((a, b) => a[1] - b[1]).reduce((prev, [p, y]) => { const yy = Math.max(y, prev + 14); lastY[p] = yy; return yy; }, -99);
+  const xl = pts.map((x, i) => `<text x="${X(i)}" y="${Hh - 6}" text-anchor="middle" font-size="11" fill="#6B5638">${x.round === "Fin" ? "Fin" : "M" + x.round}</text>`).join("");
+  const lines = pids.map((p) => { const c = houseColor(p); const d = pts.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(x.s[p] || 0).toFixed(1)}`).join(""); const last = pts[pts.length - 1].s[p] || 0; return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${p === me() ? 4 : 2.5}" stroke-linejoin="round"/><circle cx="${X(pts.length - 1)}" cy="${Y(last)}" r="4" fill="${c}"/><text x="${X(pts.length - 1) + 8}" y="${Math.min(Hh - B + 4, lastY[p]) + 4}" font-size="12" font-weight="700" fill="${c}">${esc(houseName(p))} ${last}</text>`; }).join("");
+  return `<p class="ph">La course à la couronne</p><svg viewBox="0 0 ${W} ${Hh}" class="score-chart" role="img" aria-label="Évolution des scores par manche">${grid}${xl}${lines}</svg><p class="hint">Score visible à la fin de chaque manche ; « Fin » ajoute les objectifs secrets.</p>`;
+}
+
+// qui a fait quoi à qui : attaques, trahisons, complots, votes, mariages
+function relationsTable(st) {
+  const rel = st.rel || [];
+  if (!rel.length) return "";
+  const pids = st.order.filter((p) => st.players[p].house !== "anglais");
+  const count = (a, b) => rel.filter((x) => x.a === a && x.b === b && ["attaque", "trahison", "poison", "poison-rate", "corruption", "seduction", "vote", "accusation"].includes(x.k)).length;
+  const head = `<tr><th>De ↓ / contre →</th>${pids.map((p) => `<th style="color:${houseColor(p)}">${esc(houseName(p))}</th>`).join("")}</tr>`;
+  const body = pids.map((a) => `<tr><th style="color:${houseColor(a)}">${esc(houseName(a))}</th>${pids.map((b) => { if (a === b) return "<td class='self'>—</td>"; const n = count(a, b); const t = rel.filter((x) => x.a === a && x.b === b); const tip = ["attaque", "trahison", "poison", "corruption", "seduction", "vote", "accusation"].map((k) => { const c = t.filter((x) => x.k === k).length; return c ? `${c} ${k}` : ""; }).filter(Boolean).join(", "); return `<td class="${n >= 4 ? "hot" : n ? "warm" : ""}" title="${esc(tip)}">${n || ""}</td>`; }).join("")}</tr>`).join("");
+  const facts = [];
+  const top = (k) => { const m = {}; rel.filter((x) => x.k === k).forEach((x) => (m[x.a] = (m[x.a] || 0) + 1)); const best = Object.entries(m).sort((a, b) => b[1] - a[1])[0]; return best; };
+  const tr = top("trahison"); if (tr) facts.push(`<b>Plus grand traître</b> : ${esc(houseName(tr[0]))} (${tr[1]} trahison${tr[1] > 1 ? "s" : ""})`);
+  const at = top("attaque"); if (at) facts.push(`<b>Le plus belliqueux</b> : ${esc(houseName(at[0]))} (${at[1]} attaques)`);
+  const pairs = {}; rel.filter((x) => x.k === "attaque").forEach((x) => { const k = [x.a, x.b].sort().join("|"); pairs[k] = (pairs[k] || 0) + 1; });
+  const feud = Object.entries(pairs).sort((a, b) => b[1] - a[1])[0];
+  if (feud) { const [a, b] = feud[0].split("|"); facts.push(`<b>La grande rivalité</b> : ${esc(houseName(a))} contre ${esc(houseName(b))} (${feud[1]} batailles)`); }
+  const mar = rel.filter((x) => x.k === "treve").length; if (mar) facts.push(`<b>Trêves signées</b> : ${mar}`);
+  return `<p class="ph">Qui a frappé qui</p><table class="relmatrix">${head}${body}</table><p class="hint">Attaques, trahisons, complots démasqués, votes contre au Conseil et accusations. Survole une case pour le détail.</p>${facts.length ? `<div class="relfacts">${facts.map((f) => `<span>${f}</span>`).join("")}</div>` : ""}`;
+}
+
 export function endHtml() {
   const st = S();
   const r = st.result;
   if (!r) return "";
   const w = r.winner;
-  const rows = r.rows.map((x, i) => `<tr class="${i === 0 ? "win" : ""}"><td>${shield(st.players[x.pid].house, 18)} ${esc(st.players[x.pid].name)} · ${esc(houseName(x.pid))}</td><td>${x.prestige}</td><td>${x.provinces}</td><td>${x.regions * 3}</td><td>${x.objPts}</td><td>${x.family}</td><td><b>${x.total}</b></td></tr>`).join("");
+  const rows = r.rows.map((x, i) => `<tr class="${i === 0 ? "win" : ""}"><td>${shield(st.players[x.pid].house, 18)} ${esc(st.players[x.pid].name)} · ${esc(houseName(x.pid))}</td><td>${x.prestige}</td><td>${x.provPts ?? x.provinces}</td><td>${x.regPts ?? x.regions * 3}</td><td>${x.objPts}</td><td>${x.family}</td><td>${x.goldPts || 0}</td><td><b>${x.total}</b></td></tr>`).join("");
   const objs = r.rows.filter((x) => x.objectives && x.objectives.length).map((x) => `<p style="font-size:15px;margin:4px 0"><b>${esc(houseName(x.pid))}</b> : ${x.objectives.map((o) => `${o.done ? "✓" : "✗"} ${esc(o.text)}`).join(" · ")}</p>`).join("");
   const titles = r.titles.map((t) => `<div class="title-card"><b>${esc(t.name)}</b>${esc(houseName(t.pid))}</div>`).join("");
   const isHost = L.meta && L.meta.host === net.uid;
   return `<div class="card end-card"><span class="card-kicker">FIN DE LA PARTIE</span><h2>${esc(houseName(w))} règne sur la France</h2><p>${esc((st.chronicle || []).filter((c) => c.kind === "end").slice(-1)[0]?.text || "")}</p>
-    <div class="scorewrap"><table class="scoretable"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="scorewrap"><table class="scoretable"><thead><tr><th>Maison</th><th>Prestige</th><th>Provinces</th><th>Régions</th><th>Objectifs</th><th>Famille</th><th>Or</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${scoreChart(st)}
+    ${relationsTable(st)}
     ${objs ? `<p class="ph">Les objectifs secrets</p>${objs}` : ""}
     <p class="ph" style="margin-top:14px">Les moments forts</p><div class="moments">${momentsForts().map((c) => `<div class="moment"><b>${c.year}</b>${c.title ? `« ${esc(c.title)} » — ${esc(c.choice || "")}. ` : ""}${esc(c.text)}</div>`).join("")}</div>
     <p class="ph">Les titres</p><div class="titles">${titles}</div>${palmaresHtml()}
@@ -188,14 +250,15 @@ export function openModal(kind, data) {
   if (kind === "unlock") { const u = UNLOCK_INFO[data]; html = `<div class="card"><span class="card-kicker">PREMIÈRE PARTIE · MANCHE ${S().round}</span><div class="intro-icon">${u.icon.replace('width="16" height="16"', 'width="56" height="56"')}</div><h2 style="text-align:center">${u.title}</h2><p>${u.text}</p><button class="btn btn-red btn-block" id="md-close">Compris</button></div>`; }
   if (kind === "score") { const st = S(), pid = me(); const e = pid ? E.estimateScore(st, { [pid]: L.priv || {} }, pid) : null; html = `<div class="card"><span class="card-kicker">COMMENT GAGNER</span><h2>Le score</h2><p>${GLOSSARY.score[1]}</p>${e ? `<div class="score-box"><b>${e.total}</b> points aujourd'hui :<br>${ICON.prestige}Prestige ${e.prestige} · ${ICON.province}provinces ${e.provinces} · régions ${e.regions} · objectifs ${e.objectives} · ${ICON.family}famille ${e.family}</div>` : ""}<p class="hint">Les objectifs secrets ne comptent que s'ils sont réussis à la fin. Détail dans l'onglet « Ma maison ».</p><button class="btn btn-block" id="md-close">Fermer</button></div>`; }
   if (kind === "house") html = `<div class="card">${houseHtml(L.ui.viewHouse, false)}<button class="btn btn-block" id="md-close" style="margin-top:12px">Fermer</button></div>`;
-  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><button class="btn btn-small" data-intro="0">Revoir l'introduction en 5 cartes</button>
-    <p><b>But :</b> avoir le plus de points après la dernière manche (10, ou 7 en partie courte) (Prestige + 1 par province + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille). Quinze provinces = victoire immédiate.</p>
-    <h3>Une manche</h3><ul><li><b>Revenus</b> : 1 or par province, 2 armées dans ta capitale, bonus de régions.</li><li><b>Dilemme</b> secret (parfois avec un autre joueur).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (recrute 2 à 4 armées), Intriguer (poison, séduction, corruption).</li><li><b>Révélation</b> : dilemmes, intrigues, mouvements, puis batailles.</li></ul>
-    <h3>Batailles</h3><p>Force = armées + bonus + un petit dé (0 à 2). Le défenseur gagne les égalités. Le vainqueur perd la moitié des armées adverses. Les survivants du défenseur rentrent à sa capitale. Perdre sa capitale : −5 Prestige, +20 Colère, un tiers de l'or pillé.</p>
+  if (kind === "rules") html = `<div class="card rules"><span class="card-kicker">AIDE-MÉMOIRE</span><h2>Les règles</h2><button class="btn btn-small" data-intro="0">Revoir l'introduction</button>
+    <p><b>But :</b> avoir le plus de points après la dernière manche (10, ou 7 en partie courte). Score = Prestige + <b>3 par province</b> + 3 par région complète + objectifs secrets + 1 par membre vivant de ta famille + 1 par tranche de 10 or. Quinze provinces = victoire immédiate.</p>
+    <h3>Une manche</h3><ul><li><b>Dilemmes</b> secrets : une affaire de ta maison (les autres n'en apprennent qu'une rumeur), une affaire avec un rival (révélée à tous). Aux manches 3, 6 et 9, le <b>Conseil du Roi</b> : un vote public (on ne vote jamais pour soi).</li><li><b>Ordres</b> : chaque dé reçoit un ordre. Frapper (attaque, le dé s'ajoute à ta force), Marcher (déplace jusqu'à la valeur du dé), Lever (2 à 4 armées), Intriguer (poison, séduction, corruption). Un double donne un dé bonus. Tu peux relancer un dé (2 or) et offrir une fête au peuple (3 or, −15 Colère).</li><li><b>Révélation partagée</b> : tout le monde voit les mêmes cartes ; on passe à la suivante quand tous ont validé.</li><li><b>Trois ans passent</b> : revenus (1 or par province, +1 par mariage), solde des troupes (1 or pour 5 armées, sinon désertions), 2 armées dans ta capitale + bonus de régions, vieillissement, naissances, morts, révoltes, peste.</li></ul>
+    <h3>Les maisons</h3><p>Bâtisseurs (Valcourt) : +1 en défense, solde +1. Marchands (Morlanges) : or des côtes, mercenaires à 2 or, +3 Colère par manche. Ombres (Ravenel) : intrigues meilleures et moins chères, mariages sans or. Lignée sacrée (Aubrac) : +1 Prestige par manche si Colère sous 50, −2 or par manche.</p>
+    <h3>Batailles</h3><p>Force = armées + ton dé + bonus + un petit hasard (0 à 2). Le défenseur ajoute sa Peur (et ses forteresses) et gagne les égalités. Le vainqueur perd la moitié des armées adverses. Perdre sa capitale : −5 Prestige, +20 Colère, un tiers de l'or pillé.</p>
     <h3>Dynastie</h3><p>Chaque manche = 3 ans. Les rois vieillissent et meurent. L'aîné hérite (les fils d'abord). Sans héritier : guerre civile. Un bâtard semé chez l'ennemi te permet de revendiquer une province à la mort de son roi.</p>
-    <h3>Bluff et diplomatie</h3><ul><li><b>Dé caché</b> : chaque joueur a un dé que les autres ne voient pas.</li><li><b>Mariage</b> : alliance permanente, +1 or par manche. <b>Trêve</b> : 3 manches. Attaquer un allié ou rompre une trêve = trahison (−5 Prestige).</li><li><b>Or</b> : tu peux envoyer de l'or à qui tu veux (pot-de-vin, rançon, promesse).</li><li><b>Crimes anonymes</b> : un poison réussi ou un coup bas reste anonyme. Accuse la bonne maison (+2 / elle −4), ou passe pour un calomniateur (−2).</li><li><b>Messages secrets</b> : onglet Messages, lus seulement par le destinataire.</li></ul>
-    <h3>Jauges</h3><p>Colère à 80 : une province se révolte. Peur : +1 en défense tous les 25 points, mais à 50 plus aucun mariage.</p>
-    <h3>Le favori</h3><p>Le joueur en tête porte la couronne : battre ses armées rapporte +2 Prestige. Dernière manche : le Couronnement, conquêtes à 3 Prestige et scores cachés.</p>
+    <h3>Bluff et diplomatie</h3><ul><li><b>Dé caché</b> : chaque joueur a un dé que les autres ne voient pas.</li><li><b>Mariage</b> : alliance permanente, +1 or par manche. <b>Trêve</b> : 3 manches. Attaquer un allié ou rompre une trêve = trahison (−5 Prestige).</li><li><b>Or</b> : tu peux envoyer de l'or à qui tu veux (cadeau, rançon, achat de voix).</li><li><b>Accusation</b> : un poison réussi est anonyme ; accuser juste rapporte, accuser à tort coûte.</li></ul>
+    <h3>Jauges</h3><p>Colère à 80 en fin de manche : une province (pas la capitale) se révolte et devient neutre, puis la Colère retombe à 50. Peur : +1 en défense tous les 25 points, mais à 50 plus aucun mariage.</p>
+    <h3>Le favori</h3><p>Le joueur au meilleur score visible porte la couronne : battre ses armées rapporte +2 Prestige. La maison la plus en retard reçoit chaque manche +2 armées et +2 or. Dernière manche : conquêtes à 3 Prestige, scores cachés, puis le Couronnement révèle les objectifs secrets.</p>
     <button class="btn btn-block" id="md-close">Fermer</button></div>`;
   m.innerHTML = html; m.classList.remove("hidden");
   const close = () => { m.classList.add("hidden"); setTimeout(nextModal, 50); };

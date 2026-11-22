@@ -1,14 +1,14 @@
 // Début de manche : revenus, événements du monde, dés
-import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795298173";
-import { PROVINCES, REGIONS } from "../map.js?v=1795298173";
-import { aiOffers } from "./ai.js?v=1795298173";
-import { canPropose, chron, computeLeader, provincesOf, regionsOf } from "./calc.js?v=1795298173";
-import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795298173";
-import { dealDilemmas } from "./dilemmas.js?v=1795298173";
-import { seedPlague } from "./effects.js?v=1795298173";
-import { deName, heirs, king, kingLabel, mother, newPerson, personTitle } from "./people.js?v=1795298173";
-import { estimateScore } from "./scoring.js?v=1795298173";
-import { killPerson } from "./succession.js?v=1795298173";
+import { DEATH_CHANCE, EVENTS } from "../content.js?v=1795309716";
+import { PROVINCES, REGIONS } from "../map.js?v=1795309716";
+import { aiOffers } from "./ai.js?v=1795309716";
+import { canPropose, chron, computeLeader, housePower, provincesOf, regionsOf } from "./calc.js?v=1795309716";
+import { PROV_IDS, capitalize, clamp, deC, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795309716";
+import { dealDilemmas } from "./dilemmas.js?v=1795309716";
+import { seedPlague } from "./effects.js?v=1795309716";
+import { deName, heirs, king, kingLabel, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795309716";
+import { estimateScore } from "./scoring.js?v=1795309716";
+import { killPerson } from "./succession.js?v=1795309716";
 
 // ---------- début de manche ----------
 export function snapshotPlayers(state) {
@@ -21,26 +21,60 @@ export function snapshotPlayers(state) {
   return snap;
 }
 
+// Début de manche : les dés et les dilemmes. (Le temps qui passe, revenus, morts, naissances, révoltes,
+// est calculé à la fin de la manche précédente par passTime, pour être montré dans la même révélation.)
 export function startRound(state, priv, rng) {
   state.roundStart = snapshotPlayers(state);
   state.round++;
   state.news = [];
   state.proposals = {};
   state.treaties = (state.treaties || []).filter((t) => t.until >= state.round);
-  const out = state.news;
-  const first = state.round === 1;
+  computeLeader(state);
+  rollDice(state, rng, priv);
+  dealDilemmas(state, priv, rng);
+  aiOffers(state, priv, rng);
+  state.phase = "dilemma";
+}
+
+// Solde des troupes : 1 or par tranche de 5 armées
+export const upkeepOf = (state, pid) => Math.floor(provincesOf(state, pid).reduce((s, id) => s + state.provinces[id].armies, 0) / 5) + (housePower(state, pid).upkeep || 0);
+// Revenu brut d'une maison (avant la solde)
+export function incomeOf(state, pid) {
+  const pl = state.players[pid];
+  const mine = provincesOf(state, pid);
+  const hp = housePower(state, pid);
+  const allies = hp.noAllyGold ? 0 : state.alliances.filter((x) => x.a === pid || x.b === pid).length;
+  const coast = hp.coastGold ? mine.filter((id) => PROVINCES[id].coast).length * hp.coastGold : 0;
+  return { provinces: mine.length, allies, coast, foire: pl.flags && pl.flags.foire ? 1 : 0, house: hp.gold || 0, total: Math.max(0, mine.length + allies + coast + (pl.flags && pl.flags.foire ? 1 : 0) + (hp.gold || 0)) };
+}
+
+// Trois années passent : revenus et solde, vieillissement, morts, naissances, révoltes, peste, événements.
+export function passTime(state, priv, rng, out) {
+  const eco = [];
   for (const pid of state.order) {
     const pl = state.players[pid];
     const mine = provincesOf(state, pid);
-    if (!first) {
+    const hp = housePower(state, pid);
+    {
       const regs = regionsOf(state, pid);
-      const allies = state.alliances.filter((x) => x.a === pid || x.b === pid).length;
-      pl.gold += mine.length + allies + (pl.flags && pl.flags.foire ? 1 : 0);
+      // économie : revenu, puis solde des troupes ; sans or pour payer, des soldats désertent
+      const inc = incomeOf(state, pid);
+      const up = upkeepOf(state, pid);
+      pl.gold += inc.total;
+      let desert = 0;
+      if (pl.gold >= up) pl.gold -= up;
+      else {
+        desert = (up - pl.gold) * 2; pl.gold = 0;
+        let left = desert;
+        for (const id of mine.slice().sort((a, b) => state.provinces[b].armies - state.provinces[a].armies)) { while (left > 0 && state.provinces[id].armies > 1) { state.provinces[id].armies--; left--; } }
+        desert -= left;
+      }
+      if (pl.house !== "anglais") eco.push({ pid, income: inc.total, upkeep: up, desert, gold: pl.gold });
       const cap = pl.capital && state.provinces[pl.capital].owner === pid ? pl.capital : mine[0];
       const bonus = 2 + regs.reduce((s, r) => s + REGIONS[r].provs.length - 1, 0);
       if (cap) state.provinces[cap].armies += bonus;
-      pl.prestige += regs.length;
-      pl.colere = clamp(pl.colere - 5, 0, 100);
+      pl.prestige += regs.length + (hp.prestige && (!hp.prestigeIfCalm || pl.colere < 50) ? hp.prestige : 0);
+      pl.colere = clamp(pl.colere - 5 + (hp.colere || 0), 0, 100);
       const k = king(state, pid);
       if (k) {
         if (k.trait === "Sanguinaire") pl.peur = clamp(pl.peur + 5, 0, 100);
@@ -70,7 +104,7 @@ export function startRound(state, priv, rng) {
       const q = mother(state, pid);
       if (q && q.age < 40 && rng() < 0.25) {
         const volage = pl.flags && pl.flags.reine_volage && rng() < 0.35 ? pick(rng, state.order.filter((o) => o !== pid)) : null;
-        const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", consanguin: fam.consanguin, bastardOf: volage });
+        const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: pl.house, role: "child", consanguin: fam.consanguin, bastardOf: volage, taken: takenNames(state) });
         fam.members.push(c);
         const t = `${capitalize(maisonName(state, pid))} célèbre une naissance : ${personTitle(c)}${c.infirm ? ", déjà surnommé" + (c.sex === "f" ? "e" : "") + " ainsi au berceau" : ""}.`;
         out.push({ kind: "birth", text: t, pid }); chron(state, t, "birth");
@@ -82,13 +116,14 @@ export function startRound(state, priv, rng) {
           const id = pick(rng, cand);
           state.provinces[id].owner = null; state.provinces[id].armies = 3;
           pl.colere = 50;
-          const t = `Jacquerie ! Les paysans ${PROVINCES[id].de} massacrent leurs seigneurs et chassent ${maisonName(state, pid)}.`;
-          out.push({ kind: "revolt", text: t, prov: id }); chron(state, t, "revolt");
+          const t = `Jacquerie ! La Colère du peuple ${deName(state, pid)} a atteint 80 : les paysans ${PROVINCES[id].de} massacrent leurs seigneurs et chassent ${maisonName(state, pid)}. La province devient neutre, et la Colère retombe à 50.`;
+          out.push({ kind: "revolt", text: t, prov: id, pid }); chron(state, t, "revolt");
         }
       }
     }
   }
-  if (!first) {
+  if (eco.length) out.push({ kind: "economy", text: "Le trésor : revenus des provinces et des mariages, moins la solde des troupes (1 or pour 5 armées).", rows: eco });
+  {
     // peste
     const spread = [];
     for (const id of PROV_IDS) {
@@ -123,10 +158,7 @@ export function startRound(state, priv, rng) {
       out.push({ kind: "text", text: t, pid: low }); chron(state, t, "text");
     }
   }
-  rollDice(state, rng, priv);
-  dealDilemmas(state, priv, rng);
-  aiOffers(state, priv, rng);
-  state.phase = "dilemma";
+  computeLeader(state);
 }
 
 
@@ -196,6 +228,18 @@ export function rollDice(state, rng, priv) {
     if (priv && priv[pid]) priv[pid].hidden = hid >= 0 ? { round: state.round, idx: hid, v: dice[hid] } : null;
     pl.dice = dice.map((v, i) => (i === hid ? 0 : v));
   }
+}
+
+// Relancer un dé contre de l'or (une fois par manche). Renvoie la nouvelle valeur, ou null si impossible.
+export const REROLL_COST = 2;
+export function rerollDie(state, priv, pid, idx, rng) {
+  const pl = state.players[pid];
+  if (!pl || pl.rerolled === state.round || pl.gold < REROLL_COST || !Number.isInteger(idx) || idx < 0 || idx >= pl.dice.length) return null;
+  const v = 1 + Math.floor(rng() * 6);
+  pl.gold -= REROLL_COST; pl.rerolled = state.round;
+  const h = priv && priv[pid] && priv[pid].hidden;
+  if (h && h.idx === idx && h.round === state.round) h.v = v; else pl.dice[idx] = v;
+  return v;
 }
 
 export function realDice(state, priv, pid) {

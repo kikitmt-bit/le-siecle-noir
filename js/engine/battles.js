@@ -1,12 +1,28 @@
 // Résolution des ordres : mouvements, batailles, intrigues
-import { PROVINCES } from "../map.js?v=1795298173";
-import { aiAnswer, aiOrders } from "./ai.js?v=1795298173";
-import { allied, attackMod, chron, computeLeader, provincesOf } from "./calc.js?v=1795298173";
-import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795298173";
-import { validateOrders } from "./dilemmas.js?v=1795298173";
-import { addEpithet } from "./effects.js?v=1795298173";
-import { deName, king, mother, newPerson, personTitle } from "./people.js?v=1795298173";
-import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795298173";
+import { PROVINCES } from "../map.js?v=1795309716";
+import { aiAnswer, aiOrders } from "./ai.js?v=1795309716";
+import { allied, attackMod, chron, computeLeader, costOf, defBonusOf, housePower, levyFor, mercCostOf, noteRel, provincesOf, publicScore } from "./calc.js?v=1795309716";
+import { COSTS, MERC_ARMIES, MERC_COST, NEED, PROV_IDS, WIN_PROVINCES, capitalize, clamp, deC, levyAmount, maisonName, peurBonus, pick, shuffle, unlocked } from "./core.js?v=1795309716";
+import { validateOrders } from "./dilemmas.js?v=1795309716";
+import { addEpithet } from "./effects.js?v=1795309716";
+import { deName, king, mother, newPerson, personTitle, takenNames } from "./people.js?v=1795309716";
+import { passTime } from "./rounds.js?v=1795309716";
+import { prepareResult } from "./scoring.js?v=1795309716";
+import { addTreaty, bound, killPerson, marry } from "./succession.js?v=1795309716";
+
+export const FEAST_COST = 3;
+// La révélation en quelques grandes cartes, les mêmes pour tous (on passe à la suivante quand tout le monde a validé)
+export function revealCards(steps, gameOver) {
+  const groups = [["court", ["dil"]], ["intrigue", ["intr"]], ["move", ["move"]], ["battle", ["battle"]], ["diplo", ["diplo", "end"]], ["time", ["time"]]];
+  const cards = [];
+  for (const [type, chs] of groups) {
+    const ks = steps.map((s, k) => (chs.includes(s.ch) ? k : -1)).filter((k) => k >= 0);
+    if (ks.length) cards.push({ type, ks });
+  }
+  cards.push({ type: "summary", ks: [] });
+  if (gameOver) { cards.push({ type: "objectives", ks: [] }); cards.push({ type: "final", ks: [] }); }
+  return cards;
+}
 
 export function resolveRound(state, priv, inputs, rng) {
   const steps = [];
@@ -21,7 +37,7 @@ export function resolveRound(state, priv, inputs, rng) {
   if (state.pendingDilemma) {
     for (const l of state.pendingDilemma.lines) {
       const extra = l.title ? { title: l.title, situation: l.situation, choice: l.choice, secret: !!l.secret } : null;
-      steps.push({ kind: "dilemma", text: l.text, pid: l.pid, ...(extra || {}) });
+      steps.push({ kind: l.kind || "dilemma", text: l.text, pid: l.pid, ...(extra || {}), ...(l.votes ? { votes: l.votes, winner: l.winner, motion: l.motion } : {}) });
       chron(state, l.text, "dilemma", extra);
     }
     for (const o of state.pendingDilemma.out) if (o.kind !== "text" || true) steps.push({ ...o });
@@ -33,6 +49,16 @@ export function resolveRound(state, priv, inputs, rng) {
     const pl = state.players[pid];
     orders[pid] = pl.isBot ? validateOrders(state, pid, aiOrders(state, pid, rng, priv), priv) : validateOrders(state, pid, inputs[pid] && inputs[pid].orders && inputs[pid].orders.round === state.round ? inputs[pid].orders : null, priv);
   }
+  // fêtes données au peuple (3 or : −15 Colère)
+  for (const pid of state.order) {
+    const pl = state.players[pid];
+    const wants = pl.isBot ? pl.ai && pl.colere >= 55 && pl.gold >= 8 : !!(inputs[pid] && inputs[pid].orders && inputs[pid].orders.round === state.round && inputs[pid].orders.feast);
+    if (wants && pl.gold >= FEAST_COST) {
+      pl.gold -= FEAST_COST; pl.colere = clamp(pl.colere - 15, 0, 100);
+      const t = `${capitalize(maisonName(state, pid))} offre une grande fête au peuple : vin, porcs rôtis et pendaisons de voleurs. La Colère retombe (−15, pour ${FEAST_COST} or).`;
+      steps.push({ kind: "feast", text: t, pid }); chron(state, t, "text");
+    }
+  }
   mark("intr");
   // 1. intrigues
   for (const pid of shuffle(rng, state.order)) {
@@ -42,10 +68,10 @@ export function resolveRound(state, priv, inputs, rng) {
       if (!COSTS[kind]) continue;
       const tgt = o.target && state.players[o.target] && o.target !== pid ? o.target : null;
       if (!tgt) continue;
-      if (pl.gold < COSTS[kind]) { steps.push({ kind: "intrigue", text: `${capitalize(maisonName(state, pid))} voulait intriguer, mais son trésor était vide.`, pid }); continue; }
-      pl.gold -= COSTS[kind];
+      if (pl.gold < costOf(state, pid, kind)) { steps.push({ kind: "intrigue", text: `${capitalize(maisonName(state, pid))} voulait intriguer, mais son trésor était vide.`, pid }); continue; }
+      pl.gold -= costOf(state, pid, kind);
       const k = king(state, pid);
-      let bonus = (k && k.trait === "Rusé" ? 1 : 0) + (pl.intrigueBonus || 0);
+      let bonus = (k && k.trait === "Rusé" ? 1 : 0) + (pl.intrigueBonus || 0) + (housePower(state, pid).intr || 0);
       if (kind === "seduction" && k && k.trait === "Séduisant") bonus++;
       let need = NEED[kind];
       if (kind === "poison") {
@@ -58,6 +84,7 @@ export function resolveRound(state, priv, inputs, rng) {
           steps.push({ kind: "death", text: t, pid: tgt, sound: "poison" }); chron(state, t, "death");
           const out = [];
           killPerson(state, tgt, victim, "empoisonné", pid, out);
+          noteRel(state, "poison", pid, tgt);
           out.forEach((x) => steps.push(x));
           const cid = "c" + Math.floor(rng() * 1e9).toString(36);
           priv.__crimes = priv.__crimes || []; priv.__crimes.push({ id: cid, round: state.round, culprit: pid, victim: tgt });
@@ -65,21 +92,23 @@ export function resolveRound(state, priv, inputs, rng) {
         } else {
           pl.prestige -= 2;
           const kk = king(state, pid); if (kk && !kk.epithets.includes("l'Empoisonneur")) kk.epithets.push("l'Empoisonneur");
-          const t = `Un empoisonneur est arrêté à la cour ${deName(state, tgt)}. Sous la torture, il donne le nom de son maître : ${maisonName(state, pid)}.`;
+          noteRel(state, "poison-rate", pid, tgt);
+          const t = `Un empoisonneur est arrêté à la cour ${deName(state, tgt)} avant d'atteindre ${personTitle(victim)}. Sous la torture, il donne le nom de son maître : ${maisonName(state, pid)} (−2 Prestige, surnom « l'Empoisonneur »).`;
           steps.push({ kind: "intrigue", text: t, pid }); chron(state, t, "intrigue");
         }
       } else if (kind === "seduction") {
         const q = mother(state, tgt);
         if (!q) { steps.push({ kind: "intrigue", text: `Le séducteur de ${maisonName(state, pid)} ne trouva pas de reine à séduire chez ${maisonName(state, tgt)}.`, pid }); continue; }
         if (o.value + bonus + Math.floor(rng() * 4) >= need + 2) {
-          const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: state.players[tgt].house, role: "child", bastardOf: pid });
+          const c = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 0, house: state.players[tgt].house, role: "child", bastardOf: pid, taken: takenNames(state) });
           state.families[tgt].members.push(c);
           state.players[tgt].stats.bastardsReceived++;
+          noteRel(state, "seduction", pid, tgt);
           const t = `La reine ${personTitle(q)} donne naissance à ${c.sex === "f" ? "une fille" : "un fils"}, ${c.name}. L'enfant a, dit-on, les yeux de ${maisonName(state, pid)}.`;
           steps.push({ kind: "birth", text: t, pid: tgt, sound: "birth" }); chron(state, t, "intrigue");
         } else {
           pl.prestige -= 2;
-          const t = `Le galant envoyé par ${maisonName(state, pid)} est surpris dans la chambre de la reine ${deName(state, tgt)}. On le rendit à son maître, castré.`;
+          const t = `Le galant envoyé par ${maisonName(state, pid)} est surpris dans la chambre de la reine ${deName(state, tgt)}. On le rendit à son maître, castré (−2 Prestige pour ${maisonName(state, pid)}).`;
           steps.push({ kind: "intrigue", text: t, pid }); chron(state, t, "intrigue");
         }
       } else if (kind === "bribe") {
@@ -87,6 +116,7 @@ export function resolveRound(state, priv, inputs, rng) {
         if (!P[prov] || P[prov].owner !== tgt || prov === state.players[tgt].capital || P[prov].armies > 3) { steps.push({ kind: "intrigue", text: `L'or de ${maisonName(state, pid)} ne trouva preneur nulle part.`, pid }); continue; }
         if (o.value + bonus + Math.floor(rng() * 4) >= need + 2) {
           P[prov].owner = pid;
+          noteRel(state, "corruption", pid, tgt);
           const t = `La garnison ${deC(PROVINCES[prov].city)} ouvre ses portes à ${maisonName(state, pid)}, contre une bourse bien pleine. ${capitalize(PROVINCES[prov].art)} change de camp sans un coup d'épée.`;
           steps.push({ kind: "bribe", text: t, prov, set: snap(prov), pid, sound: "coins" }); chron(state, t, "intrigue");
         } else {
@@ -114,11 +144,12 @@ export function resolveRound(state, priv, inputs, rng) {
       let to = P[o.to] && P[o.to].owner === pid ? o.to : state.players[pid].capital;
       if (!to || P[to].owner !== pid) to = provincesOf(state, pid)[0];
       if (!to) continue;
-      let n = levyAmount(o.value), merc = false;
-      // mercenaires : 4 pièces d'or pour 2 armées de plus
-      if (o.merc && state.players[pid].gold >= MERC_COST) { state.players[pid].gold -= MERC_COST; n += MERC_ARMIES; merc = true; }
+      let n = levyFor(state, pid, o.value), merc = false;
+      const mc = mercCostOf(state, pid);
+      // mercenaires : de l'or pour 2 armées de plus
+      if (o.merc && state.players[pid].gold >= mc) { state.players[pid].gold -= mc; n += MERC_ARMIES; merc = true; }
       P[to].armies += n;
-      parts.push(`lève ${n} armées ${PROVINCES[to].en}${merc ? " (dont des mercenaires payés " + MERC_COST + " or)" : ""}`); touched.push(to); lv.push({ to, n });
+      parts.push(`lève ${n} armées ${PROVINCES[to].en}${merc ? " (dont des mercenaires payés " + mc + " or)" : ""}`); touched.push(to); lv.push({ to, n });
     }
     if (parts.length) steps.push({ kind: "move", text: `${capitalize(maisonName(state, pid))} : ${parts.join(", ")}.`, pid, set: snap(...touched), provs: touched, mv, lv });
   }
@@ -149,6 +180,7 @@ export function resolveRound(state, priv, inputs, rng) {
         const pl = state.players[a.pid];
         const wasAllied = allied(state, a.pid, def);
         pl.prestige -= 5; pl.stats.betrayals++;
+        noteRel(state, "trahison", a.pid, def);
         state.alliances = state.alliances.filter((x) => !((x.a === a.pid && x.b === def) || (x.a === def && x.b === a.pid)));
         state.treaties = (state.treaties || []).filter((x) => !((x.a === a.pid && x.b === def) || (x.a === def && x.b === a.pid)));
         if (priv[def]) { priv[def].grudges = priv[def].grudges || []; if (!priv[def].grudges.includes(a.pid)) priv[def].grudges.push(a.pid); }
@@ -157,7 +189,8 @@ export function resolveRound(state, priv, inputs, rng) {
         steps.push({ kind: "betrayal", text: t, pid: a.pid, sound: "betrayal" }); chron(state, t, "betrayal");
       }
     }
-    const defTotal = defArmies + peurBonus(state.players[def]) + Math.floor(rng() * 3);
+    const defTotal = defArmies + defBonusOf(state, def) + Math.floor(rng() * 3);
+    for (const a of atts) if (def) noteRel(state, "attaque", a.pid, def);
     const totals = atts.map((a) => ({ ...a, total: a.n + a.bonus + Math.floor(rng() * 3) })).sort((x, y) => y.total - x.total);
     const best = totals[0];
     const attWins = best.total > defTotal && (totals.length === 1 || best.total > totals[1].total);
@@ -200,7 +233,8 @@ export function resolveRound(state, priv, inputs, rng) {
       set = snap(to, ...totals.flatMap((a) => a.froms));
     }
     steps.push({ kind: "battle", text, prov: to, from: totals.flatMap((a) => a.froms), winner: attWins ? best.pid : def, attWins, set, sound: "battle",
-      atk: totals.map((a) => ({ pid: a.pid, n: a.n, bonus: a.bonus, total: a.total })), def, defArmies, defTotal, defBonus: peurBonus(state.players[def]) });
+      atk: totals.map((a) => ({ pid: a.pid, n: a.n, bonus: a.bonus, total: a.total })), def, defArmies, defTotal, defBonus: defBonusOf(state, def) });
+    if (attWins && def) noteRel(state, "conquete", best.pid, def);
     if (attWins || totals.length > 1) chron(state, text.replace(/ \(\d+ armées, force \d+\)/g, ""), "battle");
   }
   mark("diplo");
@@ -216,7 +250,7 @@ export function resolveRound(state, priv, inputs, rng) {
     const out = [];
     if (ans === true) {
       if (kind === "marriage" && state.players[pr.from].peur < 50) { if (marry(state, pr.from, pr.to, out)) out.forEach((x) => steps.push({ ...x, sound: "bells" })); }
-      if (kind === "treaty") { addTreaty(state, pr.from, pr.to, 3, out); out.forEach((x) => steps.push({ ...x, sound: "seal" })); }
+      if (kind === "treaty") { addTreaty(state, pr.from, pr.to, 3, out); noteRel(state, "treve", pr.from, pr.to); out.forEach((x) => steps.push({ ...x, sound: "seal" })); }
     } else if (ans === false) {
       const t = kind === "treaty" ? `${capitalize(maisonName(state, pr.to))} refuse la trêve proposée par ${maisonName(state, pr.from)}.` : `${capitalize(maisonName(state, pr.to))} refuse avec mépris la demande en mariage de ${maisonName(state, pr.from)}.`;
       steps.push({ kind: "text", text: t }); chron(state, t);
@@ -230,6 +264,7 @@ export function resolveRound(state, priv, inputs, rng) {
       const n = Math.min(Math.max(0, g.amount | 0), state.players[pid].gold);
       if (!to || g.to === pid || n <= 0) continue;
       state.players[pid].gold -= n; to.gold += n; state.players[pid].stats.goldGiven = (state.players[pid].stats.goldGiven || 0) + n;
+      noteRel(state, "or", pid, g.to);
       const t = `${capitalize(maisonName(state, pid))} fait porter ${n} pièce${n > 1 ? "s" : ""} d'or à ${maisonName(state, g.to)}. Cadeau, pot-de-vin ou promesse ?`;
       steps.push({ kind: "gift", text: t, pid, sound: "coins" }); chron(state, t, "gift");
     }
@@ -241,6 +276,7 @@ export function resolveRound(state, priv, inputs, rng) {
       if (crime && crime.culprit === acc.target) {
         state.players[acc.target].prestige -= 4; state.players[pid].prestige += 2;
         state.players[pid].stats.accusationsOk = (state.players[pid].stats.accusationsOk || 0) + 1;
+        noteRel(state, "accusation", pid, acc.target);
         addEpithet(state, acc.target, "l'Assassin");
         state.unsolved = state.unsolved.filter((u) => u.id !== acc.crime);
         if (priv[crime.victim]) { priv[crime.victim].grudges = priv[crime.victim].grudges || []; priv[crime.victim].grudges.push(acc.target); }
@@ -274,10 +310,23 @@ export function resolveRound(state, priv, inputs, rng) {
   computeLeader(state);
   // 6. fin de partie ?
   const winner = state.order.find((pid) => provincesOf(state, pid).length >= WIN_PROVINCES);
-  marks.forEach((m, i) => { const end = i + 1 < marks.length ? marks[i + 1].at : steps.length; for (let k = m.at; k < end; k++) steps[k].ch = m.c; });
-  state.reveal = { round: state.round, steps };
-  state.phase = "reveal";
   state.gameOver = !!winner || state.round >= state.maxRounds;
   state.instantWinner = winner || null;
+  // 7. trois années passent (sauf à la toute fin) : montrées dans la même révélation
+  if (!state.gameOver) {
+    mark("time");
+    const out = [];
+    passTime(state, priv, rng, out);
+    const all = snap(...PROV_IDS);
+    out.forEach((x) => steps.push({ ...x, set: all }));
+  }
+  marks.forEach((m, i) => { const end = i + 1 < marks.length ? marks[i + 1].at : steps.length; for (let k = m.at; k < end; k++) steps[k].ch = m.c; });
+  // historique des scores visibles, manche par manche
+  state.history = state.history || [];
+  state.history.push({ round: state.round, s: Object.fromEntries(state.order.map((pid) => [pid, publicScore(state, pid)])) });
+  if (state.gameOver) prepareResult(state, priv);
+  state.reveal = { round: state.round, steps, cards: revealCards(steps, state.gameOver) };
+  state.revCard = 0;
+  state.phase = "reveal";
   return steps;
 }

@@ -1,20 +1,20 @@
 // Réception des données (salon, messages privés, état de la partie)
-import * as A from "../audio.js?v=1795298173";
-import { AI_REPLIES, WHISPERS } from "../content.js?v=1795298173";
-import * as E from "../engine.js?v=1795298173";
-import { ICON, term } from "../help.js?v=1795298173";
-import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795298173";
-import { $, H, L, S, SOLO, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795298173";
-import { queueModal } from "./aides.js?v=1795298173";
-import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795298173";
-import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795298173";
-import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795298173";
-import { shield } from "./draw.js?v=1795298173";
-import { infoFromState, noteGame } from "./games.js?v=1795298173";
-import { badFormat, renderLobby } from "./lobby.js?v=1795298173";
-import { buildMap } from "./map.js?v=1795298173";
-import { recordPalmares } from "./overlays.js?v=1795298173";
-import { render } from "./render.js?v=1795298173";
+import * as A from "../audio.js?v=1795309716";
+import { AI_REPLIES, WHISPERS } from "../content.js?v=1795309716";
+import * as E from "../engine.js?v=1795309716";
+import { ICON, term } from "../help.js?v=1795309716";
+import { becomeHost, stopHost, syncInputListeners } from "../host.js?v=1795309716";
+import { $, H, L, S, SOLO, esc, me, net, resetUi, setRollDiceAnim, store } from "../state.js?v=1795309716";
+import { queueModal } from "./aides.js?v=1795309716";
+import { playNewsSounds, restoreOrders, splash } from "./announce.js?v=1795309716";
+import { houseColor, houseName, show, toast, tuto } from "./common.js?v=1795309716";
+import { bindDiplomacy, diplomacyHtml } from "./diplomacy.js?v=1795309716";
+import { shield } from "./draw.js?v=1795309716";
+import { infoFromState, noteGame } from "./games.js?v=1795309716";
+import { badFormat, renderLobby } from "./lobby.js?v=1795309716";
+import { buildMap } from "./map.js?v=1795309716";
+import { recordPalmares } from "./overlays.js?v=1795309716";
+import { render } from "./render.js?v=1795309716";
 
 // ---------------------------------------------------------------------
 // réception des données
@@ -130,7 +130,7 @@ export function onState(st) {
     if (st.round === st.maxRounds) { A.play("drum"); tuto("round10", "Le Couronnement", "Dernière manche ! Chaque conquête rapporte 3 Prestige et les scores sont cachés jusqu'à la fin."); }
   }
   // fenêtres « Nouveau » de la première partie : au moment des ordres, quand on a le temps de lire
-  if (st.tutorial && me() && st.phase === "orders") for (const [k, r] of Object.entries(E.UNLOCK)) if (st.round === r && !store.get(`sn_unl_${st.gameId}_${k}`)) { store.set(`sn_unl_${st.gameId}_${k}`, "1"); queueModal("unlock", k); }
+  if (st.tutorial && me() && st.phase === "orders") for (const [k, r] of Object.entries(E.UNLOCK)) if (st.round === r && !store.get(`sn_unl_${st.gameId}_${k}`)) { store.set(`sn_unl_${st.gameId}_${k}`, "1"); setTimeout(() => queueModal("unlock", k), 2600); }
   if (st.phase !== L.last.phase) {
     if (st.phase === "orders") restoreOrders();
     if (st.phase === "interlude") { A.play("bell"); L.modalOpen = null; }
@@ -142,6 +142,13 @@ export function onState(st) {
   }
   if (st.phase !== L.last.phase || st.round !== L.last.round) splash(st);
   if (st.phase !== L.last.phase && ["orders", "placement", "draft", "reveal"].includes(st.phase)) L.ui.tab = "panel";
+  // alertes : la Colère qui va déclencher une révolte, le trésor qui ne paiera pas la solde
+  if (st.phase === "dilemma" && (st.phase !== L.last.phase || st.round !== L.last.round) && pid && st.players[pid]) {
+    const p = st.players[pid];
+    if (p.colere >= 65) setTimeout(() => toast(`${ICON.colere}<b>Ta Colère du peuple est à ${p.colere}.</b> À 80 en fin de manche, une de tes provinces se révolte et devient neutre. Offre une fête au peuple (3 or, dans tes ordres) ou évite les choix cruels.`, "#8E1B1B", 9000), 3200);
+    const up = E.upkeepOf(st, pid), inc = E.incomeOf(st, pid).total;
+    if (p.gold + inc < up) setTimeout(() => toast(`${ICON.gold}<b>Ton trésor ne suffira pas à payer la solde</b> (${up} or) : des soldats vont déserter en fin de manche.`, "#8E1B1B", 8000), 3600);
+  }
   if (st.phase === "placement" && me() && st.families && st.families[me()] && !store.get(`sn_fam_${st.gameId}`)) { store.set(`sn_fam_${st.gameId}`, "1"); setTimeout(() => queueModal("family", 0), 2400); }
   if (prev && prev.leader !== st.leader && st.leader && st.round > 1 && st.round < st.maxRounds && ["dilemma", "interlude"].includes(st.phase)) {
     setTimeout(() => { toast(`${ICON.prestige}<b>La couronne passe à ${esc(houseName(st.leader))}</b>${st.leader === me() ? " : c'est toi ! Tout le monde va vouloir te faire tomber." : ". Battre ses armées rapporte 2 Prestige."}`, "#D9A441", 6000); A.play("horn"); }, 2400);

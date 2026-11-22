@@ -1,6 +1,6 @@
 // Famille : accesseurs et création des personnages
-import { HOUSES, INFIRMITIES, NAMES, TRAIT_POOL } from "../content.js?v=1795298173";
-import { pick, uid } from "./core.js?v=1795298173";
+import { HOUSES, INFIRMITIES, NAMES, TRAIT_POOL } from "../content.js?v=1795309716";
+import { pick, uid } from "./core.js?v=1795309716";
 
 // ---------- famille ----------
 export function family(state, pid) { return state.families[pid]; }
@@ -47,9 +47,18 @@ export function heirs(state, pid) {
   return c.sort((a, b) => (a.sex === b.sex ? b.age - a.age : a.sex === "m" ? -1 : 1));
 }
 
-export function newPerson(rng, { sex, age, house, role, bastard = false, bastardOf = null, consanguin = false }) {
+// tous les prénoms déjà portés dans la partie (pour ne jamais avoir deux « Guy » qu'on confond)
+export function takenNames(state) { const s = new Set(); for (const f of Object.values(state.families || {})) for (const m of f.members) s.add(m.name); return s; }
+
+export function newPerson(rng, { sex, age, house, role, bastard = false, bastardOf = null, consanguin = false, taken = null }) {
   const en = house === "anglais";
-  const name = pick(rng, sex === "m" ? (en ? NAMES.en_m : NAMES.m) : en ? NAMES.en_f : NAMES.f);
+  const pool = sex === "m" ? (en ? NAMES.en_m : NAMES.m) : en ? NAMES.en_f : NAMES.f;
+  let name = pick(rng, pool);
+  if (taken) {
+    const free = pool.filter((n) => !taken.has(n));
+    name = free.length ? pick(rng, free) : `${pick(rng, pool)} le Jeune`;
+    taken.add(name);
+  }
   let trait = pick(rng, TRAIT_POOL);
   let infirm = rng() < 0.28 ? pick(rng, INFIRMITIES[sex]) : null;
   if (consanguin && rng() < 0.55) { trait = pick(rng, ["Simple d'esprit", "Fragile", "Cruel"]); if (!infirm) infirm = pick(rng, INFIRMITIES[sex]); }
@@ -57,10 +66,10 @@ export function newPerson(rng, { sex, age, house, role, bastard = false, bastard
   return { id: uid(rng), name, sex, age, trait, infirm, epithets: [], health, alive: true, role, bastard, legit: !bastard, bastardOf, spouse: null, cause: null };
 }
 
-export function makeFamily(rng, house) {
-  const k = newPerson(rng, { sex: "m", age: 40 + Math.floor(rng() * 16), house, role: "king" });
-  const q = newPerson(rng, { sex: "f", age: 25 + Math.floor(rng() * 11), house, role: "queen" });
-  const c1 = newPerson(rng, { sex: rng() < 0.6 ? "m" : "f", age: 14 + Math.floor(rng() * 7), house, role: "child" });
-  const c2 = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 6 + Math.floor(rng() * 9), house, role: "child" });
+export function makeFamily(rng, house, taken = new Set()) {
+  const k = newPerson(rng, { sex: "m", age: 40 + Math.floor(rng() * 16), house, role: "king", taken });
+  const q = newPerson(rng, { sex: "f", age: 25 + Math.floor(rng() * 11), house, role: "queen", taken });
+  const c1 = newPerson(rng, { sex: rng() < 0.6 ? "m" : "f", age: 14 + Math.floor(rng() * 7), house, role: "child", taken });
+  const c2 = newPerson(rng, { sex: rng() < 0.5 ? "m" : "f", age: 6 + Math.floor(rng() * 9), house, role: "child", taken });
   return { members: [k, q, c1, c2], kingId: k.id, queenRef: null, consanguin: false, house };
 }

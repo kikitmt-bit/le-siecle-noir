@@ -1,16 +1,16 @@
 // Accueil, création, salon de la partie, quitter
-import * as A from "../audio.js?v=1795298173";
-import { HOUSES, HUMAN_HOUSES } from "../content.js?v=1795298173";
-import * as E from "../engine.js?v=1795298173";
-import { hostStart, stopHost } from "../host.js?v=1795298173";
-import * as local from "../localnet.js?v=1795298173";
-import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795298173";
-import { show, toast } from "./common.js?v=1795298173";
-import { shield } from "./draw.js?v=1795298173";
-import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795298173";
-import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795298173";
-import { palmaresHtml } from "./overlays.js?v=1795298173";
-import { render } from "./render.js?v=1795298173";
+import * as A from "../audio.js?v=1795309716";
+import { HOUSE_POWERS, HOUSES, HUMAN_HOUSES } from "../content.js?v=1795309716";
+import * as E from "../engine.js?v=1795309716";
+import { hostStart, stopHost } from "../host.js?v=1795309716";
+import * as local from "../localnet.js?v=1795309716";
+import { $, H, L, SOLO, esc, net, setNet, setSolo, store } from "../state.js?v=1795309716";
+import { show, toast } from "./common.js?v=1795309716";
+import { shield } from "./draw.js?v=1795309716";
+import { dropGame, loadGames, noteGame, renderGames } from "./games.js?v=1795309716";
+import { onMembers, onMeta, onState, onTaunts, onWhispers } from "./inbox.js?v=1795309716";
+import { palmaresHtml } from "./overlays.js?v=1795309716";
+import { render } from "./render.js?v=1795309716";
 
 // ---------------------------------------------------------------------
 // ACCUEIL ET SALON
@@ -80,6 +80,8 @@ export async function joinGame(code, silent = false) {
 export function enterRoom(code) {
   L.code = code; L.joinedAt = Date.now(); L.noted = false;
   if (!SOLO) { noteGame(code, { name: store.get("sn_name") || undefined }); history.replaceState(null, "", `${location.pathname}${new URLSearchParams(location.search).has("test") ? "?test" : ""}`); }
+  // une entrée d'historique « tampon » : le bouton retour (ou B sur Xbox) ne fait pas quitter la partie
+  try { history.pushState({ sn: 1 }, ""); } catch {}
   L.unsub.forEach((u) => u());
   L.unsub = [
     net.listen(code, "meta", (m) => { L.meta = m || {}; onMeta(); }),
@@ -131,7 +133,7 @@ export function renderLobby() {
   $("#lobby-code").textContent = L.code;
   const mine = L.members[net.uid] || {};
   const taken = [...Object.entries(L.members).filter(([u, m]) => u !== net.uid && m.online !== false).map(([, m]) => m.house), ...Object.values((L.meta && L.meta.ais) || {}).map((a) => a.house)];
-  $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${mine.house === h}" ${taken.includes(h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small></button>`).join("");
+  $("#house-pick").innerHTML = HUMAN_HOUSES.map((h) => `<button class="house-opt" data-h="${h}" aria-pressed="${mine.house === h}" ${taken.includes(h) ? "disabled" : ""}>${shield(h, 40)}${HOUSES[h].name}<small>${esc(HOUSES[h].motto)}</small><span class="hp-t">${esc(HOUSE_POWERS[h].title)}</span><span class="hp-g">+ ${esc(HOUSE_POWERS[h].power)}</span><span class="hp-b">− ${esc(HOUSE_POWERS[h].weak)}</span></button>`).join("");
   $("#house-pick").querySelectorAll("button").forEach((b) => (b.onclick = () => { A.play("click"); net.updateMember(L.code, { house: b.dataset.h }); }));
   if (document.activeElement !== $("#lobby-hname")) $("#lobby-hname").value = mine.hname || "";
   $("#lobby-hname").onchange = () => { const v = E.cleanHouseName($("#lobby-hname").value) || ""; store.set("sn_hname", v); $("#lobby-hname").value = v; net.updateMember(L.code, { hname: v }); };

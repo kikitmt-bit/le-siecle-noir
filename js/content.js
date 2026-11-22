@@ -2,11 +2,12 @@
 //  LE SIÈCLE NOIR — contenu : maisons, noms, traits, dilemmes, objectifs
 // =====================================================================
 
-import { DIL_COUR } from "./dil_cour.js?v=1795298173";
-import { DIL_GUERRE } from "./dil_guerre.js?v=1795298173";
-import { DIL_PACTES } from "./dil_pactes.js?v=1795298173";
-import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795298173";
-import { DIL_FAMILLES } from "./dil_familles.js?v=1795298173";
+import { DIL_COUR } from "./dil_cour.js?v=1795309716";
+import { DIL_GUERRE } from "./dil_guerre.js?v=1795309716";
+import { DIL_PACTES } from "./dil_pactes.js?v=1795309716";
+import { DIL_INTRIGUES } from "./dil_intrigues.js?v=1795309716";
+import { DIL_FAMILLES } from "./dil_familles.js?v=1795309716";
+import { DIL_SOMBRES } from "./dil_sombres.js?v=1795309716";
 
 export const HOUSES = {
   valcourt: { name: "Valcourt", color: "#8E1B1B", light: "#C0504A", charge: "tower", motto: "Le sang ne sèche jamais" },
@@ -16,6 +17,25 @@ export const HOUSES = {
   anglais: { name: "Angleterre", color: "#4A4F57", light: "#7D838C", charge: "lion", motto: "Dieu et mon droit", bot: true },
 };
 export const HUMAN_HOUSES = ["valcourt", "morlanges", "ravenel", "aubrac"];
+
+// Chaque maison a un pouvoir et une faiblesse (affichés au choix du blason et dans la maison)
+export const HOUSE_POWERS = {
+  valcourt: { title: "Les Bâtisseurs", power: "+1 en défense dans toutes leurs provinces.", weak: "Entretenir les forteresses coûte cher : solde des troupes +1 or par manche.", def: 1, upkeep: 1 },
+  morlanges: { title: "Les Marchands", power: "+1 or par province côtière à chaque manche. Mercenaires à 2 or.", weak: "Le peuple déteste les usuriers : +3 Colère par manche.", coastGold: 1, merc: 2, colere: 3 },
+  ravenel: { title: "Les Ombres", power: "+1 de chance à toutes leurs intrigues, qui coûtent 1 or de moins.", weak: "Personne ne leur fait confiance : leurs mariages ne rapportent aucun or.", intr: 1, intrCost: -1, noAllyGold: true },
+  aubrac: { title: "La Lignée sacrée", power: "+1 Prestige à chaque manche tant que leur Colère reste sous 50 (l'Église les bénit).", weak: "La dîme : −2 or de revenu par manche.", prestige: 1, prestigeIfCalm: true, gold: -2 },
+};
+
+// Le Conseil du Roi : un vote public toutes les 3 manches. On ne vote jamais pour soi.
+export const COUNCIL = [
+  { id: "connetable", good: true, title: "Le Connétable de France", text: "Le roi de France doit nommer un Connétable pour commander ses armées. Le Conseil vote : quelle maison recevra l'épée ?", effect: "La maison élue reçoit +3 armées dans sa capitale et +2 Prestige." },
+  { id: "impot", good: false, title: "L'impôt de guerre", text: "La guerre contre l'Anglais coûte cher. Le Conseil doit désigner la maison qui paiera l'impôt.", effect: "La maison désignée paie 8 or (ou tout ce qu'elle a), partagés entre les autres maisons." },
+  { id: "excommunication", good: false, title: "L'excommunication", text: "Le légat du pape demande au Conseil quelle maison mérite d'être chassée de l'Église.", effect: "La maison désignée prend +20 Colère et perd 3 Prestige." },
+  { id: "main", good: true, title: "La Main du Roi", text: "Le vieux roi de France, gâteux, veut une Main pour gouverner à sa place. Qui murmurera à son oreille ?", effect: "La maison élue lance 1 dé de plus à la prochaine manche et gagne +2 Prestige." },
+  { id: "bouc", good: false, title: "Le bouc émissaire", text: "La peste ravage le royaume. Le peuple réclame un coupable. Le Conseil doit en livrer un.", effect: "La maison désignée perd 3 armées dans sa capitale, prend +10 Colère, et la peste frappe sa capitale." },
+  { id: "princesse", good: true, title: "La princesse de France", text: "La fille du roi de France, laide mais richement dotée, doit être mariée. À quelle maison la donner ?", effect: "La maison élue gagne +4 Prestige et +6 or de dot." },
+  { id: "tribunal", good: false, title: "Le tribunal des pairs", text: "Les pairs du royaume veulent juger une maison pour ses crimes. Personne n'est innocent. Qui sera condamné ?", effect: "La maison désignée perd 4 Prestige et une province (hors capitale) se soulève et devient neutre." },
+];
 
 export const NAMES = {
   m: ["Philippe", "Louis", "Jean", "Charles", "Gautier", "Enguerrand", "Thibaut", "Raoul", "Hugues", "Bertrand", "Guy", "Amaury", "Robert", "Godefroy", "Aymeric", "Baudouin", "Foulques", "Tancrède", "Arnaud", "Geoffroy", "Henri", "Mathieu", "Pierre", "Olivier"],
@@ -388,7 +408,7 @@ export const OBJECTIVES = [
   { id: "genereux", pts: 6, text: "Donner au moins 10 pièces d'or à d'autres maisons (cadeaux ou pots-de-vin)" },
   { id: "pacifique", pts: 10, text: "N'attaquer personne de toute la partie" },
 ];
-DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES, ...DIL_FAMILLES);
+DILEMMAS.push(...DIL_COUR, ...DIL_GUERRE, ...DIL_PACTES, ...DIL_INTRIGUES, ...DIL_FAMILLES, ...DIL_SOMBRES);
 // vérification des identifiants uniques
 { const seen = new Set(); for (const d of DILEMMAS) { if (seen.has(d.id)) console.warn("Dilemme en double :", d.id); seen.add(d.id); } }
 
